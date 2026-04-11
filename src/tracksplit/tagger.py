@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import base64
 import logging
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Sequence
 
 from mutagen.flac import FLAC, Picture
 from mutagen.oggopus import OggOpus
@@ -118,12 +118,16 @@ def tag_all(
     track_paths: Sequence[str | Path],
     album: AlbumMeta,
     cover_data: bytes | None = None,
+    on_progress: Callable[[str, int, int], None] | None = None,
 ) -> None:
     """Tag all track files by zipping paths with album.tracks.
 
     Dispatches to tag_flac or tag_ogg based on file extension.
     """
-    for path, track in zip(track_paths, album.tracks, strict=True):
+    total = len(track_paths)
+    for i, (path, track) in enumerate(zip(track_paths, album.tracks, strict=True)):
+        if on_progress:
+            on_progress("Tagging tracks", i + 1, total)
         p = Path(path)
         if p.suffix.lower() in (".ogg", ".opus"):
             tag_ogg(p, album, track, cover_data=cover_data)

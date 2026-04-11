@@ -3,9 +3,12 @@
 Coordinates probing, extraction, splitting, tagging, and cover art
 composition for individual video files and directories of video files.
 """
+from __future__ import annotations
+
 import json
 import logging
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 from tracksplit.cover import (
@@ -114,6 +117,7 @@ def process_file(
     force: bool = False,
     dry_run: bool = False,
     output_format: str = "auto",
+    on_progress: Callable[[str, int, int], None] | None = None,
 ) -> bool:
     """Process a single video file through the full pipeline.
 
@@ -122,10 +126,15 @@ def process_file(
 
     Returns True on success, False if skipped or failed.
     """
+    def _progress(step: str, current: int = 0, total: int = 0) -> None:
+        if on_progress:
+            on_progress(step, current, total)
+
     input_path = Path(input_path)
     output_dir = Path(output_dir)
 
     # Probe
+    _progress("Probing")
     ffprobe_data = run_ffprobe(input_path)
 
     if not has_audio(ffprobe_data):
@@ -193,23 +202,28 @@ def process_file(
         tmp_dir = Path(tmp_str)
 
         # Prepare audio (detect codec, extract if needed)
+        _progress("Extracting audio")
         audio_path, ext, codec_mode = prepare_audio(
             input_path, ffprobe_data, output_format, tmp_dir
         )
         from_video = (audio_path == input_path)
 
         # Split into tracks
+        _progress("Splitting tracks")
         track_paths = split_tracks(
             audio_path, album.tracks, album_dir,
             ext=ext, codec_mode=codec_mode, from_video=from_video,
+            on_progress=on_progress,
         )
 
         # Cover art
+        _progress("Extracting cover art")
         cover_data = extract_cover_from_mkv(input_path)
         dj_artwork_data = find_dj_artwork(
             input_path, artist=album.artist,
         )
 
+        _progress("Composing covers")
         cover_bytes = compose_cover(
             artist=album.artist,
             festival=album.festival,
@@ -220,69 +234,41 @@ def process_file(
         )
 
         # Tag all tracks
-        tag_all(track_paths, album, cover_data=cover_bytes)
+        _progress("Tagging tracks")
+        tag_all(track_paths, album, cover_data=cover_bytes, on_progress=on_progress)
 
         # Save cover.jpg
+        _progress("Saving")
         cover_path = album_dir / "cover.jpg"
         cover_path.write_bytes(cover_bytes)
 
     # Save chapter cache
     _save_chapter_cache(album_dir, chapters)
 
-    # Artist cover (only if not already present)
+    # Artist cover (only if not already present, tolerates parallel races)
     artist_dir = output_dir / safe_filename(album.artist_folder)
     artist_cover_path = artist_dir / "folder.jpg"
     if not artist_cover_path.exists():
-        artist_bytes = compose_artist_cover(
-            artist=album.artist,
-            dj_artwork_data=dj_artwork_data,
-        )
-        artist_cover_path.write_bytes(artist_bytes)
-        # Also save as artist.jpg for Lyrion
-        (artist_dir / "artist.jpg").write_bytes(artist_bytes)
-        logger.info("Created artist cover: %s", artist_dir.name)
+        try:
+            artist_bytes = compose_artist_cover(
+                artist=album.artist,
+                dj_artwork_data=dj_artwork_data,
+            )
+            artist_cover_path.write_bytes(artist_bytes)
+            # Also save as artist.jpg for Lyrion
+            (artist_dir / "artist.jpg").write_bytes(artist_bytes)
+            logger.info("Created artist cover: %s", artist_dir.name)
+        except OSError:
+            pass  # another worker may have written it concurrently
 
     logger.info("Processed %s -> %s", _safe_log_name(input_path), album_dir)
     return True
 
 
-def process_directory(
-    input_dir: Path,
-    output_dir: Path,
-    force: bool = False,
-    dry_run: bool = False,
-    output_format: str = "auto",
-) -> tuple[int, int, int]:
-    """Process all video files in a directory.
-
-    Iterates sorted video files, calls process_file for each, catches
-    and logs exceptions per file. Returns (processed, skipped, failed).
-    """
-    input_dir = Path(input_dir)
-    output_dir = Path(output_dir)
-
-    video_files = sorted(
+def find_video_files(input_dir: Path) -> list[Path]:
+    """Find all video files in a directory, sorted by name."""
+    return sorted(
         f for f in input_dir.rglob("*") if f.is_file() and is_video_file(f)
     )
 
-    if not video_files:
-        logger.warning("No video files found in %s", input_dir)
-        return (0, 0, 0)
 
-    processed = 0
-    skipped = 0
-    failed = 0
-    for video_file in video_files:
-        try:
-            if process_file(
-                video_file, output_dir, force=force, dry_run=dry_run,
-                output_format=output_format,
-            ):
-                processed += 1
-            else:
-                skipped += 1
-        except Exception:
-            logger.exception("Failed to process %s", video_file.name)
-            failed += 1
-
-    return (processed, skipped, failed)

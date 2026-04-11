@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, UnidentifiedImageError
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +267,13 @@ def _prepare_background(
     artist covers use 0.18 (CrateDigger style).
     """
     if background_data is not None:
-        bg = Image.open(io.BytesIO(background_data)).convert("RGB")
+        try:
+            bg = Image.open(io.BytesIO(background_data)).convert("RGB")
+        except (UnidentifiedImageError, OSError) as exc:
+            logger.warning("Could not decode background image, using gradient: %s", exc)
+            bg = create_gradient(size, size)
+            accent = _ensure_contrast(180, 100, 220)
+            return bg, accent
 
         # Cover-fit resize and center crop
         src_w, src_h = bg.size

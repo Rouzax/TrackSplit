@@ -1,5 +1,8 @@
 """Split a full FLAC into individual tracks at chapter boundaries."""
+from __future__ import annotations
+
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
 from tracksplit.metadata import safe_filename
@@ -63,6 +66,7 @@ def split_tracks(
     ext: str = ".flac",
     codec_mode: str = "copy",
     from_video: bool = False,
+    on_progress: Callable[[str, int, int], None] | None = None,
 ) -> list[Path]:
     """Split audio into individual track files.
 
@@ -72,8 +76,12 @@ def split_tracks(
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    total = len(tracks)
     output_paths: list[Path] = []
     for i, track in enumerate(tracks):
+        if on_progress:
+            on_progress("Splitting tracks", i + 1, total)
+
         filename = build_track_filename(track, ext=ext)
         output_path = output_dir / filename
 
