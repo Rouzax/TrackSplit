@@ -18,7 +18,7 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
     """
     tags: dict[str, list[str]] = {
         "TITLE": [track.title],
-        "ARTIST": [album.artist],
+        "ARTIST": [track.artist or album.artist],
         "ALBUMARTIST": [album.artist],
         "ALBUM": [album.album],
         "TRACKNUMBER": [str(track.number)],

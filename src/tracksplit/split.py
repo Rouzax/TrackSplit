@@ -31,10 +31,14 @@ def build_split_command(
 def build_track_filename(track: TrackMeta) -> str:
     """Build a sanitized filename for a track.
 
-    Format: {number:02d} - {safe_title}.flac
+    Format: {number:02d} - {artist} - {title}.flac
+    Or:     {number:02d} - {title}.flac (when no track artist)
     """
-    safe_title = safe_filename(track.title)
-    return f"{track.number:02d} - {safe_title}.flac"
+    if track.artist:
+        name = f"{track.artist} - {track.title}"
+    else:
+        name = track.title
+    return f"{track.number:02d} - {safe_filename(name)}.flac"
 
 
 def split_tracks(

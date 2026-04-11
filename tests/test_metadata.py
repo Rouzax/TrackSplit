@@ -4,6 +4,7 @@ from tracksplit.metadata import (
     safe_filename,
     parse_filename,
     deduplicate_titles,
+    split_track_artist,
     build_album_meta,
 )
 from tracksplit.models import Chapter
@@ -106,6 +107,43 @@ def test_parse_filename_no_match():
     assert year == ""
 
 
+# --- split_track_artist ---
+
+
+def test_split_track_artist_normal():
+    artist, title = split_track_artist("Fred again.. & Jamie T - Lights Burn Dimmer")
+    assert artist == "Fred again.. & Jamie T"
+    assert title == "Lights Burn Dimmer"
+
+
+def test_split_track_artist_with_vs():
+    artist, title = split_track_artist(
+        "Public Domain vs. Maddix - Operation Blade vs. Receive Life"
+    )
+    assert artist == "Public Domain vs. Maddix"
+    assert title == "Operation Blade vs. Receive Life"
+
+
+def test_split_track_artist_with_ft():
+    artist, title = split_track_artist("Tiësto ft. Tegan & Sara - Feel It In My Bones")
+    assert artist == "Tiësto ft. Tegan & Sara"
+    assert title == "Feel It In My Bones"
+
+
+def test_split_track_artist_no_separator():
+    artist, title = split_track_artist("Just A Title")
+    assert artist == ""
+    assert title == "Just A Title"
+
+
+def test_split_track_artist_x_connector():
+    artist, title = split_track_artist(
+        "PARISI x Sebastian Ingrosso x Steve Angello - U Ok?"
+    )
+    assert artist == "PARISI x Sebastian Ingrosso x Steve Angello"
+    assert title == "U Ok?"
+
+
 # --- deduplicate_titles ---
 
 def test_deduplicate_titles_no_dupes():
@@ -200,6 +238,28 @@ def test_build_album_meta_deduplicates_titles():
     assert meta.tracks[0].title == "ID (01)"
     assert meta.tracks[1].title == "Track B"
     assert meta.tracks[2].title == "ID (03)"
+
+
+def test_build_album_meta_splits_track_artists():
+    tags = {
+        "artist": "Tiësto",
+        "festival": "EDC",
+        "date": "2024-05-18",
+        "genres": ["Trance"],
+    }
+    chapters = _make_chapters([
+        "Fred again.. & Jamie T - Lights Burn Dimmer [Atlantic]",
+        "Tiësto - Adagio For Strings [Magik Muzik]",
+        "ID",  # no artist separator
+    ])
+    meta = build_album_meta(tags, chapters, "", tier=2)
+    assert meta.tracks[0].artist == "Fred again.. & Jamie T"
+    assert meta.tracks[0].title == "Lights Burn Dimmer"
+    assert meta.tracks[0].publisher == "Atlantic"
+    assert meta.tracks[1].artist == "Tiësto"
+    assert meta.tracks[1].title == "Adagio For Strings"
+    assert meta.tracks[2].artist == ""
+    assert meta.tracks[2].title == "ID"
 
 
 def test_build_album_meta_propagates_fields():

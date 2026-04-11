@@ -75,6 +75,18 @@ def parse_filename(stem: str) -> tuple[str, str]:
     return "", ""
 
 
+def split_track_artist(title: str) -> tuple[str, str]:
+    """Split 'Artist - Track Title' into (artist, title).
+
+    Uses the first ' - ' as the boundary. Returns ("", title) if no
+    separator is found.
+    """
+    if " - " in title:
+        artist, track = title.split(" - ", 1)
+        return artist.strip(), track.strip()
+    return "", title
+
+
 def deduplicate_titles(titles: list[str]) -> list[str]:
     """Append track number in parens to duplicate titles.
 
@@ -107,12 +119,15 @@ def build_album_meta(
     Tier 2: album = "Artist @ Festival Year (Stage)" with full tag data.
     Tier 1: album = filename_stem, artist/date parsed from filename.
     """
-    # Strip labels from chapter titles
+    # Strip labels, then split artist from title
     clean_titles = []
+    track_artists = []
     publishers = []
     for ch in chapters:
         title, label = strip_label(ch.title)
-        clean_titles.append(title)
+        track_artist, track_title = split_track_artist(title)
+        clean_titles.append(track_title)
+        track_artists.append(track_artist)
         publishers.append(label)
 
     # Deduplicate titles
@@ -146,6 +161,7 @@ def build_album_meta(
                 title=clean_titles[i],
                 start=ch.start,
                 end=ch.end,
+                artist=track_artists[i],
                 publisher=publishers[i],
                 genre=list(genres),
             )
