@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from rich.console import Console
+from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
 
+from tracksplit.console import make_console, print_error, status_text, summary_panel
 from tracksplit.pipeline import process_directory, process_file
 from tracksplit.probe import is_video_file
 
@@ -17,7 +18,7 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-console = Console()
+console = make_console()
 
 _VALID_FORMATS = {"auto", "flac", "opus"}
 
@@ -35,7 +36,15 @@ def _setup_logging(verbose: bool, debug: bool) -> None:
         level=level,
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler(console=console, rich_tracebacks=True)],
+        handlers=[
+            RichHandler(
+                console=console,
+                rich_tracebacks=True,
+                show_path=False,
+                markup=False,
+                highlighter=NullHighlighter(),
+            ),
+        ],
         force=True,
     )
 
@@ -78,16 +87,17 @@ def main(
         "auto",
         "--format",
         "-f",
-        help="Output format: auto (detect from source), flac, opus.",
+        help="Output format: auto, flac, or opus.",
     ),
 ) -> None:
     """Process video files and extract audio chapters into tagged albums."""
     _setup_logging(verbose, debug)
 
     if output_format not in _VALID_FORMATS:
-        console.print(
-            f"[red]Invalid format:[/red] {output_format}. "
-            f"Choose from: {', '.join(sorted(_VALID_FORMATS))}"
+        print_error(
+            f"Invalid format: {output_format}. "
+            f"Choose from: {', '.join(sorted(_VALID_FORMATS))}",
+            console=console,
         )
         raise typer.Exit(code=1)
 
@@ -95,8 +105,9 @@ def main(
 
     if input_path.is_file():
         if not is_video_file(input_path):
-            console.print(
-                f"[red]Not a recognized video file:[/red] {input_path.name}"
+            print_error(
+                f"Not a recognized video file: {input_path.name}",
+                console=console,
             )
             raise typer.Exit(code=1)
 
@@ -105,31 +116,22 @@ def main(
             output_format=output_format,
         )
         if success:
-            console.print(
-                f"[green]Processed:[/green] {input_path.name}"
-            )
+            console.print(status_text("done", input_path.name))
         else:
-            console.print(
-                f"[yellow]Skipped:[/yellow] {input_path.name}"
-            )
+            console.print(status_text("skipped", input_path.name, "unchanged"))
 
     elif input_path.is_dir():
-        count = process_directory(
+        processed, skipped, failed = process_directory(
             input_path, output_dir, force=force, dry_run=dry_run,
             output_format=output_format,
         )
-        if count > 0:
-            console.print(
-                f"[green]Processed {count} file(s) successfully.[/green]"
-            )
-        else:
-            console.print(
-                "[yellow]No files were processed.[/yellow]"
-            )
+        console.print()
+        console.print(summary_panel(processed, skipped, failed))
 
     else:
-        console.print(
-            f"[red]Input path is neither a file nor a directory:[/red] {input_path}"
+        print_error(
+            f"Input path is neither a file nor a directory: {input_path}",
+            console=console,
         )
         raise typer.Exit(code=1)
 

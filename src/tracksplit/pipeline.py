@@ -14,7 +14,7 @@ from tracksplit.cover import (
     extract_cover_from_mkv,
     find_dj_artwork,
 )
-from tracksplit.extract import extract_audio, prepare_audio
+from tracksplit.extract import prepare_audio
 from tracksplit.metadata import build_album_meta, safe_filename
 from tracksplit.models import Chapter, TrackMeta
 from tracksplit.probe import (
@@ -252,12 +252,11 @@ def process_directory(
     force: bool = False,
     dry_run: bool = False,
     output_format: str = "auto",
-) -> int:
+) -> tuple[int, int, int]:
     """Process all video files in a directory.
 
     Iterates sorted video files, calls process_file for each, catches
-    and logs exceptions per file. Returns the count of successfully
-    processed files.
+    and logs exceptions per file. Returns (processed, skipped, failed).
     """
     input_dir = Path(input_dir)
     output_dir = Path(output_dir)
@@ -268,14 +267,22 @@ def process_directory(
 
     if not video_files:
         logger.warning("No video files found in %s", input_dir)
-        return 0
+        return (0, 0, 0)
 
-    success_count = 0
+    processed = 0
+    skipped = 0
+    failed = 0
     for video_file in video_files:
         try:
-            if process_file(video_file, output_dir, force=force, dry_run=dry_run, output_format=output_format):
-                success_count += 1
+            if process_file(
+                video_file, output_dir, force=force, dry_run=dry_run,
+                output_format=output_format,
+            ):
+                processed += 1
+            else:
+                skipped += 1
         except Exception:
             logger.exception("Failed to process %s", video_file.name)
+            failed += 1
 
-    return success_count
+    return (processed, skipped, failed)
