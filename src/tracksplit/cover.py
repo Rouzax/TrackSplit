@@ -648,12 +648,14 @@ def extract_cover_from_mkv(input_path: Path) -> bytes | None:
         subprocess.run(extract_cmd, capture_output=True, check=True)
 
         if tmp_file.exists():
-            data = tmp_file.read_bytes()
-            tmp_file.unlink()
-            logger.info(
-                "Extracted cover art via mkvextract from %s", input_path.name
-            )
-            return data
+            try:
+                data = tmp_file.read_bytes()
+                logger.info(
+                    "Extracted cover art via mkvextract from %s", input_path.name
+                )
+                return data
+            finally:
+                tmp_file.unlink(missing_ok=True)
 
     except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError) as exc:
         logger.debug("mkvmerge/mkvextract fallback failed: %s", exc)
