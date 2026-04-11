@@ -4,10 +4,11 @@ Extract audio from video chapters into FLAC music albums for Jellyfin and Lyrion
 
 ## Features
 
-- Splits video audio into individual FLAC tracks at chapter boundaries
+- Splits video audio into individual tracks at chapter boundaries
+- Codec-aware output: FLAC for lossless sources, Opus stream-copy or re-encode for lossy
 - Gapless playback (sample-accurate splitting)
 - Rich metadata tagging (Vorbis comments)
-- Album cover art generation (1:1, embedded + folder)
+- Album and artist cover art generation (1:1, embedded + folder)
 - Two-tier metadata: basic (any video with chapters) or enriched (CrateDigger tags)
 - Re-run detection: only regenerates when chapters change
 
@@ -38,6 +39,9 @@ tracksplit video.mkv --output /path/to/music/library/
 # Force regeneration
 tracksplit video.mkv --force
 
+# Choose output format (auto, flac, or opus)
+tracksplit video.mkv --format opus
+
 # Dry run
 tracksplit video.mkv --dry-run --verbose
 ```
@@ -46,11 +50,14 @@ tracksplit video.mkv --dry-run --verbose
 
 ```
 Artist/
+  folder.jpg
+  artist.jpg
   Artist @ Festival Year (Stage)/
-    00 - Intro.flac
+    00 - Intro.flac (or .opus)
     01 - Track Title.flac
     02 - Track Title.flac
     cover.jpg
+    .tracksplit_chapters.json
 ```
 
 ## Tags Written
