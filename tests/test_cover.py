@@ -1,19 +1,15 @@
 """Tests for tracksplit.cover module."""
 
 import io
-import json
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import numpy as np
-import pytest
 from PIL import Image
 
 from tracksplit.cover import (
     _artwork_cache_filename,
     _wcag_contrast,
-    _wcag_luminance,
     build_cover_command,
     compose_artist_cover,
     compose_cover,

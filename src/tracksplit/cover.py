@@ -53,16 +53,17 @@ def _load_font(size: int, bold: bool = True) -> ImageFont.FreeTypeFont | ImageFo
 def _measure_w(font: ImageFont.FreeTypeFont | ImageFont.ImageFont, text: str) -> int:
     """Return text width in pixels."""
     bbox = font.getbbox(text)
-    return bbox[2] - bbox[0]
+    return int(bbox[2] - bbox[0])
 
 
 def _font_height(font: ImageFont.FreeTypeFont | ImageFont.ImageFont) -> int:
     """Return ascent + descent for the font."""
-    if hasattr(font, "getmetrics"):
-        ascent, descent = font.getmetrics()
+    try:
+        ascent, descent = font.getmetrics()  # type: ignore[union-attr]
         return ascent + descent
-    bbox = font.getbbox("Ay")
-    return bbox[3] - bbox[1]
+    except AttributeError:
+        bbox = font.getbbox("Ay")
+        return int(bbox[3] - bbox[1])
 
 
 def _auto_fit(
@@ -270,7 +271,7 @@ def _prepare_background(
         scale = max(size / src_w, size / src_h)
         new_w = int(src_w * scale)
         new_h = int(src_h * scale)
-        bg = bg.resize((new_w, new_h), Image.LANCZOS)
+        bg = bg.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
         left = (new_w - size) // 2
         top = (new_h - size) // 2
@@ -493,7 +494,7 @@ def compose_artist_cover(
     if dj_artwork_data is not None:
         try:
             photo = Image.open(io.BytesIO(dj_artwork_data)).convert("RGBA")
-            photo = photo.resize((PHOTO_SIZE, PHOTO_SIZE), Image.LANCZOS)
+            photo = photo.resize((PHOTO_SIZE, PHOTO_SIZE), Image.Resampling.LANCZOS)
 
             # Rounded corners mask
             corner_radius = int(PHOTO_SIZE * 0.1)
