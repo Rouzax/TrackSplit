@@ -14,7 +14,7 @@ from tracksplit.cover import (
     extract_cover_from_mkv,
     find_dj_artwork,
 )
-from tracksplit.extract import extract_audio
+from tracksplit.extract import extract_audio, prepare_audio
 from tracksplit.metadata import build_album_meta, safe_filename
 from tracksplit.models import Chapter, TrackMeta
 from tracksplit.probe import (
@@ -113,6 +113,7 @@ def process_file(
     output_dir: Path,
     force: bool = False,
     dry_run: bool = False,
+    output_format: str = "auto",
 ) -> bool:
     """Process a single video file through the full pipeline.
 
@@ -185,11 +186,17 @@ def process_file(
     with tempfile.TemporaryDirectory() as tmp_str:
         tmp_dir = Path(tmp_str)
 
-        # Extract full audio
-        full_flac = extract_audio(input_path, temp_dir=tmp_dir)
+        # Prepare audio (detect codec, extract if needed)
+        audio_path, ext, codec_mode = prepare_audio(
+            input_path, ffprobe_data, output_format, tmp_dir
+        )
+        from_video = (audio_path == input_path)
 
         # Split into tracks
-        track_paths = split_tracks(full_flac, album.tracks, album_dir)
+        track_paths = split_tracks(
+            audio_path, album.tracks, album_dir,
+            ext=ext, codec_mode=codec_mode, from_video=from_video,
+        )
 
         # Cover art
         cover_data = extract_cover_from_mkv(input_path)
@@ -238,6 +245,7 @@ def process_directory(
     output_dir: Path,
     force: bool = False,
     dry_run: bool = False,
+    output_format: str = "auto",
 ) -> int:
     """Process all video files in a directory.
 
@@ -259,7 +267,7 @@ def process_directory(
     success_count = 0
     for video_file in video_files:
         try:
-            if process_file(video_file, output_dir, force=force, dry_run=dry_run):
+            if process_file(video_file, output_dir, force=force, dry_run=dry_run, output_format=output_format):
                 success_count += 1
         except Exception:
             logger.exception("Failed to process %s", video_file.name)

@@ -13,6 +13,9 @@ from tracksplit.probe import (
     detect_tier,
     has_audio,
     is_video_file,
+    get_audio_codec,
+    is_lossless_codec,
+    LOSSLESS_CODECS,
     VIDEO_EXTENSIONS,
 )
 from tracksplit.models import Chapter
@@ -283,3 +286,64 @@ class TestRunFfprobe:
         with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "ffprobe")):
             with pytest.raises(subprocess.CalledProcessError):
                 run_ffprobe(Path("/fake/video.mkv"))
+
+
+# ---------------------------------------------------------------------------
+# get_audio_codec
+# ---------------------------------------------------------------------------
+
+class TestGetAudioCodec:
+    def test_opus_codec(self):
+        data = _make_ffprobe_data(streams=[
+            {"codec_type": "video", "codec_name": "h264"},
+            {"codec_type": "audio", "codec_name": "opus"},
+        ])
+        assert get_audio_codec(data) == "opus"
+
+    def test_flac_codec(self):
+        data = _make_ffprobe_data(streams=[
+            {"codec_type": "audio", "codec_name": "flac"},
+        ])
+        assert get_audio_codec(data) == "flac"
+
+    def test_no_audio_stream(self):
+        data = _make_ffprobe_data(streams=[
+            {"codec_type": "video", "codec_name": "h264"},
+        ])
+        assert get_audio_codec(data) == ""
+
+    def test_no_streams(self):
+        assert get_audio_codec({}) == ""
+
+    def test_missing_codec_name(self):
+        data = _make_ffprobe_data(streams=[
+            {"codec_type": "audio"},
+        ])
+        assert get_audio_codec(data) == ""
+
+    def test_first_audio_stream_returned(self):
+        data = _make_ffprobe_data(streams=[
+            {"codec_type": "audio", "codec_name": "opus"},
+            {"codec_type": "audio", "codec_name": "aac"},
+        ])
+        assert get_audio_codec(data) == "opus"
+
+
+# ---------------------------------------------------------------------------
+# is_lossless_codec
+# ---------------------------------------------------------------------------
+
+class TestIsLosslessCodec:
+    @pytest.mark.parametrize("codec", ["flac", "alac", "pcm_s16le", "pcm_s24le", "pcm_s32le", "pcm_f32le", "wavpack"])
+    def test_known_lossless(self, codec):
+        assert is_lossless_codec(codec) is True
+
+    def test_unknown_pcm_variant(self):
+        assert is_lossless_codec("pcm_s64le") is True
+
+    @pytest.mark.parametrize("codec", ["opus", "aac", "mp3", "vorbis"])
+    def test_lossy_codecs(self, codec):
+        assert is_lossless_codec(codec) is False
+
+    def test_empty_string(self):
+        assert is_lossless_codec("") is False

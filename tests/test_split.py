@@ -39,11 +39,71 @@ class TestBuildSplitCommand:
         ]
         assert "-to" not in cmd
 
+    def test_from_video_adds_vn_flag(self):
+        cmd = build_split_command(
+            input_path=Path("/tmp/video.mkv"),
+            output_path=Path("/tmp/out/01 - Song.ogg"),
+            start=0.0,
+            end=60.0,
+            codec_mode="copy",
+            from_video=True,
+        )
+        assert "-vn" in cmd
+        assert cmd == [
+            "ffmpeg",
+            "-i", "/tmp/video.mkv",
+            "-ss", "0.0",
+            "-to", "60.0",
+            "-vn",
+            "-c:a", "copy",
+            "-y",
+            "/tmp/out/01 - Song.ogg",
+        ]
+
+    def test_libopus_codec_mode(self):
+        cmd = build_split_command(
+            input_path=Path("/tmp/video.mkv"),
+            output_path=Path("/tmp/out/01 - Song.ogg"),
+            start=0.0,
+            end=60.0,
+            codec_mode="libopus",
+        )
+        assert "-c:a" in cmd
+        idx = cmd.index("-c:a")
+        assert cmd[idx + 1] == "libopus"
+        assert "-b:a" in cmd
+        assert "256k" in cmd
+
+    def test_libopus_with_from_video(self):
+        cmd = build_split_command(
+            input_path=Path("/tmp/video.mkv"),
+            output_path=Path("/tmp/out/01 - Song.ogg"),
+            start=10.0,
+            end=70.0,
+            codec_mode="libopus",
+            from_video=True,
+        )
+        assert "-vn" in cmd
+        assert cmd == [
+            "ffmpeg",
+            "-i", "/tmp/video.mkv",
+            "-ss", "10.0",
+            "-to", "70.0",
+            "-vn",
+            "-c:a", "libopus", "-b:a", "256k",
+            "-y",
+            "/tmp/out/01 - Song.ogg",
+        ]
+
 
 class TestBuildTrackFilename:
     def test_basic(self):
         track = TrackMeta(number=3, title="Blah Blah Blah", start=0.0, end=60.0)
         assert build_track_filename(track) == "03 - Blah Blah Blah.flac"
+
+    def test_ogg_extension(self):
+        track = TrackMeta(number=3, title="Blah Blah Blah", start=0.0, end=60.0)
+        assert build_track_filename(track, ext=".ogg") == "03 - Blah Blah Blah.ogg"
 
     def test_unsafe_chars_removed(self):
         track = TrackMeta(
@@ -96,3 +156,28 @@ class TestSplitTracks:
         assert "-to" not in cmd
 
         assert mock_run.call_count == 3
+
+    def test_split_tracks_with_ogg_extension(self, tmp_path, mocker):
+        full_audio = tmp_path / "video.mkv"
+        full_audio.touch()
+        output_dir = tmp_path / "output" / "album"
+
+        tracks = [
+            TrackMeta(number=1, title="First", start=0.0, end=60.0),
+            TrackMeta(number=2, title="Second", start=60.0, end=180.0),
+        ]
+
+        mock_run = mocker.patch("tracksplit.split.subprocess.run")
+
+        results = split_tracks(
+            full_audio, tracks, output_dir,
+            ext=".ogg", codec_mode="copy", from_video=True,
+        )
+
+        assert len(results) == 2
+        assert results[0] == output_dir / "01 - First.ogg"
+        assert results[1] == output_dir / "02 - Second.ogg"
+
+        # Check from_video flag produces -vn
+        first_cmd = mock_run.call_args_list[0][0][0]
+        assert "-vn" in first_cmd

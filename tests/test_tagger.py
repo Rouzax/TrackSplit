@@ -1,5 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 from tracksplit.models import AlbumMeta, TrackMeta
-from tracksplit.tagger import build_tag_dict
+from tracksplit.tagger import build_tag_dict, tag_ogg, tag_all
 
 
 def _full_album():
@@ -97,3 +99,56 @@ def test_build_tag_dict_tracktotal_from_tracks():
     tags = build_tag_dict(album, tracks[0])
 
     assert tags["TRACKTOTAL"] == ["5"]
+
+
+def test_tag_ogg_writes_vorbis_comments():
+    """tag_ogg should open, clear, write tags, and save."""
+    album = AlbumMeta(artist="DJ Test", album="Test Album")
+    track = TrackMeta(number=1, title="Track 1", start=0.0, end=60.0)
+
+    mock_audio = MagicMock()
+    with patch("tracksplit.tagger.OggOpus", return_value=mock_audio) as mock_cls:
+        tag_ogg("/tmp/track.ogg", album, track)
+
+    mock_cls.assert_called_once_with("/tmp/track.ogg")
+    mock_audio.delete.assert_called_once()
+    mock_audio.save.assert_called_once()
+    # Check that tags were written
+    assert mock_audio.__setitem__.call_count > 0
+
+
+def test_tag_ogg_embeds_cover():
+    """tag_ogg should embed cover as METADATA_BLOCK_PICTURE."""
+    album = AlbumMeta(artist="DJ Test", album="Test Album")
+    track = TrackMeta(number=1, title="Track 1", start=0.0, end=60.0)
+
+    mock_audio = MagicMock()
+    with patch("tracksplit.tagger.OggOpus", return_value=mock_audio):
+        tag_ogg("/tmp/track.ogg", album, track, cover_data=b"\xff\xd8fake-jpeg")
+
+    # Check METADATA_BLOCK_PICTURE was set
+    calls = {c[0][0]: c[0][1] for c in mock_audio.__setitem__.call_args_list}
+    assert "METADATA_BLOCK_PICTURE" in calls
+
+
+def test_tag_all_dispatches_by_extension():
+    """tag_all should dispatch to tag_ogg for .ogg files and tag_flac for .flac."""
+    album = AlbumMeta(
+        artist="DJ Test",
+        album="Mixed Album",
+        tracks=[
+            TrackMeta(number=1, title="Flac Track", start=0.0, end=60.0),
+            TrackMeta(number=2, title="Ogg Track", start=60.0, end=120.0),
+        ],
+    )
+
+    with patch("tracksplit.tagger.tag_flac") as mock_flac, \
+         patch("tracksplit.tagger.tag_ogg") as mock_ogg:
+        tag_all(
+            ["/tmp/01 - Flac Track.flac", "/tmp/02 - Ogg Track.ogg"],
+            album,
+            cover_data=b"cover",
+        )
+
+    mock_flac.assert_called_once()
+    mock_ogg.assert_called_once()

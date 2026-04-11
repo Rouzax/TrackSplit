@@ -24,3 +24,10 @@ def test_cli_help():
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "output" in result.output.lower()
+
+
+def test_cli_format_flag_in_help():
+    """--format flag should appear in help output."""
+    result = runner.invoke(app, ["--help"])
+    assert result.exit_code == 0
+    assert "--format" in result.output

@@ -1,11 +1,13 @@
-"""Tag FLAC files with Vorbis comments and cover art."""
+"""Tag FLAC and OGG/Opus files with Vorbis comments and cover art."""
 from __future__ import annotations
 
+import base64
 import logging
 from pathlib import Path
 from typing import Sequence
 
 from mutagen.flac import FLAC, Picture
+from mutagen.oggopus import OggOpus
 
 from tracksplit.models import AlbumMeta, TrackMeta
 
@@ -59,7 +61,7 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
 
 
 def tag_flac(
-    flac_path: str | Path,
+    path: str | Path,
     album: AlbumMeta,
     track: TrackMeta,
     cover_data: bytes | None = None,
@@ -67,7 +69,7 @@ def tag_flac(
     """Open a FLAC file, clear existing tags, write Vorbis comments, and
     optionally embed front cover art. Saves the file in place.
     """
-    audio = FLAC(flac_path)
+    audio = FLAC(path)
     audio.clear()
     audio.clear_pictures()
 
@@ -85,11 +87,45 @@ def tag_flac(
     audio.save()
 
 
+def tag_ogg(
+    path: str | Path,
+    album: AlbumMeta,
+    track: TrackMeta,
+    cover_data: bytes | None = None,
+) -> None:
+    """Write Vorbis comments to an OGG/Opus file."""
+    audio = OggOpus(str(path))
+    audio.delete()
+
+    tag_dict = build_tag_dict(album, track)
+    for key, values in tag_dict.items():
+        audio[key] = values
+
+    if cover_data is not None:
+        pic = Picture()
+        pic.type = 3  # front cover
+        pic.mime = "image/jpeg"
+        pic.desc = "Cover"
+        pic.data = cover_data
+        audio["METADATA_BLOCK_PICTURE"] = [
+            base64.b64encode(pic.write()).decode("ascii")
+        ]
+
+    audio.save()
+
+
 def tag_all(
     track_paths: Sequence[str | Path],
     album: AlbumMeta,
     cover_data: bytes | None = None,
 ) -> None:
-    """Tag all track files by zipping paths with album.tracks."""
+    """Tag all track files by zipping paths with album.tracks.
+
+    Dispatches to tag_flac or tag_ogg based on file extension.
+    """
     for path, track in zip(track_paths, album.tracks, strict=True):
-        tag_flac(path, album, track, cover_data=cover_data)
+        p = Path(path)
+        if p.suffix.lower() == ".ogg":
+            tag_ogg(p, album, track, cover_data=cover_data)
+        else:
+            tag_flac(p, album, track, cover_data=cover_data)

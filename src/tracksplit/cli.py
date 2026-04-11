@@ -72,8 +72,14 @@ def main(
         "--dry-run",
         help="Show what would be done without writing files.",
     ),
+    output_format: str = typer.Option(
+        "auto",
+        "--format",
+        "-f",
+        help="Output format: auto (detect from source), flac, ogg.",
+    ),
 ) -> None:
-    """Process video files and extract audio chapters into FLAC albums."""
+    """Process video files and extract audio chapters into tagged albums."""
     _setup_logging(verbose, debug)
 
     output_dir = output if output is not None else Path.cwd()
@@ -86,7 +92,8 @@ def main(
             raise typer.Exit(code=1)
 
         success = process_file(
-            input_path, output_dir, force=force, dry_run=dry_run
+            input_path, output_dir, force=force, dry_run=dry_run,
+            output_format=output_format,
         )
         if success:
             console.print(
@@ -99,7 +106,8 @@ def main(
 
     elif input_path.is_dir():
         count = process_directory(
-            input_path, output_dir, force=force, dry_run=dry_run
+            input_path, output_dir, force=force, dry_run=dry_run,
+            output_format=output_format,
         )
         if count > 0:
             console.print(

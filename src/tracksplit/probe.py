@@ -109,3 +109,19 @@ def has_audio(ffprobe_data: dict) -> bool:
 def is_video_file(path: Path) -> bool:
     """Check whether *path* has a recognized video extension."""
     return path.suffix.lower() in VIDEO_EXTENSIONS
+
+
+def get_audio_codec(ffprobe_data: dict) -> str:
+    """Return the codec name of the first audio stream (e.g. 'opus', 'flac', 'aac')."""
+    for s in ffprobe_data.get("streams", []):
+        if s.get("codec_type") == "audio":
+            return s.get("codec_name", "")
+    return ""
+
+
+LOSSLESS_CODECS = {"flac", "alac", "pcm_s16le", "pcm_s24le", "pcm_s32le", "pcm_f32le", "wavpack"}
+
+
+def is_lossless_codec(codec: str) -> bool:
+    """Check if a codec is lossless."""
+    return codec in LOSSLESS_CODECS or codec.startswith("pcm_")
