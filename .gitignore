@@ -7,3 +7,10 @@ build/
 .pytest_cache/
 *.flac
 .tracksplit_chapters.json
+
+# Claude/AI files
+CLAUDE.md
+.claude/
+
+# Internal plans
+docs/plans/
