@@ -1,52 +1,183 @@
-"""Cover art extraction and 1:1 album cover composition."""
+"""Cover art: accent color extraction, line-anchored album/artist covers."""
 
+import colorsys
+import hashlib
 import io
 import json
 import logging
+import math
 import subprocess
 import tempfile
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 logger = logging.getLogger(__name__)
 
-# Font paths to try, in order of preference
-_DEJAVU_PATHS = [
+# ---------------------------------------------------------------------------
+# Font paths
+# ---------------------------------------------------------------------------
+_DEJAVU_BOLD_PATHS = [
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf",
     "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
 ]
 
+_DEJAVU_REGULAR_PATHS = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
+    "/usr/share/fonts/TTF/DejaVuSans.ttf",
+]
 
-def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """Load DejaVu Sans Bold at the given size, with fallback to default."""
-    for path in _DEJAVU_PATHS:
+
+# ---------------------------------------------------------------------------
+# Font helpers
+# ---------------------------------------------------------------------------
+def _load_font(size: int, bold: bool = True) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """Load DejaVu Sans at the given size, with fallback to default."""
+    paths = _DEJAVU_BOLD_PATHS if bold else _DEJAVU_REGULAR_PATHS
+    for path in paths:
         try:
             return ImageFont.truetype(path, size)
         except OSError:
             continue
+    name = "DejaVuSans-Bold" if bold else "DejaVuSans"
     try:
-        return ImageFont.truetype("DejaVuSans-Bold", size)
+        return ImageFont.truetype(name, size)
     except OSError:
         logger.debug("DejaVu font not found, using default font")
         return ImageFont.load_default()
 
 
-def create_gradient(width: int, height: int) -> Image.Image:
-    """Create a dark gradient background with purple/blue tones.
+def _measure_w(font: ImageFont.FreeTypeFont | ImageFont.ImageFont, text: str) -> int:
+    """Return text width in pixels."""
+    bbox = font.getbbox(text)
+    return bbox[2] - bbox[0]
 
-    Args:
-        width: Image width in pixels.
-        height: Image height in pixels.
 
-    Returns:
-        RGB image with a vertical dark gradient.
+def _font_height(font: ImageFont.FreeTypeFont | ImageFont.ImageFont) -> int:
+    """Return ascent + descent for the font."""
+    if hasattr(font, "getmetrics"):
+        ascent, descent = font.getmetrics()
+        return ascent + descent
+    bbox = font.getbbox("Ay")
+    return bbox[3] - bbox[1]
+
+
+def _auto_fit(
+    text: str, bold: bool, max_width: int, start: int = 90, minimum: int = 40
+) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """Return the largest font that fits text within max_width."""
+    for size in range(start, minimum - 1, -1):
+        font = _load_font(size, bold=bold)
+        if _measure_w(font, text) <= max_width:
+            return font
+    return _load_font(minimum, bold=bold)
+
+
+# ---------------------------------------------------------------------------
+# WCAG contrast helpers
+# ---------------------------------------------------------------------------
+def _wcag_luminance(r: int, g: int, b: int) -> float:
+    """Relative luminance per WCAG 2.0."""
+    vals = []
+    for c in (r, g, b):
+        s = c / 255.0
+        if s <= 0.04045:
+            vals.append(s / 12.92)
+        else:
+            vals.append(((s + 0.055) / 1.055) ** 2.4)
+    return 0.2126 * vals[0] + 0.7152 * vals[1] + 0.0722 * vals[2]
+
+
+def _wcag_contrast(rgb1: tuple[int, int, int], rgb2: tuple[int, int, int]) -> float:
+    """Contrast ratio between two RGB colors."""
+    l1 = _wcag_luminance(*rgb1)
+    l2 = _wcag_luminance(*rgb2)
+    lighter = max(l1, l2)
+    darker = min(l1, l2)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _ensure_contrast(
+    r: int, g: int, b: int, bg: tuple[int, int, int] = (10, 10, 10), target: float = 4.5
+) -> tuple[int, int, int]:
+    """Boost brightness until WCAG AA contrast ratio is met against bg."""
+    h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+    for _ in range(100):
+        rr, gg, bb = (int(c * 255) for c in colorsys.hsv_to_rgb(h, s, v))
+        if _wcag_contrast((rr, gg, bb), bg) >= target:
+            return (rr, gg, bb)
+        v = min(1.0, v + 0.02)
+        s = max(0.0, s - 0.01)
+    rr, gg, bb = (int(c * 255) for c in colorsys.hsv_to_rgb(h, s, v))
+    return (rr, gg, bb)
+
+
+# ---------------------------------------------------------------------------
+# Accent color extraction
+# ---------------------------------------------------------------------------
+def _circular_hue_mean(h_array: np.ndarray, s_array: np.ndarray, min_sat: int = 40) -> float:
+    """Circular mean of hue (0-360) weighted by saturation.
+
+    Filters pixels below min_sat. Uses sin/cos decomposition to handle
+    the wrapping at red (0/360 degrees).
     """
+    mask = s_array >= min_sat
+    h_filtered = h_array[mask]
+    s_filtered = s_array[mask]
+
+    if len(h_filtered) == 0:
+        return 0.0
+
+    radians = np.deg2rad(h_filtered.astype(np.float64))
+    weights = s_filtered.astype(np.float64)
+
+    sin_mean = np.average(np.sin(radians), weights=weights)
+    cos_mean = np.average(np.cos(radians), weights=weights)
+
+    mean_rad = math.atan2(sin_mean, cos_mean)
+    mean_deg = math.degrees(mean_rad) % 360
+    return mean_deg
+
+
+def get_accent_color(img: Image.Image) -> tuple[int, int, int]:
+    """Derive accent RGB from an image.
+
+    Convert to HSV, compute circular hue mean, set V=0.95, then
+    ensure WCAG AA contrast against a dark background.
+    """
+    small = img.copy()
+    small.thumbnail((200, 200))
+    hsv = small.convert("HSV")
+
+    data = np.array(hsv)
+    # PIL HSV: H is 0-255, S is 0-255, V is 0-255
+    # Scale H to 0-360 and S to 0-255
+    h_array = data[:, :, 0].flatten().astype(np.float64) * (360.0 / 255.0)
+    s_array = data[:, :, 1].flatten().astype(np.float64) * (100.0 / 255.0)
+
+    hue_deg = _circular_hue_mean(h_array, s_array, min_sat=40)
+
+    # Convert to RGB with V=0.95
+    h_norm = hue_deg / 360.0
+    s_norm = 0.8
+    v_norm = 0.95
+    r, g, b = colorsys.hsv_to_rgb(h_norm, s_norm, v_norm)
+    rgb = (int(r * 255), int(g * 255), int(b * 255))
+
+    return _ensure_contrast(*rgb)
+
+
+# ---------------------------------------------------------------------------
+# Drawing helpers
+# ---------------------------------------------------------------------------
+def create_gradient(width: int, height: int) -> Image.Image:
+    """Create a dark gradient background with purple/blue tones."""
     img = Image.new("RGB", (width, height))
     draw = ImageDraw.Draw(img)
 
-    # Dark purple at top, dark blue at bottom
     for y in range(height):
         ratio = y / max(height - 1, 1)
         r = int(25 + 5 * ratio)
@@ -57,30 +188,84 @@ def create_gradient(width: int, height: int) -> Image.Image:
     return img
 
 
-def compose_cover(
-    artist: str,
-    album: str,
-    background_data: bytes | None = None,
-    size: int = 1000,
-) -> bytes:
-    """Compose a 1:1 square album cover image.
+def _draw_centered(
+    draw: ImageDraw.ImageDraw,
+    canvas_w: int,
+    y: int,
+    text: str,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    fill: tuple[int, ...],
+) -> None:
+    """Draw centered text WITH drop shadow."""
+    tw = _measure_w(font, text)
+    x = (canvas_w - tw) // 2
+    # Drop shadow
+    draw.text((x + 2, y + 3), text, font=font, fill=(0, 0, 0, 160))
+    draw.text((x, y), text, font=font, fill=fill)
 
-    If background_data is provided, the image is resized to fill the square,
-    center-cropped, blurred, and darkened. Otherwise a gradient is used.
 
-    Args:
-        artist: Artist name shown in large white text.
-        album: Album name shown in smaller light gray text.
-        background_data: Raw image bytes for the background, or None.
-        size: Output image dimension (square).
+def _draw_centered_no_shadow(
+    draw: ImageDraw.ImageDraw,
+    canvas_w: int,
+    y: int,
+    text: str,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    fill: tuple[int, ...],
+) -> None:
+    """Draw centered text without shadow."""
+    tw = _measure_w(font, text)
+    x = (canvas_w - tw) // 2
+    draw.text((x, y), text, font=font, fill=fill)
 
-    Returns:
-        JPEG image as bytes (quality 90).
-    """
+
+def _draw_glow_line(
+    base_img: Image.Image,
+    y: int,
+    width: int,
+    height: int,
+    color: tuple[int, int, int],
+    glow_radius: int = 14,
+) -> Image.Image:
+    """Draw an accent line with glow effect. Returns new RGB image."""
+    canvas_w = base_img.size[0]
+    x_start = (canvas_w - width) // 2
+
+    # Create glow overlay
+    overlay = Image.new("RGBA", base_img.size, (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(overlay)
+
+    # Thick rectangle for glow source
+    glow_draw.rectangle(
+        [x_start, y, x_start + width, y + height],
+        fill=(*color, 200),
+    )
+
+    # Blur twice for soft glow
+    overlay = overlay.filter(ImageFilter.GaussianBlur(radius=glow_radius))
+    overlay = overlay.filter(ImageFilter.GaussianBlur(radius=glow_radius // 2))
+
+    # Composite glow onto base
+    base_rgba = base_img.convert("RGBA")
+    composited = Image.alpha_composite(base_rgba, overlay)
+
+    # Draw sharp line on top
+    sharp_draw = ImageDraw.Draw(composited)
+    sharp_draw.rectangle(
+        [x_start, y, x_start + width, y + height],
+        fill=(*color, 255),
+    )
+
+    return composited.convert("RGB")
+
+
+def _prepare_background(
+    background_data: bytes | None, size: int
+) -> tuple[Image.Image, tuple[int, int, int]]:
+    """Blur+darken background or create gradient. Returns (image, accent_color)."""
     if background_data is not None:
         bg = Image.open(io.BytesIO(background_data)).convert("RGB")
 
-        # Resize to fill the square (cover-fit), then center-crop
+        # Cover-fit resize and center crop
         src_w, src_h = bg.size
         scale = max(size / src_w, size / src_h)
         new_w = int(src_w * scale)
@@ -91,54 +276,260 @@ def compose_cover(
         top = (new_h - size) // 2
         bg = bg.crop((left, top, left + size, top + size))
 
-        # Blur
-        bg = bg.filter(ImageFilter.GaussianBlur(radius=15))
+        # Get accent before blurring
+        accent = get_accent_color(bg)
 
-        # Darken: blend with black at 0.4 opacity
+        # Blur and darken
+        bg = bg.filter(ImageFilter.GaussianBlur(radius=15))
         black = Image.new("RGB", (size, size), (0, 0, 0))
         bg = Image.blend(bg, black, 0.4)
+
+        return bg, accent
     else:
         bg = create_gradient(size, size)
+        # Default accent: a warm purple/magenta
+        accent = _ensure_contrast(180, 100, 220)
+        return bg, accent
 
-    # Draw text overlay
-    draw = ImageDraw.Draw(bg)
 
-    artist_font = _load_font(size // 14)
-    album_font = _load_font(size // 20)
+# ---------------------------------------------------------------------------
+# Date formatting
+# ---------------------------------------------------------------------------
+def format_date_display(date: str) -> str:
+    """Format date for display: '2026-03-01' -> '1 March 2026', '2026' -> '2026'."""
+    if not date:
+        return ""
+    if len(date) == 4:
+        return date
+    parts = date.split("-")
+    if len(parts) == 3:
+        months = [
+            "", "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December",
+        ]
+        year, month, day = parts
+        month_idx = int(month)
+        if 1 <= month_idx <= 12:
+            return f"{int(day)} {months[month_idx]} {year}"
+    return date
 
-    # Artist name, centered, white
-    artist_bbox = draw.textbbox((0, 0), artist, font=artist_font)
-    artist_w = artist_bbox[2] - artist_bbox[0]
-    artist_h = artist_bbox[3] - artist_bbox[1]
-    artist_x = (size - artist_w) // 2
-    artist_y = size // 2 - artist_h - 10
 
-    draw.text((artist_x, artist_y), artist, fill=(255, 255, 255), font=artist_font)
+# ---------------------------------------------------------------------------
+# Album cover composition
+# ---------------------------------------------------------------------------
+def compose_cover(
+    artist: str,
+    festival: str,
+    date: str = "",
+    stage: str = "",
+    venue: str = "",
+    background_data: bytes | None = None,
+    size: int = 1000,
+) -> bytes:
+    """Compose a line-anchored square album cover.
 
-    # Album name, centered below, light gray
-    album_bbox = draw.textbbox((0, 0), album, font=album_font)
-    album_w = album_bbox[2] - album_bbox[0]
-    album_x = (size - album_w) // 2
-    album_y = artist_y + artist_h + 20
+    Layout: artist name above accent line, festival/date/stage/venue below.
+    All layout values scale proportionally if size != 1000.
+    """
+    s = size / 1000.0  # scale factor
 
-    draw.text((album_x, album_y), album, fill=(200, 200, 200), font=album_font)
+    LINE_Y = int(550 * s)
+    LINE_H = max(1, int(4 * s))
+    LINE_W = int(400 * s)
+    PAD_LINE_TO_ARTIST = int(28 * s)
+    PAD_LINE_TO_FEST = int(30 * s)
+    PAD_FEST_TO_DATE = int(22 * s)
+    PAD_DATE_TO_DETAIL = int(22 * s)
+    PAD_DETAIL_LINES = int(8 * s)
 
-    # Return as JPEG bytes
+    bg, accent = _prepare_background(background_data, size)
+
+    max_text_w = int(size * 0.85)
+
+    # Artist name: bold, uppercase, auto-fitted
+    artist_text = artist.upper()
+    artist_font = _auto_fit(artist_text, True, max_text_w, start=int(90 * s), minimum=int(40 * s))
+    artist_h = _font_height(artist_font)
+    artist_y = LINE_Y - PAD_LINE_TO_ARTIST - artist_h
+
+    # Draw artist with drop shadow on RGBA canvas
+    canvas = bg.convert("RGBA")
+    draw = ImageDraw.Draw(canvas)
+    _draw_centered(draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255))
+
+    # Convert back and draw glow line
+    result = canvas.convert("RGB")
+    result = _draw_glow_line(result, LINE_Y, LINE_W, LINE_H, accent)
+
+    # Now draw below-line text
+    draw = ImageDraw.Draw(result)
+    cursor_y = LINE_Y + LINE_H + PAD_LINE_TO_FEST
+
+    # Festival name: accent color, bold, uppercase, no shadow
+    if festival:
+        fest_text = festival.upper()
+        fest_font = _auto_fit(fest_text, True, max_text_w, start=int(50 * s), minimum=int(30 * s))
+        _draw_centered_no_shadow(draw, size, cursor_y, fest_text, fest_font, accent)
+        cursor_y += _font_height(fest_font) + PAD_FEST_TO_DATE
+
+    # Date
+    date_display = format_date_display(date)
+    if date_display:
+        date_font = _load_font(int(32 * s), bold=False)
+        _draw_centered_no_shadow(draw, size, cursor_y, date_display, date_font, (255, 255, 255))
+        cursor_y += _font_height(date_font) + PAD_DATE_TO_DETAIL
+
+    # Stage
+    if stage:
+        stage_font = _load_font(int(28 * s), bold=False)
+        _draw_centered_no_shadow(draw, size, cursor_y, stage, stage_font, (255, 255, 255))
+        cursor_y += _font_height(stage_font) + PAD_DETAIL_LINES
+
+    # Venue (split on comma, deduplicate against stage)
+    if venue:
+        venue_parts = [p.strip() for p in venue.split(",")]
+        venue_parts = [p for p in venue_parts if p and p.lower() != stage.lower()]
+        venue_font = _load_font(int(26 * s), bold=False)
+        for part in venue_parts:
+            _draw_centered_no_shadow(draw, size, cursor_y, part, venue_font, (200, 200, 200))
+            cursor_y += _font_height(venue_font) + PAD_DETAIL_LINES
+
+    # Return as JPEG
     buf = io.BytesIO()
-    bg.save(buf, format="JPEG", quality=90)
+    result.save(buf, format="JPEG", quality=90)
     return buf.getvalue()
 
 
-def build_cover_command(input_path: Path, output_path: Path) -> list[str]:
-    """Build ffmpeg command for extracting cover art via image2pipe.
+# ---------------------------------------------------------------------------
+# DJ artwork lookup
+# ---------------------------------------------------------------------------
+def _artwork_cache_filename(url: str) -> str:
+    """md5(url)[:12] + extension from URL (.jpg fallback)."""
+    if not url:
+        return ""
+    h = hashlib.md5(url.encode()).hexdigest()[:12]
+    # Extract extension from URL
+    path_part = url.split("?")[0]
+    if "." in path_part.split("/")[-1]:
+        ext = "." + path_part.split("/")[-1].rsplit(".", 1)[1].lower()
+    else:
+        ext = ".jpg"
+    return f"{h}{ext}"
 
-    Args:
-        input_path: Path to the source video file.
-        output_path: Path for the extracted image.
 
-    Returns:
-        Command as a list of strings.
+def find_dj_artwork(
+    url: str, input_path: Path, home_dir: Path | None = None
+) -> bytes | None:
+    """Look up cached DJ artwork by URL.
+
+    Lookup chain:
+    1. Global cache: {home_dir}/.cratedigger/dj-artwork/{hash}.{ext}
+    2. Walk up from input_path looking for .cratedigger/dj-artwork/{hash}.{ext}
+    3. Return None if not found.
     """
+    if not url:
+        return None
+
+    filename = _artwork_cache_filename(url)
+
+    # 1. Global cache
+    if home_dir is None:
+        home_dir = Path.home()
+    global_path = home_dir / ".cratedigger" / "dj-artwork" / filename
+    if global_path.is_file():
+        return global_path.read_bytes()
+
+    # 2. Walk up from input_path parent
+    current = input_path.parent
+    for _ in range(10):
+        candidate = current / ".cratedigger" / "dj-artwork" / filename
+        if candidate.is_file():
+            return candidate.read_bytes()
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Artist cover composition
+# ---------------------------------------------------------------------------
+def compose_artist_cover(
+    artist: str,
+    background_data: bytes | None = None,
+    dj_artwork_data: bytes | None = None,
+    size: int = 1000,
+) -> bytes:
+    """Compose a line-anchored square artist cover.
+
+    Layout: optional DJ photo centered above artist name, artist name above
+    accent line with glow. Nothing below the line.
+    """
+    s = size / 1000.0
+
+    LINE_Y = int(550 * s)
+    LINE_H = max(1, int(4 * s))
+    LINE_W = int(400 * s)
+    PAD_LINE_TO_ARTIST = int(28 * s)
+    PHOTO_SIZE = int(280 * s)
+    PAD_PHOTO_TO_ARTIST = int(20 * s)
+
+    bg, accent = _prepare_background(background_data, size)
+
+    max_text_w = int(size * 0.85)
+
+    # Artist name
+    artist_text = artist.upper()
+    artist_font = _auto_fit(artist_text, True, max_text_w, start=int(90 * s), minimum=int(40 * s))
+    artist_h = _font_height(artist_font)
+    artist_y = LINE_Y - PAD_LINE_TO_ARTIST - artist_h
+
+    canvas = bg.convert("RGBA")
+    draw = ImageDraw.Draw(canvas)
+
+    # DJ photo (if provided)
+    if dj_artwork_data is not None:
+        try:
+            photo = Image.open(io.BytesIO(dj_artwork_data)).convert("RGBA")
+            photo = photo.resize((PHOTO_SIZE, PHOTO_SIZE), Image.LANCZOS)
+
+            # Rounded corners mask
+            corner_radius = int(PHOTO_SIZE * 0.1)
+            mask = Image.new("L", (PHOTO_SIZE, PHOTO_SIZE), 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.rounded_rectangle(
+                [0, 0, PHOTO_SIZE - 1, PHOTO_SIZE - 1],
+                radius=corner_radius,
+                fill=255,
+            )
+
+            photo.putalpha(mask)
+
+            photo_y = artist_y - PAD_PHOTO_TO_ARTIST - PHOTO_SIZE
+            photo_x = (size - PHOTO_SIZE) // 2
+            canvas.paste(photo, (photo_x, photo_y), photo)
+        except Exception:
+            logger.debug("Failed to process DJ artwork, skipping photo")
+
+    # Artist name: NO shadow for artist cover
+    _draw_centered_no_shadow(draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255))
+
+    # Glow line
+    result = canvas.convert("RGB")
+    result = _draw_glow_line(result, LINE_Y, LINE_W, LINE_H, accent)
+
+    buf = io.BytesIO()
+    result.save(buf, format="JPEG", quality=90)
+    return buf.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Existing extraction functions (used by pipeline.py)
+# ---------------------------------------------------------------------------
+def build_cover_command(input_path: Path, output_path: Path) -> list[str]:
+    """Build ffmpeg command for extracting cover art via image2pipe."""
     return [
         "ffmpeg",
         "-i",
@@ -158,12 +549,6 @@ def extract_cover_from_mkv(input_path: Path) -> bytes | None:
 
     Tries ffmpeg first (image2pipe). If that fails and the file is .mkv,
     falls back to mkvmerge --identify + mkvextract.
-
-    Args:
-        input_path: Path to the source video file.
-
-    Returns:
-        Image bytes or None if no artwork found.
     """
     # Attempt 1: ffmpeg
     try:
