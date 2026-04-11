@@ -1,0 +1,10 @@
+pyproject.toml
+src/tracksplit/__init__.py
+src/tracksplit/models.py
+src/tracksplit.egg-info/PKG-INFO
+src/tracksplit.egg-info/SOURCES.txt
+src/tracksplit.egg-info/dependency_links.txt
+src/tracksplit.egg-info/entry_points.txt
+src/tracksplit.egg-info/requires.txt
+src/tracksplit.egg-info/top_level.txt
+tests/test_models.py
