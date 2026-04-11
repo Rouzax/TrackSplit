@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 from PIL import Image
 
 from tracksplit.cover import (
-    _artwork_cache_filename,
     _wcag_contrast,
     build_cover_command,
     compose_artist_cover,
@@ -140,49 +139,38 @@ class TestComposeCover:
         assert img.size == (1000, 1000)
 
 
-class TestArtworkCacheFilename:
-    def test_returns_hash_dot_ext(self):
-        name = _artwork_cache_filename("https://example.com/photo.jpg")
-        assert "." in name
-        base, ext = name.rsplit(".", 1)
-        assert len(base) == 12
-        assert ext == "jpg"
-
-    def test_consistent_hash(self):
-        url = "https://example.com/photo.jpg"
-        assert _artwork_cache_filename(url) == _artwork_cache_filename(url)
-
-    def test_webp_extension(self):
-        name = _artwork_cache_filename("https://example.com/photo.webp")
-        assert name.endswith(".webp")
-
-    def test_no_extension_defaults_jpg(self):
-        name = _artwork_cache_filename("https://example.com/photo")
-        assert name.endswith(".jpg")
-
-    def test_empty_url(self):
-        assert _artwork_cache_filename("") == ""
-
-
 class TestFindDjArtwork:
-    def test_finds_fanart_in_global_artists(self, tmp_path):
-        """artists/{name}/fanart.jpg in global .cratedigger."""
-        fanart_dir = tmp_path / ".cratedigger" / "artists" / "Tiësto"
-        fanart_dir.mkdir(parents=True)
-        (fanart_dir / "fanart.jpg").write_bytes(b"fanart-global")
+    def test_finds_dj_artwork_jpg_in_global(self, tmp_path):
+        """Prefers dj-artwork.jpg over fanart.jpg."""
+        artist_dir = tmp_path / ".cratedigger" / "artists" / "Tiësto"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"dj-artwork-data")
+        (artist_dir / "fanart.jpg").write_bytes(b"fanart-data")
 
         result = find_dj_artwork(
-            "", tmp_path / "music" / "file.mkv",
+            tmp_path / "music" / "file.mkv",
             artist="Tiësto", home_dir=tmp_path,
         )
-        assert result == b"fanart-global"
+        assert result == b"dj-artwork-data"
 
-    def test_finds_fanart_in_library_artists(self, tmp_path):
-        """artists/{name}/fanart.jpg found by walking up from input."""
+    def test_falls_back_to_fanart(self, tmp_path):
+        """Uses fanart.jpg when dj-artwork.jpg is absent."""
+        artist_dir = tmp_path / ".cratedigger" / "artists" / "DJ"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "fanart.jpg").write_bytes(b"fanart-data")
+
+        result = find_dj_artwork(
+            tmp_path / "music" / "file.mkv",
+            artist="DJ", home_dir=tmp_path,
+        )
+        assert result == b"fanart-data"
+
+    def test_finds_in_library_cache(self, tmp_path):
+        """Walks up from input to find .cratedigger/artists/."""
         lib_dir = tmp_path / "library"
-        fanart_dir = lib_dir / ".cratedigger" / "artists" / "DJ Name"
-        fanart_dir.mkdir(parents=True)
-        (fanart_dir / "fanart.jpg").write_bytes(b"fanart-library")
+        artist_dir = lib_dir / ".cratedigger" / "artists" / "DJ Name"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"lib-artwork")
 
         input_file = lib_dir / "videos" / "file.mkv"
         input_file.parent.mkdir(parents=True)
@@ -190,69 +178,20 @@ class TestFindDjArtwork:
         fake_home = tmp_path / "nope"
         fake_home.mkdir()
 
-        result = find_dj_artwork(
-            "", input_file,
-            artist="DJ Name", home_dir=fake_home,
-        )
-        assert result == b"fanart-library"
-
-    def test_finds_in_global_dj_artwork_cache(self, tmp_path):
-        url = "https://example.com/dj.jpg"
-        filename = _artwork_cache_filename(url)
-        cache_dir = tmp_path / ".cratedigger" / "dj-artwork"
-        cache_dir.mkdir(parents=True)
-        (cache_dir / filename).write_bytes(b"fake-image-data")
-
-        result = find_dj_artwork(url, tmp_path / "music" / "file.flac", home_dir=tmp_path)
-        assert result == b"fake-image-data"
-
-    def test_finds_in_library_dj_artwork_cache(self, tmp_path):
-        url = "https://example.com/dj2.jpg"
-        filename = _artwork_cache_filename(url)
-        lib_dir = tmp_path / "music"
-        lib_dir.mkdir()
-        cache_dir = lib_dir / ".cratedigger" / "dj-artwork"
-        cache_dir.mkdir(parents=True)
-        (cache_dir / filename).write_bytes(b"library-image")
-
-        input_file = lib_dir / "artist" / "file.flac"
-        input_file.parent.mkdir(parents=True)
-
-        fake_home = tmp_path / "fakehome"
-        fake_home.mkdir()
-
-        result = find_dj_artwork(url, input_file, home_dir=fake_home)
-        assert result == b"library-image"
-
-    def test_fanart_takes_priority_over_dj_artwork(self, tmp_path):
-        """artists/ fanart should be found before dj-artwork/ hash."""
-        url = "https://example.com/dj.jpg"
-        filename = _artwork_cache_filename(url)
-
-        # Both exist
-        fanart_dir = tmp_path / ".cratedigger" / "artists" / "DJ"
-        fanart_dir.mkdir(parents=True)
-        (fanart_dir / "fanart.jpg").write_bytes(b"fanart-wins")
-
-        dj_dir = tmp_path / ".cratedigger" / "dj-artwork"
-        dj_dir.mkdir(parents=True)
-        (dj_dir / filename).write_bytes(b"hash-loses")
-
-        result = find_dj_artwork(url, tmp_path / "file.mkv", artist="DJ", home_dir=tmp_path)
-        assert result == b"fanart-wins"
+        result = find_dj_artwork(input_file, artist="DJ Name", home_dir=fake_home)
+        assert result == b"lib-artwork"
 
     def test_returns_none_when_not_found(self, tmp_path):
         fake_home = tmp_path / "fakehome"
         fake_home.mkdir()
         result = find_dj_artwork(
-            "https://example.com/missing.jpg",
             tmp_path / "file.flac",
             home_dir=fake_home,
         )
         assert result is None
 
-    def test_no_url_no_artist_returns_none(self, tmp_path):
-        result = find_dj_artwork("", tmp_path / "file.flac", home_dir=tmp_path)
+    def test_no_artist_returns_none(self, tmp_path):
+        result = find_dj_artwork(tmp_path / "file.flac", home_dir=tmp_path)
         assert result is None
 
 
@@ -275,13 +214,13 @@ class TestComposeArtistCover:
         img = Image.open(io.BytesIO(result))
         assert img.size == (1000, 1000)
 
-    def test_with_background_and_photo(self):
-        bg = _make_image_bytes((50, 50, 100), 1200, 800)
+    def test_photo_used_as_background(self):
+        """DJ photo serves as both the sharp image and the blurred background."""
         photo = _make_image_bytes((200, 100, 50), 400, 400)
-        result = compose_artist_cover(
-            "Artist", background_data=bg, dj_artwork_data=photo
-        )
+        result = compose_artist_cover("Artist", dj_artwork_data=photo)
         assert isinstance(result, bytes)
+        img = Image.open(io.BytesIO(result))
+        assert img.size == (1000, 1000)
 
     def test_no_photo_no_background(self):
         result = compose_artist_cover("Solo Artist")

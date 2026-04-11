@@ -1,7 +1,6 @@
 """Cover art: accent color extraction, line-anchored album/artist covers."""
 
 import colorsys
-import hashlib
 import io
 import json
 import logging
@@ -431,32 +430,19 @@ def compose_cover(
 # ---------------------------------------------------------------------------
 # DJ artwork lookup
 # ---------------------------------------------------------------------------
-def _artwork_cache_filename(url: str) -> str:
-    """md5(url)[:12] + extension from URL (.jpg fallback)."""
-    if not url:
-        return ""
-    h = hashlib.md5(url.encode()).hexdigest()[:12]
-    # Extract extension from URL
-    path_part = url.split("?")[0]
-    if "." in path_part.split("/")[-1]:
-        ext = "." + path_part.split("/")[-1].rsplit(".", 1)[1].lower()
-    else:
-        ext = ".jpg"
-    return f"{h}{ext}"
-
 
 def find_dj_artwork(
-    url: str,
     input_path: Path,
     artist: str = "",
     home_dir: Path | None = None,
 ) -> bytes | None:
-    """Look up cached DJ artwork.
+    """Look up cached DJ artwork from CrateDigger's artist cache.
 
     Lookup chain:
-    1. .cratedigger/artists/{artist}/fanart.jpg (global, then walk up)
-    2. .cratedigger/dj-artwork/{hash}.{ext} (global, then walk up)
-    3. Return None if not found.
+    1. ~/.cratedigger/artists/{artist}/dj-artwork.jpg (global)
+    2. Walk up from input_path for .cratedigger/artists/{artist}/dj-artwork.jpg
+    3. Same for fanart.jpg as fallback
+    4. Return None if not found.
     """
     if home_dir is None:
         home_dir = Path.home()
@@ -477,22 +463,15 @@ def find_dj_artwork(
             break
         current = parent
 
-    # 1. Look for artists/{name}/fanart.jpg
+    # 1. Look for artists/{name}/dj-artwork.jpg then fanart.jpg
     if artist:
         for cd in cratedigger_dirs:
-            fanart = cd / "artists" / artist / "fanart.jpg"
-            if fanart.is_file():
-                logger.debug("DJ artwork found: %s", fanart)
-                return fanart.read_bytes()
-
-    # 2. Look for dj-artwork/{hash}.{ext}
-    if url:
-        filename = _artwork_cache_filename(url)
-        for cd in cratedigger_dirs:
-            dj_path = cd / "dj-artwork" / filename
-            if dj_path.is_file():
-                logger.debug("DJ artwork found: %s", dj_path)
-                return dj_path.read_bytes()
+            artist_dir = cd / "artists" / artist
+            for name in ("dj-artwork.jpg", "fanart.jpg"):
+                candidate = artist_dir / name
+                if candidate.is_file():
+                    logger.debug("DJ artwork found: %s", candidate)
+                    return candidate.read_bytes()
 
     return None
 
@@ -502,13 +481,13 @@ def find_dj_artwork(
 # ---------------------------------------------------------------------------
 def compose_artist_cover(
     artist: str,
-    background_data: bytes | None = None,
     dj_artwork_data: bytes | None = None,
     size: int = 1000,
 ) -> bytes:
     """Compose a line-anchored square artist cover.
 
-    Layout: optional DJ photo centered above artist name, artist name above
+    Uses the DJ artwork as both the sharp photo and blurred background.
+    Layout: DJ photo centered above artist name, artist name above
     accent line with glow. Nothing below the line.
     """
     s = size / 1000.0
@@ -520,7 +499,8 @@ def compose_artist_cover(
     PHOTO_SIZE = int(280 * s)
     PAD_PHOTO_TO_ARTIST = int(20 * s)
 
-    bg, accent = _prepare_background(background_data, size)
+    # Use DJ artwork as background (blurred version of same photo)
+    bg, accent = _prepare_background(dj_artwork_data, size)
 
     max_text_w = int(size * 0.85)
 

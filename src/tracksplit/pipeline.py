@@ -194,9 +194,7 @@ def process_file(
         # Cover art
         cover_data = extract_cover_from_mkv(input_path)
         dj_artwork_data = find_dj_artwork(
-            tags.get("dj_artwork", ""),
-            input_path=input_path,
-            artist=album.artist,
+            input_path, artist=album.artist,
         )
 
         cover_bytes = compose_cover(
@@ -225,7 +223,6 @@ def process_file(
     if not artist_cover_path.exists():
         artist_bytes = compose_artist_cover(
             artist=album.artist,
-            background_data=cover_data,
             dj_artwork_data=dj_artwork_data,
         )
         artist_cover_path.write_bytes(artist_bytes)
