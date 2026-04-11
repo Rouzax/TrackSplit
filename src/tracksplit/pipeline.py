@@ -262,7 +262,7 @@ def process_directory(
     output_dir = Path(output_dir)
 
     video_files = sorted(
-        f for f in input_dir.iterdir() if f.is_file() and is_video_file(f)
+        f for f in input_dir.rglob("*") if f.is_file() and is_video_file(f)
     )
 
     if not video_files:
