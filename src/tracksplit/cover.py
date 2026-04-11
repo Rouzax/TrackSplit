@@ -325,12 +325,13 @@ def compose_cover(
     stage: str = "",
     venue: str = "",
     background_data: bytes | None = None,
+    dj_artwork_data: bytes | None = None,
     size: int = 1000,
 ) -> bytes:
     """Compose a line-anchored square album cover.
 
-    Layout: artist name above accent line, festival/date/stage/venue below.
-    All layout values scale proportionally if size != 1000.
+    Layout: optional DJ photo, artist name above accent line,
+    festival/date/stage/venue below. All layout values scale proportionally.
     """
     s = size / 1000.0  # scale factor
 
@@ -342,6 +343,8 @@ def compose_cover(
     PAD_FEST_TO_DATE = int(22 * s)
     PAD_DATE_TO_DETAIL = int(22 * s)
     PAD_DETAIL_LINES = int(8 * s)
+    PHOTO_SIZE = int(200 * s)
+    PAD_PHOTO_TO_ARTIST = int(16 * s)
 
     bg, accent = _prepare_background(background_data, size)
 
@@ -353,9 +356,33 @@ def compose_cover(
     artist_h = _font_height(artist_font)
     artist_y = LINE_Y - PAD_LINE_TO_ARTIST - artist_h
 
-    # Draw artist with drop shadow on RGBA canvas
+    # Draw on RGBA canvas
     canvas = bg.convert("RGBA")
     draw = ImageDraw.Draw(canvas)
+
+    # DJ photo (if provided), smaller than artist cover to leave room for metadata
+    if dj_artwork_data is not None:
+        try:
+            photo = Image.open(io.BytesIO(dj_artwork_data)).convert("RGBA")
+            photo = photo.resize((PHOTO_SIZE, PHOTO_SIZE), Image.Resampling.LANCZOS)
+
+            corner_radius = int(PHOTO_SIZE * 0.1)
+            mask = Image.new("L", (PHOTO_SIZE, PHOTO_SIZE), 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.rounded_rectangle(
+                [0, 0, PHOTO_SIZE - 1, PHOTO_SIZE - 1],
+                radius=corner_radius,
+                fill=255,
+            )
+            photo.putalpha(mask)
+
+            photo_y = artist_y - PAD_PHOTO_TO_ARTIST - PHOTO_SIZE
+            photo_x = (size - PHOTO_SIZE) // 2
+            canvas.paste(photo, (photo_x, photo_y), photo)
+        except Exception:
+            logger.debug("Failed to process DJ artwork for album cover")
+
+    # Artist with drop shadow
     _draw_centered(draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255))
 
     # Convert back and draw glow line

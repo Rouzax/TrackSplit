@@ -193,6 +193,11 @@ def process_file(
 
         # Cover art
         cover_data = extract_cover_from_mkv(input_path)
+        dj_artwork_data = find_dj_artwork(
+            tags.get("dj_artwork", ""),
+            input_path=input_path,
+        )
+
         cover_bytes = compose_cover(
             artist=album.artist,
             festival=album.festival,
@@ -200,6 +205,7 @@ def process_file(
             stage=album.stage,
             venue=album.venue,
             background_data=cover_data,
+            dj_artwork_data=dj_artwork_data,
         )
 
         # Tag all tracks
@@ -216,10 +222,6 @@ def process_file(
     artist_dir = output_dir / safe_filename(album.artist_folder)
     artist_cover_path = artist_dir / "folder.jpg"
     if not artist_cover_path.exists():
-        dj_artwork_data = find_dj_artwork(
-            tags.get("dj_artwork", ""),
-            input_path=input_path,
-        )
         artist_bytes = compose_artist_cover(
             artist=album.artist,
             background_data=cover_data,
