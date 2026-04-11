@@ -283,6 +283,24 @@ def test_build_album_meta_propagates_fields():
     assert meta.musicbrainz_artistid == "uuid-123"
 
 
+def test_build_album_meta_tier2_no_festival():
+    """Tier 2 with missing festival should not produce 'Artist @'."""
+    tags = {
+        "artist": "DJ Test",
+        "festival": "",
+        "date": "2024",
+        "stage": "",
+        "venue": "",
+        "genres": [],
+        "comment": "",
+        "musicbrainz_artistid": "",
+        "cratedigger": True,
+    }
+    chapters = [Chapter(index=1, title="Track 1", start=0.0, end=60.0)]
+    album = build_album_meta(tags, chapters, "fallback_stem", tier=2)
+    assert "@" not in album.album
+
+
 def test_probe_to_metadata_to_tagger_contract():
     """Integration: verify data flows correctly across module boundaries."""
     from tracksplit.probe import parse_tags

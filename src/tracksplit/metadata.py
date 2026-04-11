@@ -143,9 +143,13 @@ def build_album_meta(
         stage = tags.get("stage", "")
         year = date[:4] if date else ""
 
-        album = f"{artist} @ {festival} {year}".strip()
-        if stage:
-            album = f"{album} ({stage})"
+        if festival:
+            album = f"{artist} @ {festival} {year}".strip()
+            if stage:
+                album = f"{album} ({stage})"
+        else:
+            # No festival metadata: fall back to filename
+            album = filename_stem
     else:
         # Tier 1: fallback to filename parsing
         artist, year = parse_filename(filename_stem)
