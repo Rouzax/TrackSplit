@@ -414,24 +414,22 @@ def compose_cover(
     # Date
     date_display = format_date_display(date)
     if date_display:
-        date_font = _load_font(int(28 * s), bold=False)
+        date_font = _auto_fit(date_display, False, max_text_w, start=int(36 * s), minimum=int(24 * s))
         _draw_centered_no_shadow(draw, size, cursor_y, date_display, date_font, (255, 255, 255))
         cursor_y += _font_height(date_font) + PAD_DATE_TO_DETAIL
 
-    # Stage
+    # Stage (split on comma: "Set Name, Stage Name")
     if stage:
-        stage_font = _load_font(int(24 * s), bold=False)
-        _draw_centered_no_shadow(draw, size, cursor_y, stage, stage_font, (255, 255, 255))
-        cursor_y += _font_height(stage_font) + PAD_DETAIL_LINES
+        for part in [p.strip() for p in stage.split(",") if p.strip()]:
+            stage_font = _auto_fit(part, False, max_text_w, start=int(30 * s), minimum=int(20 * s))
+            _draw_centered_no_shadow(draw, size, cursor_y, part, stage_font, (255, 255, 255))
+            cursor_y += _font_height(stage_font) + PAD_DETAIL_LINES
 
-    # Venue (split on comma, deduplicate against stage)
-    if venue:
-        venue_parts = [p.strip() for p in venue.split(",")]
-        venue_parts = [p for p in venue_parts if p and p.lower() != stage.lower()]
-        venue_font = _load_font(int(22 * s), bold=False)
-        for part in venue_parts:
-            _draw_centered_no_shadow(draw, size, cursor_y, part, venue_font, (200, 200, 200))
-            cursor_y += _font_height(venue_font) + PAD_DETAIL_LINES
+    # Venue (auto-fit, deduplicate against stage)
+    if venue and venue.lower() != (stage or "").lower():
+        venue_font = _auto_fit(venue, False, max_text_w, start=int(28 * s), minimum=int(18 * s))
+        _draw_centered_no_shadow(draw, size, cursor_y, venue, venue_font, (200, 200, 200))
+        cursor_y += _font_height(venue_font) + PAD_DETAIL_LINES
 
     buf = io.BytesIO()
     result.save(buf, format="JPEG", quality=90)
