@@ -391,7 +391,7 @@ def compose_cover(
             art_x = (size - ART_SIZE) // 2
             canvas.paste(art, (art_x, art_y), art)
         except Exception:
-            logger.debug("Failed to process set artwork for album cover")
+            logger.warning("Failed to process set artwork for album cover, using plain background")
 
     # Artist with drop shadow
     _draw_centered(draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255))
@@ -544,7 +544,7 @@ def compose_artist_cover(
             photo_y = artist_y - PAD_PHOTO_TO_ARTIST - PHOTO_SIZE
             canvas.paste(photo, (photo_x, photo_y), photo)
         except Exception:
-            logger.debug("Failed to process DJ artwork, skipping photo")
+            logger.warning("Failed to process DJ artwork, skipping photo")
 
     # Artist name: NO shadow for artist cover
     _draw_centered_no_shadow(draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255))
