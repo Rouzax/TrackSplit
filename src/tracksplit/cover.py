@@ -588,17 +588,13 @@ def build_cover_command(input_path: Path, output_path: Path) -> list[str]:
 def extract_cover_from_mkv(input_path: Path) -> bytes | None:
     """Extract embedded cover art from a video file.
 
-    For MKV files, uses mkvmerge/mkvextract to pull image attachments
-    directly. For other formats, tries ffmpeg with a short timeout
-    (the image2pipe approach can hang on large files without attachments).
+    For MKV files, uses mkvmerge/mkvextract exclusively (the ffmpeg
+    image2pipe approach dumps the entire video stream for MKV, not
+    just attachments). For other formats, tries ffmpeg with a timeout.
     """
-    # MKV files: use mkvmerge/mkvextract (reliable, reads attachments directly)
     if input_path.suffix.lower() == ".mkv":
-        result = _extract_cover_mkvtools(input_path)
-        if result is not None:
-            return result
+        return _extract_cover_mkvtools(input_path)
 
-    # Fallback: ffmpeg image2pipe with a timeout to avoid hanging
     return _extract_cover_ffmpeg(input_path)
 
 
