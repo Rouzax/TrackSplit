@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 from tracksplit.models import Chapter
+from tracksplit.tools import get_tool
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ VIDEO_EXTENSIONS = {".mkv", ".mp4", ".webm", ".avi", ".mov", ".m2ts", ".ts", ".f
 def run_ffprobe(path: Path) -> dict:
     """Run ffprobe with JSON output on *path* and return parsed data."""
     cmd = [
-        "ffprobe",
+        get_tool("ffprobe"),
         "-v", "quiet",
         "-print_format", "json",
         "-show_chapters",

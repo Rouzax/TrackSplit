@@ -8,6 +8,7 @@ from pathlib import Path
 
 from tracksplit.probe import get_audio_codec, is_lossless_codec
 from tracksplit.subprocess_utils import tracked_run
+from tracksplit.tools import get_tool
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 def build_extract_command(input_path: Path, output_path: Path) -> list[str]:
     """Build the ffmpeg command to extract audio as FLAC."""
     return [
-        "ffmpeg",
+        get_tool("ffmpeg"),
         "-i",
         str(input_path),
         "-vn",

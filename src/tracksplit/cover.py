@@ -12,6 +12,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, UnidentifiedImageError
 
+from tracksplit.tools import get_tool
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -570,7 +572,7 @@ def compose_artist_cover(
 def build_cover_command(input_path: Path, output_path: Path) -> list[str]:
     """Build ffmpeg command for extracting cover art via image2pipe."""
     return [
-        "ffmpeg",
+        get_tool("ffmpeg"),
         "-i",
         str(input_path),
         "-an",
@@ -604,7 +606,7 @@ def _extract_cover_ffmpeg(input_path: Path) -> bytes | None:
     """Try ffmpeg image2pipe extraction with a timeout."""
     try:
         cmd = [
-            "ffmpeg",
+            get_tool("ffmpeg"),
             "-i",
             str(input_path),
             "-an",
@@ -632,7 +634,7 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
     """Extract cover art from MKV using mkvmerge identify + mkvextract."""
     try:
         identify_cmd = [
-            "mkvmerge",
+            get_tool("mkvmerge"),
             "--identify",
             "--identification-format",
             "json",
@@ -662,7 +664,7 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
         tmp_file = tmp_dir / f"tracksplit_cover_{att_id}.jpg"
 
         extract_cmd = [
-            "mkvextract",
+            get_tool("mkvextract"),
             str(input_path),
             "attachments",
             f"{att_id}:{tmp_file}",

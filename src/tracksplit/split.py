@@ -8,6 +8,7 @@ from pathlib import Path
 from tracksplit.metadata import safe_filename
 from tracksplit.models import TrackMeta
 from tracksplit.subprocess_utils import CancelledError, tracked_run
+from tracksplit.tools import get_tool
 
 
 def build_split_command(
@@ -31,7 +32,7 @@ def build_split_command(
     from_video adds -vn to strip any video stream.
     """
     cmd = [
-        "ffmpeg",
+        get_tool("ffmpeg"),
         "-i", str(input_path),
         "-ss", str(start),
     ]
