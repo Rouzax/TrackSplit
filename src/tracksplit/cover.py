@@ -641,7 +641,7 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
         logger.debug("Trying mkvmerge identify: %s", " ".join(identify_cmd))
         identify_result = subprocess.run(
             identify_cmd, capture_output=True, check=True, text=True,
-            timeout=30,
+            timeout=30, encoding="utf-8",
         )
         info = json.loads(identify_result.stdout)
 
@@ -682,7 +682,7 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
 
     except (
         subprocess.CalledProcessError, subprocess.TimeoutExpired,
-        json.JSONDecodeError, KeyError,
+        json.JSONDecodeError, KeyError, OSError,
     ) as exc:
         logger.debug("mkvmerge/mkvextract failed: %s", exc)
 

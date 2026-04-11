@@ -22,7 +22,9 @@ def run_ffprobe(path: Path) -> dict:
         "-show_format",
         str(path),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    result = subprocess.run(
+        cmd, capture_output=True, text=True, check=True, encoding="utf-8",
+    )
     return json.loads(result.stdout)
 
 
