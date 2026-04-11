@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 logger = logging.getLogger(__name__)
 
@@ -259,9 +259,13 @@ def _draw_glow_line(
 
 
 def _prepare_background(
-    background_data: bytes | None, size: int
+    background_data: bytes | None, size: int, darkness: float = 0.4
 ) -> tuple[Image.Image, tuple[int, int, int]]:
-    """Blur+darken background or create gradient. Returns (image, accent_color)."""
+    """Blur+darken background or create gradient. Returns (image, accent_color).
+
+    darkness: 0.0 = black, 1.0 = no darkening. Album covers use 0.4,
+    artist covers use 0.18 (CrateDigger style).
+    """
     if background_data is not None:
         bg = Image.open(io.BytesIO(background_data)).convert("RGB")
 
@@ -280,9 +284,8 @@ def _prepare_background(
         accent = get_accent_color(bg)
 
         # Blur and darken
-        bg = bg.filter(ImageFilter.GaussianBlur(radius=15))
-        black = Image.new("RGB", (size, size), (0, 0, 0))
-        bg = Image.blend(bg, black, 0.4)
+        bg = bg.filter(ImageFilter.GaussianBlur(radius=40))
+        bg = ImageEnhance.Brightness(bg).enhance(darkness)
 
         return bg, accent
     else:
@@ -324,91 +327,100 @@ def compose_cover(
     stage: str = "",
     venue: str = "",
     background_data: bytes | None = None,
-    dj_artwork_data: bytes | None = None,
     size: int = 1000,
 ) -> bytes:
     """Compose a line-anchored square album cover.
 
-    Layout: optional DJ photo, artist name above accent line,
-    festival/date/stage/venue below. All layout values scale proportionally.
+    Layout: sharp set artwork (1:1, rounded corners) centered above artist
+    name, with blurred version as background. Festival/date/stage/venue
+    below accent line.
     """
-    s = size / 1000.0  # scale factor
+    s = size / 1000.0
 
-    LINE_Y = int(550 * s)
+    ART_SIZE = int(550 * s)  # same proportion as artist cover photo
+    LINE_Y = int(750 * s)   # same as artist cover
     LINE_H = max(1, int(4 * s))
     LINE_W = int(400 * s)
+    PAD_ART_TO_ARTIST = int(24 * s)  # same as artist cover
     PAD_LINE_TO_ARTIST = int(28 * s)
-    PAD_LINE_TO_FEST = int(30 * s)
-    PAD_FEST_TO_DATE = int(22 * s)
-    PAD_DATE_TO_DETAIL = int(22 * s)
+    PAD_LINE_TO_FEST = int(26 * s)
+    PAD_FEST_TO_DATE = int(18 * s)
+    PAD_DATE_TO_DETAIL = int(18 * s)
     PAD_DETAIL_LINES = int(8 * s)
-    PHOTO_SIZE = int(200 * s)
-    PAD_PHOTO_TO_ARTIST = int(16 * s)
 
-    bg, accent = _prepare_background(background_data, size)
+    bg, accent = _prepare_background(background_data, size, darkness=0.18)
 
     max_text_w = int(size * 0.85)
 
-    # Artist name: bold, uppercase, auto-fitted
+    # Artist text
     artist_text = artist.upper()
-    artist_font = _auto_fit(artist_text, True, max_text_w, start=int(90 * s), minimum=int(40 * s))
+    artist_font = _auto_fit(artist_text, True, max_text_w, start=int(72 * s), minimum=int(36 * s))
     artist_h = _font_height(artist_font)
+
+    # Positions: same as artist cover layout
     artist_y = LINE_Y - PAD_LINE_TO_ARTIST - artist_h
+    art_y = artist_y - PAD_ART_TO_ARTIST - ART_SIZE
+    art_y = max(int(20 * s), art_y)
 
     # Draw on RGBA canvas
     canvas = bg.convert("RGBA")
     draw = ImageDraw.Draw(canvas)
 
-    # DJ photo (if provided), smaller than artist cover to leave room for metadata
-    if dj_artwork_data is not None:
+    # Sharp set artwork with rounded corners
+    if background_data is not None:
         try:
-            photo = Image.open(io.BytesIO(dj_artwork_data)).convert("RGBA")
-            photo = photo.resize((PHOTO_SIZE, PHOTO_SIZE), Image.Resampling.LANCZOS)
+            art = Image.open(io.BytesIO(background_data)).convert("RGBA")
+            # Center-crop to square
+            w, h = art.size
+            crop_size = min(w, h)
+            left = (w - crop_size) // 2
+            top = (h - crop_size) // 2
+            art = art.crop((left, top, left + crop_size, top + crop_size))
+            art = art.resize((ART_SIZE, ART_SIZE), Image.Resampling.LANCZOS)
 
-            corner_radius = int(PHOTO_SIZE * 0.1)
-            mask = Image.new("L", (PHOTO_SIZE, PHOTO_SIZE), 0)
+            # Rounded corners
+            corner_radius = int(ART_SIZE * 0.06)
+            mask = Image.new("L", (ART_SIZE, ART_SIZE), 0)
             mask_draw = ImageDraw.Draw(mask)
             mask_draw.rounded_rectangle(
-                [0, 0, PHOTO_SIZE - 1, PHOTO_SIZE - 1],
-                radius=corner_radius,
-                fill=255,
+                [0, 0, ART_SIZE - 1, ART_SIZE - 1],
+                radius=corner_radius, fill=255,
             )
-            photo.putalpha(mask)
+            art.putalpha(mask)
 
-            photo_y = artist_y - PAD_PHOTO_TO_ARTIST - PHOTO_SIZE
-            photo_x = (size - PHOTO_SIZE) // 2
-            canvas.paste(photo, (photo_x, photo_y), photo)
+            art_x = (size - ART_SIZE) // 2
+            canvas.paste(art, (art_x, art_y), art)
         except Exception:
-            logger.debug("Failed to process DJ artwork for album cover")
+            logger.debug("Failed to process set artwork for album cover")
 
     # Artist with drop shadow
     _draw_centered(draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255))
 
-    # Convert back and draw glow line
+    # Glow line
     result = canvas.convert("RGB")
     result = _draw_glow_line(result, LINE_Y, LINE_W, LINE_H, accent)
 
-    # Now draw below-line text
+    # Below-line text
     draw = ImageDraw.Draw(result)
     cursor_y = LINE_Y + LINE_H + PAD_LINE_TO_FEST
 
-    # Festival name: accent color, bold, uppercase, no shadow
+    # Festival name: accent color, bold, uppercase
     if festival:
         fest_text = festival.upper()
-        fest_font = _auto_fit(fest_text, True, max_text_w, start=int(50 * s), minimum=int(30 * s))
+        fest_font = _auto_fit(fest_text, True, max_text_w, start=int(44 * s), minimum=int(26 * s))
         _draw_centered_no_shadow(draw, size, cursor_y, fest_text, fest_font, accent)
         cursor_y += _font_height(fest_font) + PAD_FEST_TO_DATE
 
     # Date
     date_display = format_date_display(date)
     if date_display:
-        date_font = _load_font(int(32 * s), bold=False)
+        date_font = _load_font(int(28 * s), bold=False)
         _draw_centered_no_shadow(draw, size, cursor_y, date_display, date_font, (255, 255, 255))
         cursor_y += _font_height(date_font) + PAD_DATE_TO_DETAIL
 
     # Stage
     if stage:
-        stage_font = _load_font(int(28 * s), bold=False)
+        stage_font = _load_font(int(24 * s), bold=False)
         _draw_centered_no_shadow(draw, size, cursor_y, stage, stage_font, (255, 255, 255))
         cursor_y += _font_height(stage_font) + PAD_DETAIL_LINES
 
@@ -416,12 +428,11 @@ def compose_cover(
     if venue:
         venue_parts = [p.strip() for p in venue.split(",")]
         venue_parts = [p for p in venue_parts if p and p.lower() != stage.lower()]
-        venue_font = _load_font(int(26 * s), bold=False)
+        venue_font = _load_font(int(22 * s), bold=False)
         for part in venue_parts:
             _draw_centered_no_shadow(draw, size, cursor_y, part, venue_font, (200, 200, 200))
             cursor_y += _font_height(venue_font) + PAD_DETAIL_LINES
 
-    # Return as JPEG
     buf = io.BytesIO()
     result.save(buf, format="JPEG", quality=90)
     return buf.getvalue()
@@ -492,15 +503,15 @@ def compose_artist_cover(
     """
     s = size / 1000.0
 
-    LINE_Y = int(550 * s)
+    LINE_Y = int(750 * s)  # text at 75%, photo builds up from there
     LINE_H = max(1, int(4 * s))
     LINE_W = int(400 * s)
     PAD_LINE_TO_ARTIST = int(28 * s)
-    PHOTO_SIZE = int(280 * s)
-    PAD_PHOTO_TO_ARTIST = int(20 * s)
+    PHOTO_SIZE = int(550 * s)
+    PAD_PHOTO_TO_ARTIST = int(24 * s)
 
     # Use DJ artwork as background (blurred version of same photo)
-    bg, accent = _prepare_background(dj_artwork_data, size)
+    bg, accent = _prepare_background(dj_artwork_data, size, darkness=0.18)
 
     max_text_w = int(size * 0.85)
 
@@ -531,8 +542,8 @@ def compose_artist_cover(
 
             photo.putalpha(mask)
 
-            photo_y = artist_y - PAD_PHOTO_TO_ARTIST - PHOTO_SIZE
             photo_x = (size - PHOTO_SIZE) // 2
+            photo_y = artist_y - PAD_PHOTO_TO_ARTIST - PHOTO_SIZE
             canvas.paste(photo, (photo_x, photo_y), photo)
         except Exception:
             logger.debug("Failed to process DJ artwork, skipping photo")

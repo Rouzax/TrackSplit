@@ -204,7 +204,6 @@ def process_file(
             stage=album.stage,
             venue=album.venue,
             background_data=cover_data,
-            dj_artwork_data=dj_artwork_data,
         )
 
         # Tag all tracks
