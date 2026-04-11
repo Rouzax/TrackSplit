@@ -87,7 +87,7 @@ def split_tracks(
             full_flac, output_path, track.start, end,
             codec_mode=codec_mode, from_video=from_video,
         )
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, capture_output=True, check=True)
         output_paths.append(output_path)
 
     return output_paths

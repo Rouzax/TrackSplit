@@ -157,6 +157,19 @@ class TestSplitTracks:
 
         assert mock_run.call_count == 3
 
+    def test_ffmpeg_stderr_is_captured(self, tmp_path, mocker):
+        """ffmpeg output must be captured, not leaked to terminal."""
+        full_flac = tmp_path / "full.flac"
+        full_flac.touch()
+        output_dir = tmp_path / "output"
+        tracks = [TrackMeta(number=1, title="Only", start=0.0, end=60.0)]
+
+        mock_run = mocker.patch("tracksplit.split.subprocess.run")
+        split_tracks(full_flac, tracks, output_dir)
+
+        call_kwargs = mock_run.call_args_list[0][1]
+        assert call_kwargs.get("capture_output") is True
+
     def test_split_tracks_with_ogg_extension(self, tmp_path, mocker):
         full_audio = tmp_path / "video.mkv"
         full_audio.touch()
