@@ -78,7 +78,7 @@ def prepare_audio(
         flac_path = extract_audio(input_path, temp_dir=temp_dir)
         return (flac_path, ".flac", "copy")
 
-    elif output_format in ("ogg", "opus"):
+    elif output_format == "opus":
         if codec == "opus":
             return (input_path, ".opus", "copy")
         else:

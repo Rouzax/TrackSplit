@@ -26,6 +26,18 @@ def test_cli_help():
     assert "output" in result.output.lower()
 
 
+def test_cli_invalid_format_rejected():
+    """Invalid --format value should fail with a clean message."""
+    import tempfile, os
+    fd, path = tempfile.mkstemp(suffix=".mkv")
+    os.close(fd)
+    try:
+        result = runner.invoke(app, [path, "--format", "mp3"])
+        assert result.exit_code != 0
+    finally:
+        os.unlink(path)
+
+
 def test_cli_format_flag_in_help():
     """--format flag should appear in help output."""
     result = runner.invoke(app, ["--help"])

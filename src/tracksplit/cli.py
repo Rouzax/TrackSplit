@@ -19,6 +19,8 @@ app = typer.Typer(
 
 console = Console()
 
+_VALID_FORMATS = {"auto", "flac", "opus"}
+
 
 def _setup_logging(verbose: bool, debug: bool) -> None:
     """Configure root logger with RichHandler."""
@@ -81,6 +83,13 @@ def main(
 ) -> None:
     """Process video files and extract audio chapters into tagged albums."""
     _setup_logging(verbose, debug)
+
+    if output_format not in _VALID_FORMATS:
+        console.print(
+            f"[red]Invalid format:[/red] {output_format}. "
+            f"Choose from: {', '.join(sorted(_VALID_FORMATS))}"
+        )
+        raise typer.Exit(code=1)
 
     output_dir = output if output is not None else Path.cwd()
 

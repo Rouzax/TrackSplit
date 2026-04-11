@@ -115,23 +115,23 @@ class TestPrepareAudio:
         assert ext == ".flac"
         assert codec_mode == "copy"
 
-    def test_ogg_format_opus_source(self, tmp_path):
-        """Explicit ogg format with Opus source: stream copy."""
+    def test_opus_format_opus_source(self, tmp_path):
+        """Explicit opus format with Opus source: stream copy."""
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("opus")
 
-        audio_path, ext, codec_mode = prepare_audio(input_path, data, "ogg", tmp_path)
+        audio_path, ext, codec_mode = prepare_audio(input_path, data, "opus", tmp_path)
 
         assert audio_path == input_path
         assert ext == ".opus"
         assert codec_mode == "copy"
 
-    def test_ogg_format_non_opus_source(self, tmp_path):
-        """Explicit ogg format with non-Opus source: re-encode."""
+    def test_opus_format_non_opus_source(self, tmp_path):
+        """Explicit opus format with non-Opus source: re-encode."""
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("flac")
 
-        audio_path, ext, codec_mode = prepare_audio(input_path, data, "ogg", tmp_path)
+        audio_path, ext, codec_mode = prepare_audio(input_path, data, "opus", tmp_path)
 
         assert audio_path == input_path
         assert ext == ".opus"
