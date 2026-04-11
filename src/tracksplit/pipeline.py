@@ -149,6 +149,12 @@ def process_file(
         duration = float(
             ffprobe_data.get("format", {}).get("duration", 0)
         )
+        if duration <= 0:
+            logger.warning(
+                "No chapters and no duration in %s, skipping",
+                _safe_log_name(input_path),
+            )
+            return False
         single_track = TrackMeta(
             number=1,
             title=album.album,

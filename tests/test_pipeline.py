@@ -108,3 +108,24 @@ class TestSafeLogName:
         """Should not raise even with surrogate bytes."""
         result = _safe_log_name(Path("/tmp/test\udceb.mkv"))
         assert isinstance(result, str)
+
+
+# ---------------------------------------------------------------------------
+# process_file: no chapters, no duration
+# ---------------------------------------------------------------------------
+
+class TestProcessFileNoChapters:
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_no_chapters_no_duration_skips(self, mock_probe, tmp_path):
+        """File with no chapters and no duration should be skipped."""
+        mock_probe.return_value = {
+            "streams": [{"codec_type": "audio", "codec_name": "aac"}],
+            "format": {"tags": {}},
+            "chapters": [],
+        }
+        input_file = tmp_path / "empty.mkv"
+        input_file.touch()
+
+        from tracksplit.pipeline import process_file
+        result = process_file(input_file, tmp_path / "out")
+        assert result is False
