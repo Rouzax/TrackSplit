@@ -248,10 +248,34 @@ class TestBuildCoverCommand:
 
 class TestExtractCoverFromMkv:
     @patch("tracksplit.cover.subprocess.run")
-    def test_ffmpeg_success(self, mock_run):
+    def test_ffmpeg_success_non_mkv(self, mock_run):
+        """Non-MKV files use ffmpeg image2pipe extraction."""
         fake_image = b"\xff\xd8\xff\xe0fake_jpeg_data"
         mock_run.return_value = MagicMock(stdout=fake_image, returncode=0)
 
+        result = extract_cover_from_mkv(Path("/tmp/video.mp4"))
+        assert result == fake_image
+
+    @patch("tracksplit.cover.subprocess.run")
+    def test_mkvtools_success(self, mock_run):
+        """MKV files try mkvmerge/mkvextract first."""
+        identify_json = '{"attachments": [{"id": 1, "content_type": "image/jpeg"}]}'
+        fake_image = b"\xff\xd8\xff\xe0fake_jpeg_data"
+
+        def side_effect(cmd, **kwargs):
+            if "mkvmerge" in cmd:
+                return MagicMock(stdout=identify_json, returncode=0)
+            elif "mkvextract" in cmd:
+                # Write a temp file that the function will read
+                import re
+                for part in cmd:
+                    m = re.match(r"\d+:(.*)", part)
+                    if m:
+                        Path(m.group(1)).write_bytes(fake_image)
+                return MagicMock(returncode=0)
+            return MagicMock(returncode=0)
+
+        mock_run.side_effect = side_effect
         result = extract_cover_from_mkv(Path("/tmp/video.mkv"))
         assert result == fake_image
 

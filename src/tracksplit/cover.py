@@ -586,10 +586,22 @@ def build_cover_command(input_path: Path, output_path: Path) -> list[str]:
 def extract_cover_from_mkv(input_path: Path) -> bytes | None:
     """Extract embedded cover art from a video file.
 
-    Tries ffmpeg first (image2pipe). If that fails and the file is .mkv,
-    falls back to mkvmerge --identify + mkvextract.
+    For MKV files, uses mkvmerge/mkvextract to pull image attachments
+    directly. For other formats, tries ffmpeg with a short timeout
+    (the image2pipe approach can hang on large files without attachments).
     """
-    # Attempt 1: ffmpeg
+    # MKV files: use mkvmerge/mkvextract (reliable, reads attachments directly)
+    if input_path.suffix.lower() == ".mkv":
+        result = _extract_cover_mkvtools(input_path)
+        if result is not None:
+            return result
+
+    # Fallback: ffmpeg image2pipe with a timeout to avoid hanging
+    return _extract_cover_ffmpeg(input_path)
+
+
+def _extract_cover_ffmpeg(input_path: Path) -> bytes | None:
+    """Try ffmpeg image2pipe extraction with a timeout."""
     try:
         cmd = [
             "ffmpeg",
@@ -603,17 +615,21 @@ def extract_cover_from_mkv(input_path: Path) -> bytes | None:
             "-",
         ]
         logger.debug("Trying ffmpeg cover extraction: %s", " ".join(cmd))
-        result = subprocess.run(cmd, capture_output=True, check=True)
+        result = subprocess.run(
+            cmd, capture_output=True, check=True, timeout=15,
+        )
         if result.stdout:
             logger.info("Extracted cover art via ffmpeg from %s", input_path.name)
             return result.stdout
+    except subprocess.TimeoutExpired:
+        logger.debug("ffmpeg cover extraction timed out for %s", input_path.name)
     except subprocess.CalledProcessError:
         logger.debug("ffmpeg cover extraction failed for %s", input_path.name)
+    return None
 
-    # Attempt 2: mkvmerge/mkvextract (only for .mkv files)
-    if input_path.suffix.lower() != ".mkv":
-        return None
 
+def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
+    """Extract cover art from MKV using mkvmerge identify + mkvextract."""
     try:
         identify_cmd = [
             "mkvmerge",
@@ -624,7 +640,8 @@ def extract_cover_from_mkv(input_path: Path) -> bytes | None:
         ]
         logger.debug("Trying mkvmerge identify: %s", " ".join(identify_cmd))
         identify_result = subprocess.run(
-            identify_cmd, capture_output=True, check=True, text=True
+            identify_cmd, capture_output=True, check=True, text=True,
+            timeout=30,
         )
         info = json.loads(identify_result.stdout)
 
@@ -651,7 +668,7 @@ def extract_cover_from_mkv(input_path: Path) -> bytes | None:
             f"{att_id}:{tmp_file}",
         ]
         logger.debug("Extracting attachment: %s", " ".join(extract_cmd))
-        subprocess.run(extract_cmd, capture_output=True, check=True)
+        subprocess.run(extract_cmd, capture_output=True, check=True, timeout=30)
 
         if tmp_file.exists():
             try:
@@ -663,7 +680,10 @@ def extract_cover_from_mkv(input_path: Path) -> bytes | None:
             finally:
                 tmp_file.unlink(missing_ok=True)
 
-    except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError) as exc:
-        logger.debug("mkvmerge/mkvextract fallback failed: %s", exc)
+    except (
+        subprocess.CalledProcessError, subprocess.TimeoutExpired,
+        json.JSONDecodeError, KeyError,
+    ) as exc:
+        logger.debug("mkvmerge/mkvextract failed: %s", exc)
 
     return None

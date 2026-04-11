@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import logging
 import tempfile
+import threading
 from collections.abc import Callable
 from pathlib import Path
 
@@ -118,6 +119,7 @@ def process_file(
     dry_run: bool = False,
     output_format: str = "auto",
     on_progress: Callable[[str, int, int], None] | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> bool:
     """Process a single video file through the full pipeline.
 
@@ -204,7 +206,8 @@ def process_file(
         # Prepare audio (detect codec, extract if needed)
         _progress("Extracting audio")
         audio_path, ext, codec_mode = prepare_audio(
-            input_path, ffprobe_data, output_format, tmp_dir
+            input_path, ffprobe_data, output_format, tmp_dir,
+            cancel_event=cancel_event,
         )
         from_video = (audio_path == input_path)
 
@@ -213,7 +216,7 @@ def process_file(
         track_paths = split_tracks(
             audio_path, album.tracks, album_dir,
             ext=ext, codec_mode=codec_mode, from_video=from_video,
-            on_progress=on_progress,
+            on_progress=on_progress, cancel_event=cancel_event,
         )
 
         # Cover art

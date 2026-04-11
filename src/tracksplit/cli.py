@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import logging
 import os
+import signal
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Optional
@@ -21,6 +23,7 @@ from tracksplit.console import (
 )
 from tracksplit.pipeline import find_video_files, process_file
 from tracksplit.probe import is_video_file
+from tracksplit.subprocess_utils import kill_active_processes
 
 app = typer.Typer(
     name="tracksplit",
@@ -32,6 +35,9 @@ app = typer.Typer(
 console = make_console()
 
 _VALID_FORMATS = {"auto", "flac", "opus"}
+
+# Shared cancellation state
+_cancel_event = threading.Event()
 
 
 def _setup_logging(verbose: bool, debug: bool) -> None:
@@ -82,6 +88,7 @@ def _process_single_file(
             force=force, dry_run=dry_run,
             output_format=output_format,
             on_progress=progress.update,
+            cancel_event=_cancel_event,
         )
 
     if success:
@@ -114,6 +121,8 @@ def _process_directory(
         # Sequential mode with simple spinner
         with FileProgress(console, enabled=use_live) as progress:
             for video_file in video_files:
+                if _cancel_event.is_set():
+                    break
                 progress.set_filename(video_file.name)
                 try:
                     if process_file(
@@ -121,6 +130,7 @@ def _process_directory(
                         force=force, dry_run=dry_run,
                         output_format=output_format,
                         on_progress=progress.update,
+                        cancel_event=_cancel_event,
                     ):
                         processed += 1
                         progress.print(status_text("done", video_file.name))
@@ -154,25 +164,32 @@ def _process_directory(
                         force=force, dry_run=dry_run,
                         output_format=output_format,
                         on_progress=cb,
+                        cancel_event=_cancel_event,
                     )
                     futures[future] = (video_file, key)
 
-                for future in as_completed(futures):
-                    video_file, key = futures[future]
-                    try:
-                        result = future.result()
-                        if result:
-                            processed += 1
-                            batch.file_done(key, status_text("done", video_file.name))
-                        else:
-                            skipped += 1
-                            batch.file_done(key, status_text("skipped", video_file.name, "unchanged"))
-                    except Exception:
-                        logging.getLogger(__name__).exception(
-                            "Failed to process %s", video_file.name,
-                        )
-                        failed += 1
-                        batch.file_done(key, status_text("error", video_file.name))
+                try:
+                    for future in as_completed(futures):
+                        video_file, key = futures[future]
+                        try:
+                            result = future.result()
+                            if result:
+                                processed += 1
+                                batch.file_done(key, status_text("done", video_file.name))
+                            else:
+                                skipped += 1
+                                batch.file_done(key, status_text("skipped", video_file.name, "unchanged"))
+                        except Exception:
+                            logging.getLogger(__name__).exception(
+                                "Failed to process %s", video_file.name,
+                            )
+                            failed += 1
+                            batch.file_done(key, status_text("error", video_file.name))
+                except KeyboardInterrupt:
+                    _cancel_event.set()
+                    kill_active_processes()
+                    for f in futures:
+                        f.cancel()
 
     console.print()
     console.print(summary_panel(processed, skipped, failed))
@@ -238,34 +255,54 @@ def main(
 
     output_dir = output if output is not None else Path.cwd()
 
-    if input_path.is_file():
-        if not is_video_file(input_path):
+    # Install signal handler for clean Ctrl+C
+    is_main_thread = threading.current_thread() is threading.main_thread()
+    original_handler = signal.getsignal(signal.SIGINT) if is_main_thread else None
+
+    def _sigint_handler(signum: int, frame: object) -> None:
+        _cancel_event.set()
+        kill_active_processes()
+        console.print("\n[yellow]Interrupted, stopping...[/yellow]")
+
+    try:
+        if is_main_thread:
+            signal.signal(signal.SIGINT, _sigint_handler)
+
+        if input_path.is_file():
+            if not is_video_file(input_path):
+                print_error(
+                    f"Not a recognized video file: {input_path.name}",
+                    console=console,
+                )
+                raise typer.Exit(code=1)
+
+            _process_single_file(
+                input_path, output_dir,
+                force=force, dry_run=dry_run,
+                output_format=output_format,
+            )
+
+        elif input_path.is_dir():
+            _process_directory(
+                input_path, output_dir,
+                force=force, dry_run=dry_run,
+                output_format=output_format,
+                workers=workers,
+            )
+
+        else:
             print_error(
-                f"Not a recognized video file: {input_path.name}",
+                f"Input path is neither a file nor a directory: {input_path}",
                 console=console,
             )
             raise typer.Exit(code=1)
 
-        _process_single_file(
-            input_path, output_dir,
-            force=force, dry_run=dry_run,
-            output_format=output_format,
-        )
-
-    elif input_path.is_dir():
-        _process_directory(
-            input_path, output_dir,
-            force=force, dry_run=dry_run,
-            output_format=output_format,
-            workers=workers,
-        )
-
-    else:
-        print_error(
-            f"Input path is neither a file nor a directory: {input_path}",
-            console=console,
-        )
-        raise typer.Exit(code=1)
+    except KeyboardInterrupt:
+        _cancel_event.set()
+        kill_active_processes()
+    finally:
+        if is_main_thread and original_handler is not None:
+            signal.signal(signal.SIGINT, original_handler)
 
 
 def run() -> None:

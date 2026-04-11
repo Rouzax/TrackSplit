@@ -1,12 +1,13 @@
 """Split a full FLAC into individual tracks at chapter boundaries."""
 from __future__ import annotations
 
-import subprocess
+import threading
 from collections.abc import Callable
 from pathlib import Path
 
 from tracksplit.metadata import safe_filename
 from tracksplit.models import TrackMeta
+from tracksplit.subprocess_utils import CancelledError, tracked_run
 
 
 def build_split_command(
@@ -67,6 +68,7 @@ def split_tracks(
     codec_mode: str = "copy",
     from_video: bool = False,
     on_progress: Callable[[str, int, int], None] | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> list[Path]:
     """Split audio into individual track files.
 
@@ -79,6 +81,9 @@ def split_tracks(
     total = len(tracks)
     output_paths: list[Path] = []
     for i, track in enumerate(tracks):
+        if cancel_event is not None and cancel_event.is_set():
+            raise CancelledError("Cancelled")
+
         if on_progress:
             on_progress("Splitting tracks", i + 1, total)
 
@@ -95,7 +100,7 @@ def split_tracks(
             full_flac, output_path, track.start, end,
             codec_mode=codec_mode, from_video=from_video,
         )
-        subprocess.run(cmd, capture_output=True, check=True)
+        tracked_run(cmd, cancel_event=cancel_event)
         output_paths.append(output_path)
 
     return output_paths

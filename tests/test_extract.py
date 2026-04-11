@@ -26,7 +26,7 @@ def test_build_extract_command():
 
 def test_extract_audio_calls_ffmpeg(tmp_path):
     input_path = Path("/tmp/video.mkv")
-    with patch("tracksplit.extract.subprocess.run") as mock_run:
+    with patch("tracksplit.extract.tracked_run") as mock_run:
         result = extract_audio(input_path, temp_dir=tmp_path)
 
     expected_output = tmp_path / "video_tracksplit_full.flac"
@@ -42,14 +42,13 @@ def test_extract_audio_calls_ffmpeg(tmp_path):
             "-y",
             str(expected_output),
         ],
-        capture_output=True,
-        check=True,
+        cancel_event=None,
     )
 
 
 def test_extract_audio_raises_on_failure(tmp_path):
     input_path = Path("/tmp/video.mkv")
-    with patch("tracksplit.extract.subprocess.run") as mock_run:
+    with patch("tracksplit.extract.tracked_run") as mock_run:
         mock_run.side_effect = subprocess.CalledProcessError(
             returncode=1, cmd="ffmpeg"
         )
@@ -85,7 +84,7 @@ class TestPrepareAudio:
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("flac")
 
-        with patch("tracksplit.extract.subprocess.run"):
+        with patch("tracksplit.extract.tracked_run"):
             audio_path, ext, codec_mode = prepare_audio(input_path, data, "auto", tmp_path)
 
         assert audio_path == tmp_path / "video_tracksplit_full.flac"
@@ -108,7 +107,7 @@ class TestPrepareAudio:
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("opus")
 
-        with patch("tracksplit.extract.subprocess.run"):
+        with patch("tracksplit.extract.tracked_run"):
             audio_path, ext, codec_mode = prepare_audio(input_path, data, "flac", tmp_path)
 
         assert audio_path == tmp_path / "video_tracksplit_full.flac"
