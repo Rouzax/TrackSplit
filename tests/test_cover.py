@@ -165,7 +165,38 @@ class TestArtworkCacheFilename:
 
 
 class TestFindDjArtwork:
-    def test_finds_in_global_cache(self, tmp_path):
+    def test_finds_fanart_in_global_artists(self, tmp_path):
+        """artists/{name}/fanart.jpg in global .cratedigger."""
+        fanart_dir = tmp_path / ".cratedigger" / "artists" / "Tiësto"
+        fanart_dir.mkdir(parents=True)
+        (fanart_dir / "fanart.jpg").write_bytes(b"fanart-global")
+
+        result = find_dj_artwork(
+            "", tmp_path / "music" / "file.mkv",
+            artist="Tiësto", home_dir=tmp_path,
+        )
+        assert result == b"fanart-global"
+
+    def test_finds_fanart_in_library_artists(self, tmp_path):
+        """artists/{name}/fanart.jpg found by walking up from input."""
+        lib_dir = tmp_path / "library"
+        fanart_dir = lib_dir / ".cratedigger" / "artists" / "DJ Name"
+        fanart_dir.mkdir(parents=True)
+        (fanart_dir / "fanart.jpg").write_bytes(b"fanart-library")
+
+        input_file = lib_dir / "videos" / "file.mkv"
+        input_file.parent.mkdir(parents=True)
+
+        fake_home = tmp_path / "nope"
+        fake_home.mkdir()
+
+        result = find_dj_artwork(
+            "", input_file,
+            artist="DJ Name", home_dir=fake_home,
+        )
+        assert result == b"fanart-library"
+
+    def test_finds_in_global_dj_artwork_cache(self, tmp_path):
         url = "https://example.com/dj.jpg"
         filename = _artwork_cache_filename(url)
         cache_dir = tmp_path / ".cratedigger" / "dj-artwork"
@@ -175,10 +206,9 @@ class TestFindDjArtwork:
         result = find_dj_artwork(url, tmp_path / "music" / "file.flac", home_dir=tmp_path)
         assert result == b"fake-image-data"
 
-    def test_finds_in_library_cache(self, tmp_path):
+    def test_finds_in_library_dj_artwork_cache(self, tmp_path):
         url = "https://example.com/dj2.jpg"
         filename = _artwork_cache_filename(url)
-        # Create library-level cache one directory above input
         lib_dir = tmp_path / "music"
         lib_dir.mkdir()
         cache_dir = lib_dir / ".cratedigger" / "dj-artwork"
@@ -188,12 +218,28 @@ class TestFindDjArtwork:
         input_file = lib_dir / "artist" / "file.flac"
         input_file.parent.mkdir(parents=True)
 
-        # Use a home_dir that does NOT have the cache
         fake_home = tmp_path / "fakehome"
         fake_home.mkdir()
 
         result = find_dj_artwork(url, input_file, home_dir=fake_home)
         assert result == b"library-image"
+
+    def test_fanart_takes_priority_over_dj_artwork(self, tmp_path):
+        """artists/ fanart should be found before dj-artwork/ hash."""
+        url = "https://example.com/dj.jpg"
+        filename = _artwork_cache_filename(url)
+
+        # Both exist
+        fanart_dir = tmp_path / ".cratedigger" / "artists" / "DJ"
+        fanart_dir.mkdir(parents=True)
+        (fanart_dir / "fanart.jpg").write_bytes(b"fanart-wins")
+
+        dj_dir = tmp_path / ".cratedigger" / "dj-artwork"
+        dj_dir.mkdir(parents=True)
+        (dj_dir / filename).write_bytes(b"hash-loses")
+
+        result = find_dj_artwork(url, tmp_path / "file.mkv", artist="DJ", home_dir=tmp_path)
+        assert result == b"fanart-wins"
 
     def test_returns_none_when_not_found(self, tmp_path):
         fake_home = tmp_path / "fakehome"
@@ -205,8 +251,8 @@ class TestFindDjArtwork:
         )
         assert result is None
 
-    def test_empty_url_returns_none(self, tmp_path):
-        result = find_dj_artwork("", tmp_path / "file.flac")
+    def test_no_url_no_artist_returns_none(self, tmp_path):
+        result = find_dj_artwork("", tmp_path / "file.flac", home_dir=tmp_path)
         assert result is None
 
 

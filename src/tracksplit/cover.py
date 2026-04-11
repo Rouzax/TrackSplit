@@ -446,37 +446,53 @@ def _artwork_cache_filename(url: str) -> str:
 
 
 def find_dj_artwork(
-    url: str, input_path: Path, home_dir: Path | None = None
+    url: str,
+    input_path: Path,
+    artist: str = "",
+    home_dir: Path | None = None,
 ) -> bytes | None:
-    """Look up cached DJ artwork by URL.
+    """Look up cached DJ artwork.
 
     Lookup chain:
-    1. Global cache: {home_dir}/.cratedigger/dj-artwork/{hash}.{ext}
-    2. Walk up from input_path looking for .cratedigger/dj-artwork/{hash}.{ext}
+    1. .cratedigger/artists/{artist}/fanart.jpg (global, then walk up)
+    2. .cratedigger/dj-artwork/{hash}.{ext} (global, then walk up)
     3. Return None if not found.
     """
-    if not url:
-        return None
-
-    filename = _artwork_cache_filename(url)
-
-    # 1. Global cache
     if home_dir is None:
         home_dir = Path.home()
-    global_path = home_dir / ".cratedigger" / "dj-artwork" / filename
-    if global_path.is_file():
-        return global_path.read_bytes()
 
-    # 2. Walk up from input_path parent
+    # Collect .cratedigger directories to search: global first, then walk up
+    cratedigger_dirs: list[Path] = []
+    global_cd = home_dir / ".cratedigger"
+    if global_cd.is_dir():
+        cratedigger_dirs.append(global_cd)
+
     current = input_path.parent
     for _ in range(10):
-        candidate = current / ".cratedigger" / "dj-artwork" / filename
-        if candidate.is_file():
-            return candidate.read_bytes()
+        candidate = current / ".cratedigger"
+        if candidate.is_dir() and candidate != global_cd:
+            cratedigger_dirs.append(candidate)
         parent = current.parent
         if parent == current:
             break
         current = parent
+
+    # 1. Look for artists/{name}/fanart.jpg
+    if artist:
+        for cd in cratedigger_dirs:
+            fanart = cd / "artists" / artist / "fanart.jpg"
+            if fanart.is_file():
+                logger.debug("DJ artwork found: %s", fanart)
+                return fanart.read_bytes()
+
+    # 2. Look for dj-artwork/{hash}.{ext}
+    if url:
+        filename = _artwork_cache_filename(url)
+        for cd in cratedigger_dirs:
+            dj_path = cd / "dj-artwork" / filename
+            if dj_path.is_file():
+                logger.debug("DJ artwork found: %s", dj_path)
+                return dj_path.read_bytes()
 
     return None
 

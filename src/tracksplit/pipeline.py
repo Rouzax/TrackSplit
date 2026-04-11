@@ -196,6 +196,7 @@ def process_file(
         dj_artwork_data = find_dj_artwork(
             tags.get("dj_artwork", ""),
             input_path=input_path,
+            artist=album.artist,
         )
 
         cover_bytes = compose_cover(
