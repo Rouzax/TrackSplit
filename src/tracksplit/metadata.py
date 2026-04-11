@@ -1,14 +1,160 @@
-"""Metadata utilities for TrackSplit."""
+"""Metadata extraction, sanitization, and album building for TrackSplit."""
 import re
+
+from tracksplit.models import AlbumMeta, Chapter, TrackMeta
+
+# Characters illegal in Windows filenames
+_ILLEGAL_CHARS = re.compile(r'[<>:"/\\|?*]')
+
+# Unicode slash lookalikes
+_UNICODE_SLASHES = "\u2044\u2215\u29f8\u29f9\uff0f"
+
+# Control characters (U+0000 to U+001F)
+_CONTROL_CHARS = re.compile(r"[\x00-\x1f]")
+
+# Label in square brackets at end of string
+_LABEL_RE = re.compile(r"\s*\[([^\]]+)\]\s*$")
+
+# Filename patterns: "YYYY - Artist - Festival" or "Artist - Festival"
+_FILENAME_YEAR_RE = re.compile(r"^(\d{4})\s*-\s*(.+?)\s*-\s*.+$")
+_FILENAME_NO_YEAR_RE = re.compile(r"^(.+?)\s*-\s*.+$")
+
+
+def strip_label(title: str) -> tuple[str, str]:
+    """Remove [Label Name] from end of track title.
+
+    Returns (clean_title, label). Only matches square brackets at end.
+    Preserves parentheses like (Remix).
+    """
+    m = _LABEL_RE.search(title)
+    if m:
+        clean = title[: m.start()].rstrip()
+        return clean, m.group(1)
+    return title, ""
 
 
 def safe_filename(name: str) -> str:
-    """Sanitize a string for use as a filename.
+    """Strip characters illegal in Windows filenames.
 
-    Removes characters that are unsafe on Windows or Unix filesystems:
-    / \\ : * ? " < > |
-    Collapses multiple spaces and strips leading/trailing whitespace.
+    Removes: < > : " / \\ | ? * and control chars.
+    Removes unicode slash lookalikes (U+2044, U+2215, U+29F8, U+29F9, U+FF0F).
+    Collapses whitespace, strips trailing dots/spaces.
+    Truncates to 200 characters.
     """
-    cleaned = re.sub(r'[\\/*?:"<>|]', "", name)
-    cleaned = re.sub(r"\s+", " ", cleaned)
-    return cleaned.strip()
+    # Remove control characters
+    name = _CONTROL_CHARS.sub("", name)
+    # Remove illegal characters
+    name = _ILLEGAL_CHARS.sub("", name)
+    # Remove unicode slash lookalikes
+    for ch in _UNICODE_SLASHES:
+        name = name.replace(ch, "")
+    # Collapse whitespace
+    name = re.sub(r"\s+", " ", name).strip()
+    # Strip trailing dots and spaces
+    name = name.rstrip(". ")
+    # Truncate
+    if len(name) > 200:
+        name = name[:200].rstrip(". ")
+    return name
+
+
+def parse_filename(stem: str) -> tuple[str, str]:
+    """Parse artist and year from filename stem.
+
+    Patterns:
+        "2024 - Artist - Festival" -> ("Artist", "2024")
+        "Artist - Festival" -> ("Artist", "")
+        no match -> ("", "")
+    """
+    m = _FILENAME_YEAR_RE.match(stem)
+    if m:
+        return m.group(2), m.group(1)
+    m = _FILENAME_NO_YEAR_RE.match(stem)
+    if m:
+        return m.group(1), ""
+    return "", ""
+
+
+def deduplicate_titles(titles: list[str]) -> list[str]:
+    """Append track number in parens to duplicate titles.
+
+    "ID", "Track B", "ID" -> "ID (01)", "Track B", "ID (03)"
+    Non-duplicates are unchanged.
+    """
+    counts: dict[str, int] = {}
+    for t in titles:
+        counts[t] = counts.get(t, 0) + 1
+
+    duplicated = {t for t, c in counts.items() if c > 1}
+
+    result = []
+    for i, t in enumerate(titles):
+        if t in duplicated:
+            result.append(f"{t} ({i + 1:02d})")
+        else:
+            result.append(t)
+    return result
+
+
+def build_album_meta(
+    tags: dict,
+    chapters: list[Chapter],
+    filename_stem: str,
+    tier: int,
+) -> AlbumMeta:
+    """Build album metadata from parsed tags and chapters.
+
+    Tier 2: album = "Artist @ Festival Year (Stage)" with full tag data.
+    Tier 1: album = filename_stem, artist/date parsed from filename.
+    """
+    # Strip labels from chapter titles
+    clean_titles = []
+    publishers = []
+    for ch in chapters:
+        title, label = strip_label(ch.title)
+        clean_titles.append(title)
+        publishers.append(label)
+
+    # Deduplicate titles
+    clean_titles = deduplicate_titles(clean_titles)
+
+    # Get genres from tags
+    genres = tags.get("genre", [])
+
+    if tier == 2:
+        artist = tags.get("artist", "")
+        festival = tags.get("festival", "")
+        date = tags.get("date", "")
+        stage = tags.get("stage", "")
+        year = date[:4] if date else ""
+
+        album = f"{artist} @ {festival} {year}".strip()
+        if stage:
+            album = f"{album} ({stage})"
+    else:
+        # Tier 1: fallback to filename parsing
+        artist, year = parse_filename(filename_stem)
+        date = year
+        album = filename_stem
+
+    # Build tracks
+    tracks = []
+    for i, ch in enumerate(chapters):
+        tracks.append(
+            TrackMeta(
+                number=i + 1,
+                title=clean_titles[i],
+                start=ch.start,
+                end=ch.end,
+                publisher=publishers[i],
+                genre=list(genres),
+            )
+        )
+
+    return AlbumMeta(
+        artist=artist,
+        album=album,
+        date=date,
+        genre=list(genres),
+        tracks=tracks,
+    )
