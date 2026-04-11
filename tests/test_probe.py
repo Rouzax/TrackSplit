@@ -130,12 +130,12 @@ class TestParseTags:
             "ARTIST": "Tiesto",
             "CRATEDIGGER_1001TL_GENRES": "Trance|Progressive House",
             "CRATEDIGGER_1001TL_URL": "https://www.1001tracklists.com/tracklist/abc",
-            "CRATEDIGGER_FESTIVAL": "Tomorrowland",
-            "CRATEDIGGER_STAGE": "Main Stage",
-            "CRATEDIGGER_VENUE": "Boom, Belgium",
-            "DATE": "2024-07-21",
+            "CRATEDIGGER_1001TL_FESTIVAL": "Tomorrowland",
+            "CRATEDIGGER_1001TL_STAGE": "Main Stage",
+            "CRATEDIGGER_1001TL_VENUE": "Boom, Belgium",
+            "CRATEDIGGER_1001TL_DATE": "2024-07-21",
             "CRATEDIGGER_MBID": "some-uuid",
-            "CRATEDIGGER_DJ_ARTWORK": "/path/to/art.jpg",
+            "CRATEDIGGER_1001TL_DJ_ARTWORK": "/path/to/art.jpg",
         })
         tags = parse_tags(data)
         assert tags["artist"] == "Tiesto"
@@ -152,11 +152,10 @@ class TestParseTags:
     def test_no_cratedigger_tags(self):
         data = _make_ffprobe_data(tags={
             "ARTIST": "Someone",
-            "DATE": "2023",
         })
         tags = parse_tags(data)
         assert tags["artist"] == "Someone"
-        assert tags["date"] == "2023"
+        assert tags["date"] == ""
         assert tags["genres"] == []
         assert tags["festival"] == ""
         assert tags["stage"] == ""
@@ -169,7 +168,7 @@ class TestParseTags:
     def test_case_insensitive_lookup(self):
         data = _make_ffprobe_data(tags={
             "artist": "lowercase",
-            "date": "2024",
+            "cratedigger_1001tl_date": "2024",
         })
         tags = parse_tags(data)
         assert tags["artist"] == "lowercase"

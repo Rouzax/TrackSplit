@@ -81,14 +81,14 @@ def parse_tags(ffprobe_data: dict) -> dict:
 
     return {
         "artist": ci.get("ARTIST", ""),
-        "festival": ci.get("CRATEDIGGER_FESTIVAL", ""),
-        "date": ci.get("DATE", ""),
+        "festival": ci.get("CRATEDIGGER_1001TL_FESTIVAL", ""),
+        "date": ci.get("CRATEDIGGER_1001TL_DATE", ""),
         "genres": genres,
-        "stage": ci.get("CRATEDIGGER_STAGE", ""),
-        "venue": ci.get("CRATEDIGGER_VENUE", ""),
+        "stage": ci.get("CRATEDIGGER_1001TL_STAGE", ""),
+        "venue": ci.get("CRATEDIGGER_1001TL_VENUE", ""),
         "comment": ci.get("CRATEDIGGER_1001TL_URL", ""),
         "musicbrainz_artistid": ci.get("CRATEDIGGER_MBID", ""),
-        "dj_artwork": ci.get("CRATEDIGGER_DJ_ARTWORK", ""),
+        "dj_artwork": ci.get("CRATEDIGGER_1001TL_DJ_ARTWORK", ""),
         "cratedigger": cratedigger,
     }
 

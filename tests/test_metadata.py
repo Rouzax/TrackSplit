@@ -141,7 +141,7 @@ def test_build_album_meta_tier2_with_stage():
         "festival": "Tomorrowland",
         "date": "2024-07-21",
         "stage": "Mainstage",
-        "genre": ["Trance", "EDM"],
+        "genres": ["Trance", "EDM"],
     }
     chapters = _make_chapters(["Track A [Armada]", "Track B"])
     meta = build_album_meta(tags, chapters, "ignored_stem", tier=2)
@@ -163,7 +163,7 @@ def test_build_album_meta_tier2_without_stage():
         "artist": "Hardwell",
         "festival": "Ultra",
         "date": "2023-03-25",
-        "genre": ["EDM"],
+        "genres": ["EDM"],
     }
     chapters = _make_chapters(["Track A"])
     meta = build_album_meta(tags, chapters, "ignored", tier=2)
@@ -200,3 +200,61 @@ def test_build_album_meta_deduplicates_titles():
     assert meta.tracks[0].title == "ID (01)"
     assert meta.tracks[1].title == "Track B"
     assert meta.tracks[2].title == "ID (03)"
+
+
+def test_build_album_meta_propagates_fields():
+    """Verify festival, stage, venue, comment, mbid are passed through."""
+    tags = {
+        "artist": "DJ Test",
+        "festival": "Tomorrowland",
+        "date": "2024-07-21",
+        "genres": ["Trance"],
+        "stage": "Mainstage",
+        "venue": "Boom",
+        "comment": "https://1001tl.com/abc",
+        "musicbrainz_artistid": "uuid-123",
+    }
+    chapters = _make_chapters(["Track A"])
+    meta = build_album_meta(tags, chapters, "", tier=2)
+    assert meta.festival == "Tomorrowland"
+    assert meta.stage == "Mainstage"
+    assert meta.venue == "Boom"
+    assert meta.comment == "https://1001tl.com/abc"
+    assert meta.musicbrainz_artistid == "uuid-123"
+
+
+def test_probe_to_metadata_to_tagger_contract():
+    """Integration: verify data flows correctly across module boundaries."""
+    from tracksplit.probe import parse_tags
+    from tracksplit.tagger import build_tag_dict
+
+    # Simulate ffprobe data with CrateDigger tags
+    ffprobe_data = {
+        "format": {
+            "tags": {
+                "ARTIST": "Martin Garrix",
+                "CRATEDIGGER_1001TL_FESTIVAL": "Tomorrowland",
+                "CRATEDIGGER_1001TL_DATE": "2024-07-21",
+                "CRATEDIGGER_1001TL_GENRES": "House|Techno",
+                "CRATEDIGGER_1001TL_STAGE": "Mainstage",
+                "CRATEDIGGER_1001TL_VENUE": "Boom",
+                "CRATEDIGGER_1001TL_URL": "https://1001tl.com/abc",
+                "CRATEDIGGER_MBID": "uuid-456",
+            }
+        }
+    }
+    tags = parse_tags(ffprobe_data)
+    chapters = _make_chapters(["Animals [Spinnin]", "Ocean"])
+    meta = build_album_meta(tags, chapters, "", tier=2)
+    tag_dict = build_tag_dict(meta, meta.tracks[0])
+
+    assert tag_dict["ARTIST"] == ["Martin Garrix"]
+    assert tag_dict["ALBUM"] == ["Martin Garrix @ Tomorrowland 2024 (Mainstage)"]
+    assert tag_dict["GENRE"] == ["House", "Techno"]
+    assert tag_dict["FESTIVAL"] == ["Tomorrowland"]
+    assert tag_dict["STAGE"] == ["Mainstage"]
+    assert tag_dict["VENUE"] == ["Boom"]
+    assert tag_dict["COMMENT"] == ["https://1001tl.com/abc"]
+    assert tag_dict["MUSICBRAINZ_ARTISTID"] == ["uuid-456"]
+    assert tag_dict["PUBLISHER"] == ["Spinnin"]
+    assert tag_dict["TITLE"] == ["Animals"]

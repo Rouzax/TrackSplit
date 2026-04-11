@@ -1,8 +1,7 @@
 """Tag FLAC files with Vorbis comments and cover art."""
 from __future__ import annotations
 
-import struct
-import base64
+import logging
 from pathlib import Path
 from typing import Sequence
 
@@ -92,5 +91,5 @@ def tag_all(
     cover_data: bytes | None = None,
 ) -> None:
     """Tag all track files by zipping paths with album.tracks."""
-    for path, track in zip(track_paths, album.tracks):
+    for path, track in zip(track_paths, album.tracks, strict=True):
         tag_flac(path, album, track, cover_data=cover_data)

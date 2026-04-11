@@ -119,7 +119,7 @@ def build_album_meta(
     clean_titles = deduplicate_titles(clean_titles)
 
     # Get genres from tags
-    genres = tags.get("genre", [])
+    genres = tags.get("genres", [])
 
     if tier == 2:
         artist = tags.get("artist", "")
@@ -156,5 +156,10 @@ def build_album_meta(
         album=album,
         date=date,
         genre=list(genres),
+        festival=tags.get("festival", ""),
+        stage=tags.get("stage", ""),
+        venue=tags.get("venue", ""),
+        comment=tags.get("comment", ""),
+        musicbrainz_artistid=tags.get("musicbrainz_artistid", ""),
         tracks=tracks,
     )
