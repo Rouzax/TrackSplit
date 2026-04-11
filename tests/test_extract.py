@@ -77,7 +77,7 @@ class TestPrepareAudio:
         audio_path, ext, codec_mode = prepare_audio(input_path, data, "auto", tmp_path)
 
         assert audio_path == input_path
-        assert ext == ".ogg"
+        assert ext == ".opus"
         assert codec_mode == "copy"
 
     def test_auto_flac_extracts(self, tmp_path):
@@ -100,7 +100,7 @@ class TestPrepareAudio:
         audio_path, ext, codec_mode = prepare_audio(input_path, data, "auto", tmp_path)
 
         assert audio_path == input_path
-        assert ext == ".ogg"
+        assert ext == ".opus"
         assert codec_mode == "libopus"
 
     def test_flac_format_always_extracts(self, tmp_path):
@@ -123,7 +123,7 @@ class TestPrepareAudio:
         audio_path, ext, codec_mode = prepare_audio(input_path, data, "ogg", tmp_path)
 
         assert audio_path == input_path
-        assert ext == ".ogg"
+        assert ext == ".opus"
         assert codec_mode == "copy"
 
     def test_ogg_format_non_opus_source(self, tmp_path):
@@ -134,7 +134,7 @@ class TestPrepareAudio:
         audio_path, ext, codec_mode = prepare_audio(input_path, data, "ogg", tmp_path)
 
         assert audio_path == input_path
-        assert ext == ".ogg"
+        assert ext == ".opus"
         assert codec_mode == "libopus"
 
     def test_unknown_format_raises(self, tmp_path):

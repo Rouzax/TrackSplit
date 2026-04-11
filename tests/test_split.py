@@ -42,7 +42,7 @@ class TestBuildSplitCommand:
     def test_from_video_adds_vn_flag(self):
         cmd = build_split_command(
             input_path=Path("/tmp/video.mkv"),
-            output_path=Path("/tmp/out/01 - Song.ogg"),
+            output_path=Path("/tmp/out/01 - Song.opus"),
             start=0.0,
             end=60.0,
             codec_mode="copy",
@@ -57,13 +57,13 @@ class TestBuildSplitCommand:
             "-vn",
             "-c:a", "copy",
             "-y",
-            "/tmp/out/01 - Song.ogg",
+            "/tmp/out/01 - Song.opus",
         ]
 
     def test_libopus_codec_mode(self):
         cmd = build_split_command(
             input_path=Path("/tmp/video.mkv"),
-            output_path=Path("/tmp/out/01 - Song.ogg"),
+            output_path=Path("/tmp/out/01 - Song.opus"),
             start=0.0,
             end=60.0,
             codec_mode="libopus",
@@ -77,7 +77,7 @@ class TestBuildSplitCommand:
     def test_libopus_with_from_video(self):
         cmd = build_split_command(
             input_path=Path("/tmp/video.mkv"),
-            output_path=Path("/tmp/out/01 - Song.ogg"),
+            output_path=Path("/tmp/out/01 - Song.opus"),
             start=10.0,
             end=70.0,
             codec_mode="libopus",
@@ -92,7 +92,7 @@ class TestBuildSplitCommand:
             "-vn",
             "-c:a", "libopus", "-b:a", "256k",
             "-y",
-            "/tmp/out/01 - Song.ogg",
+            "/tmp/out/01 - Song.opus",
         ]
 
 
@@ -103,7 +103,7 @@ class TestBuildTrackFilename:
 
     def test_ogg_extension(self):
         track = TrackMeta(number=3, title="Blah Blah Blah", start=0.0, end=60.0)
-        assert build_track_filename(track, ext=".ogg") == "03 - Blah Blah Blah.ogg"
+        assert build_track_filename(track, ext=".opus") == "03 - Blah Blah Blah.opus"
 
     def test_unsafe_chars_removed(self):
         track = TrackMeta(
@@ -171,12 +171,12 @@ class TestSplitTracks:
 
         results = split_tracks(
             full_audio, tracks, output_dir,
-            ext=".ogg", codec_mode="copy", from_video=True,
+            ext=".opus", codec_mode="copy", from_video=True,
         )
 
         assert len(results) == 2
-        assert results[0] == output_dir / "01 - First.ogg"
-        assert results[1] == output_dir / "02 - Second.ogg"
+        assert results[0] == output_dir / "01 - First.opus"
+        assert results[1] == output_dir / "02 - Second.opus"
 
         # Check from_video flag produces -vn
         first_cmd = mock_run.call_args_list[0][0][0]

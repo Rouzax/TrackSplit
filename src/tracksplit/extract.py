@@ -66,23 +66,23 @@ def prepare_audio(
 
     if output_format == "auto":
         if codec == "opus":
-            return (input_path, ".ogg", "copy")
+            return (input_path, ".opus", "copy")
         elif is_lossless_codec(codec):
             flac_path = extract_audio(input_path, temp_dir=temp_dir)
             return (flac_path, ".flac", "copy")
         else:
             # Other lossy codecs: re-encode to Opus
-            return (input_path, ".ogg", "libopus")
+            return (input_path, ".opus", "libopus")
 
     elif output_format == "flac":
         flac_path = extract_audio(input_path, temp_dir=temp_dir)
         return (flac_path, ".flac", "copy")
 
-    elif output_format == "ogg":
+    elif output_format in ("ogg", "opus"):
         if codec == "opus":
-            return (input_path, ".ogg", "copy")
+            return (input_path, ".opus", "copy")
         else:
-            return (input_path, ".ogg", "libopus")
+            return (input_path, ".opus", "libopus")
 
     else:
         raise ValueError(f"Unknown output format: {output_format}")

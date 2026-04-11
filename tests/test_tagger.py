@@ -108,9 +108,9 @@ def test_tag_ogg_writes_vorbis_comments():
 
     mock_audio = MagicMock()
     with patch("tracksplit.tagger.OggOpus", return_value=mock_audio) as mock_cls:
-        tag_ogg("/tmp/track.ogg", album, track)
+        tag_ogg("/tmp/track.opus", album, track)
 
-    mock_cls.assert_called_once_with("/tmp/track.ogg")
+    mock_cls.assert_called_once_with("/tmp/track.opus")
     mock_audio.delete.assert_called_once()
     mock_audio.save.assert_called_once()
     # Check that tags were written
@@ -124,7 +124,7 @@ def test_tag_ogg_embeds_cover():
 
     mock_audio = MagicMock()
     with patch("tracksplit.tagger.OggOpus", return_value=mock_audio):
-        tag_ogg("/tmp/track.ogg", album, track, cover_data=b"\xff\xd8fake-jpeg")
+        tag_ogg("/tmp/track.opus", album, track, cover_data=b"\xff\xd8fake-jpeg")
 
     # Check METADATA_BLOCK_PICTURE was set
     calls = {c[0][0]: c[0][1] for c in mock_audio.__setitem__.call_args_list}
@@ -132,7 +132,7 @@ def test_tag_ogg_embeds_cover():
 
 
 def test_tag_all_dispatches_by_extension():
-    """tag_all should dispatch to tag_ogg for .ogg files and tag_flac for .flac."""
+    """tag_all should dispatch to tag_ogg for .opus files and tag_flac for .flac."""
     album = AlbumMeta(
         artist="DJ Test",
         album="Mixed Album",
@@ -145,7 +145,7 @@ def test_tag_all_dispatches_by_extension():
     with patch("tracksplit.tagger.tag_flac") as mock_flac, \
          patch("tracksplit.tagger.tag_ogg") as mock_ogg:
         tag_all(
-            ["/tmp/01 - Flac Track.flac", "/tmp/02 - Ogg Track.ogg"],
+            ["/tmp/01 - Flac Track.flac", "/tmp/02 - Opus Track.opus"],
             album,
             cover_data=b"cover",
         )

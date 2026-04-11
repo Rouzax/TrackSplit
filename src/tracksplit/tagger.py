@@ -125,7 +125,7 @@ def tag_all(
     """
     for path, track in zip(track_paths, album.tracks, strict=True):
         p = Path(path)
-        if p.suffix.lower() == ".ogg":
+        if p.suffix.lower() in (".ogg", ".opus"):
             tag_ogg(p, album, track, cover_data=cover_data)
         else:
             tag_flac(p, album, track, cover_data=cover_data)

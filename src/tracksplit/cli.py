@@ -76,7 +76,7 @@ def main(
         "auto",
         "--format",
         "-f",
-        help="Output format: auto (detect from source), flac, ogg.",
+        help="Output format: auto (detect from source), flac, opus.",
     ),
 ) -> None:
     """Process video files and extract audio chapters into tagged albums."""
