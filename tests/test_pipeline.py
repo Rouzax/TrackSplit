@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch, call
 import pytest
 
 from tracksplit.models import AlbumMeta, Chapter, TrackMeta
-from tracksplit.pipeline import build_intro_track, should_regenerate
+from tracksplit.pipeline import build_intro_track, should_regenerate, _safe_log_name
 
 
 # ---------------------------------------------------------------------------
@@ -93,3 +93,18 @@ class TestShouldRegenerate:
         cache_file = album_dir / ".tracksplit_chapters.json"
         cache_file.write_text(json.dumps(cache_data))
         assert should_regenerate(album_dir, chapters, force=False) is True
+
+
+# ---------------------------------------------------------------------------
+# _safe_log_name
+# ---------------------------------------------------------------------------
+
+
+class TestSafeLogName:
+    def test_normal_path(self):
+        assert _safe_log_name(Path("/tmp/test.mkv")) == "test.mkv"
+
+    def test_surrogate_path(self):
+        """Should not raise even with surrogate bytes."""
+        result = _safe_log_name(Path("/tmp/test\udceb.mkv"))
+        assert isinstance(result, str)

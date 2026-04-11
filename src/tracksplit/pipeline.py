@@ -8,10 +8,15 @@ import logging
 import tempfile
 from pathlib import Path
 
-from tracksplit.cover import compose_cover, extract_cover_from_mkv
+from tracksplit.cover import (
+    compose_artist_cover,
+    compose_cover,
+    extract_cover_from_mkv,
+    find_dj_artwork,
+)
 from tracksplit.extract import extract_audio
 from tracksplit.metadata import build_album_meta, safe_filename
-from tracksplit.models import AlbumMeta, Chapter, TrackMeta
+from tracksplit.models import Chapter, TrackMeta
 from tracksplit.probe import (
     detect_tier,
     has_audio,
@@ -26,6 +31,16 @@ from tracksplit.tagger import tag_all
 logger = logging.getLogger(__name__)
 
 _CACHE_FILENAME = ".tracksplit_chapters.json"
+
+
+def _safe_log_name(path: Path) -> str:
+    """Return a logging-safe filename, replacing surrogate bytes."""
+    try:
+        name = path.name
+        name.encode("utf-8")
+        return name
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return path.name.encode("utf-8", errors="replace").decode("utf-8")
 
 
 def _chapters_to_dicts(chapters: list[Chapter]) -> list[dict]:
@@ -113,7 +128,7 @@ def process_file(
     ffprobe_data = run_ffprobe(input_path)
 
     if not has_audio(ffprobe_data):
-        logger.warning("No audio stream found in %s, skipping", input_path.name)
+        logger.warning("No audio stream found in %s, skipping", _safe_log_name(input_path))
         return False
 
     chapters = parse_chapters(ffprobe_data)
@@ -150,7 +165,7 @@ def process_file(
     if not should_regenerate(album_dir, chapters, force):
         logger.info(
             "Skipping %s, output unchanged since last run",
-            input_path.name,
+            _safe_log_name(input_path),
         )
         return False
 
@@ -158,7 +173,7 @@ def process_file(
     if dry_run:
         logger.info(
             "Dry run: would process %s -> %s (%d tracks)",
-            input_path.name,
+            _safe_log_name(input_path),
             album_dir,
             len(album.tracks),
         )
@@ -179,8 +194,11 @@ def process_file(
         # Cover art
         cover_data = extract_cover_from_mkv(input_path)
         cover_bytes = compose_cover(
-            album.artist,
-            album.album,
+            artist=album.artist,
+            festival=album.festival,
+            date=album.date,
+            stage=album.stage,
+            venue=album.venue,
             background_data=cover_data,
         )
 
@@ -194,7 +212,25 @@ def process_file(
     # Save chapter cache
     _save_chapter_cache(album_dir, chapters)
 
-    logger.info("Processed %s -> %s", input_path.name, album_dir)
+    # Artist cover (only if not already present)
+    artist_dir = output_dir / safe_filename(album.artist_folder)
+    artist_cover_path = artist_dir / "folder.jpg"
+    if not artist_cover_path.exists():
+        dj_artwork_data = find_dj_artwork(
+            tags.get("dj_artwork", ""),
+            input_path=input_path,
+        )
+        artist_bytes = compose_artist_cover(
+            artist=album.artist,
+            background_data=cover_data,
+            dj_artwork_data=dj_artwork_data,
+        )
+        artist_cover_path.write_bytes(artist_bytes)
+        # Also save as artist.jpg for Lyrion
+        (artist_dir / "artist.jpg").write_bytes(artist_bytes)
+        logger.info("Created artist cover: %s", artist_dir.name)
+
+    logger.info("Processed %s -> %s", _safe_log_name(input_path), album_dir)
     return True
 
 
