@@ -40,10 +40,15 @@ def status_text(status: str, name: str, detail: str = "") -> Text:
         text.append(escape(name))
         if detail:
             text.append(f" ({escape(detail)})", style="red")
+    elif status == "cancelled":
+        text.append("  canc  ", style="yellow")
+        text.append(escape(name))
+        if detail:
+            text.append(f" ({escape(detail)})", style="yellow")
     return text
 
 
-def summary_panel(processed: int, skipped: int, failed: int) -> Panel:
+def summary_panel(processed: int, skipped: int, failed: int, cancelled: int = 0) -> Panel:
     """Build a final summary panel for batch runs."""
     body = Text()
     body.append("Processed: ", style="bold")
@@ -54,6 +59,9 @@ def summary_panel(processed: int, skipped: int, failed: int) -> Panel:
     if failed:
         body.append("  failed: ", style="bold")
         body.append(str(failed), style="red")
+    if cancelled:
+        body.append("  cancelled: ", style="bold")
+        body.append(str(cancelled), style="yellow")
     return Panel(body, title="Summary", expand=True)
 
 

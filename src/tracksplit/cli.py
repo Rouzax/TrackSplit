@@ -23,7 +23,7 @@ from tracksplit.console import (
 )
 from tracksplit.pipeline import find_video_files, process_file
 from tracksplit.probe import is_video_file
-from tracksplit.subprocess_utils import kill_active_processes
+from tracksplit.subprocess_utils import CancelledError, kill_active_processes
 
 app = typer.Typer(
     name="tracksplit",
@@ -116,13 +116,16 @@ def _process_directory(
     processed = 0
     skipped = 0
     failed = 0
+    cancelled = 0
 
     if workers <= 1:
         # Sequential mode with simple spinner
         with FileProgress(console, enabled=use_live) as progress:
             for video_file in video_files:
                 if _cancel_event.is_set():
-                    break
+                    cancelled += 1
+                    progress.print(status_text("cancelled", video_file.name))
+                    continue
                 progress.set_filename(video_file.name)
                 try:
                     if process_file(
@@ -137,12 +140,20 @@ def _process_directory(
                     else:
                         skipped += 1
                         progress.print(status_text("skipped", video_file.name, "unchanged"))
+                except (CancelledError, KeyboardInterrupt):
+                    _cancel_event.set()
+                    cancelled += 1
+                    progress.print(status_text("cancelled", video_file.name))
                 except Exception:
-                    logging.getLogger(__name__).exception(
-                        "Failed to process %s", video_file.name,
-                    )
-                    failed += 1
-                    progress.print(status_text("error", video_file.name))
+                    if _cancel_event.is_set():
+                        cancelled += 1
+                        progress.print(status_text("cancelled", video_file.name))
+                    else:
+                        logging.getLogger(__name__).exception(
+                            "Failed to process %s", video_file.name,
+                        )
+                        failed += 1
+                        progress.print(status_text("error", video_file.name))
     else:
         # Parallel mode with batch progress display
         with BatchProgress(console, total_files=len(video_files), enabled=use_live) as batch:
@@ -179,12 +190,19 @@ def _process_directory(
                             else:
                                 skipped += 1
                                 batch.file_done(key, status_text("skipped", video_file.name, "unchanged"))
+                        except CancelledError:
+                            cancelled += 1
+                            batch.file_done(key, status_text("cancelled", video_file.name))
                         except Exception:
-                            logging.getLogger(__name__).exception(
-                                "Failed to process %s", video_file.name,
-                            )
-                            failed += 1
-                            batch.file_done(key, status_text("error", video_file.name))
+                            if _cancel_event.is_set():
+                                cancelled += 1
+                                batch.file_done(key, status_text("cancelled", video_file.name))
+                            else:
+                                logging.getLogger(__name__).exception(
+                                    "Failed to process %s", video_file.name,
+                                )
+                                failed += 1
+                                batch.file_done(key, status_text("error", video_file.name))
                 except KeyboardInterrupt:
                     _cancel_event.set()
                     kill_active_processes()
@@ -192,7 +210,7 @@ def _process_directory(
                         f.cancel()
 
     console.print()
-    console.print(summary_panel(processed, skipped, failed))
+    console.print(summary_panel(processed, skipped, failed, cancelled))
 
 
 @app.command()
