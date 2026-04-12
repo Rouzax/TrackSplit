@@ -676,3 +676,104 @@ class TestFindPriorAlbumDirs:
             out, src, new_album_dir=out / "Artist" / "New Album",
         )
         assert found == []
+
+
+class TestRefreshArtistCover:
+    def test_writes_when_missing(self, tmp_path):
+        from tracksplit.pipeline import refresh_artist_cover
+        artist = tmp_path / "A"
+        artist.mkdir()
+        calls = []
+        def _compose(**kw):
+            calls.append(kw)
+            return b"COVER"
+        refresh_artist_cover(
+            artist, artist_name="A", dj_artwork_data=b"jpg1",
+            compose=_compose,
+        )
+        assert (artist / "folder.jpg").read_bytes() == b"COVER"
+        assert (artist / "artist.jpg").read_bytes() == b"COVER"
+        assert calls and calls[0]["artist"] == "A"
+
+    def test_skips_when_artwork_hash_unchanged(self, tmp_path):
+        from tracksplit.manifest import (
+            ArtistManifest, artwork_sha256, save_artist_manifest,
+        )
+        from tracksplit.pipeline import refresh_artist_cover
+        artist = tmp_path / "A"
+        artist.mkdir()
+        (artist / "folder.jpg").write_bytes(b"OLD")
+        (artist / "artist.jpg").write_bytes(b"OLD")
+        save_artist_manifest(
+            artist,
+            ArtistManifest(
+                schema=1, artist="A",
+                dj_artwork_sha256=artwork_sha256(b"jpg1"),
+            ),
+        )
+        calls = []
+        def _compose(**kw):
+            calls.append(kw)
+            return b"NEW"
+        refresh_artist_cover(
+            artist, artist_name="A", dj_artwork_data=b"jpg1",
+            compose=_compose,
+        )
+        assert calls == []
+        assert (artist / "folder.jpg").read_bytes() == b"OLD"
+        assert (artist / "artist.jpg").read_bytes() == b"OLD"
+
+    def test_rewrites_when_artwork_hash_changes(self, tmp_path):
+        from tracksplit.manifest import (
+            ArtistManifest, artwork_sha256, load_artist_manifest,
+            save_artist_manifest,
+        )
+        from tracksplit.pipeline import refresh_artist_cover
+        artist = tmp_path / "A"
+        artist.mkdir()
+        (artist / "folder.jpg").write_bytes(b"OLD")
+        save_artist_manifest(
+            artist,
+            ArtistManifest(
+                schema=1, artist="A",
+                dj_artwork_sha256=artwork_sha256(b"old"),
+            ),
+        )
+        refresh_artist_cover(
+            artist, artist_name="A", dj_artwork_data=b"new",
+            compose=lambda **kw: b"NEW",
+        )
+        assert (artist / "folder.jpg").read_bytes() == b"NEW"
+        m = load_artist_manifest(artist)
+        assert m.dj_artwork_sha256 == artwork_sha256(b"new")
+
+    def test_rewrites_when_jpg_missing_even_if_hash_matches(self, tmp_path):
+        from tracksplit.manifest import (
+            ArtistManifest, artwork_sha256, save_artist_manifest,
+        )
+        from tracksplit.pipeline import refresh_artist_cover
+        artist = tmp_path / "A"
+        artist.mkdir()
+        save_artist_manifest(
+            artist,
+            ArtistManifest(
+                schema=1, artist="A",
+                dj_artwork_sha256=artwork_sha256(b"jpg1"),
+            ),
+        )
+        refresh_artist_cover(
+            artist, artist_name="A", dj_artwork_data=b"jpg1",
+            compose=lambda **kw: b"REGEN",
+        )
+        assert (artist / "folder.jpg").read_bytes() == b"REGEN"
+        assert (artist / "artist.jpg").read_bytes() == b"REGEN"
+
+    def test_no_dj_artwork_still_writes_on_first_run(self, tmp_path):
+        from tracksplit.pipeline import refresh_artist_cover
+        artist = tmp_path / "A"
+        artist.mkdir()
+        refresh_artist_cover(
+            artist, artist_name="A", dj_artwork_data=None,
+            compose=lambda **kw: b"PLAIN",
+        )
+        assert (artist / "folder.jpg").read_bytes() == b"PLAIN"

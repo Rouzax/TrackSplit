@@ -21,12 +21,16 @@ from tracksplit.cover import (
 from tracksplit.cratedigger import apply_cratedigger_canon
 from tracksplit.extract import decide_codec, prepare_audio
 from tracksplit.manifest import (
+    ArtistManifest,
     LEGACY_CHAPTER_CACHE_FILENAME,
     TAG_KEYS,
     SourceFingerprint,
+    artwork_sha256,
     build_album_manifest,
     load_album_manifest,
+    load_artist_manifest,
     save_album_manifest,
+    save_artist_manifest,
 )
 from tracksplit.metadata import build_album_meta, safe_filename
 from tracksplit.models import Chapter, TrackMeta
@@ -179,6 +183,49 @@ def _remove_stale_album_dirs(
             shutil.rmtree(stale)
         except OSError as exc:
             logger.warning("Could not remove %s: %s", stale, exc)
+
+
+def refresh_artist_cover(
+    artist_dir: Path,
+    *,
+    artist_name: str,
+    dj_artwork_data: bytes | None,
+    compose,
+) -> None:
+    """Write folder.jpg / artist.jpg iff the DJ artwork hash changed.
+
+    ``compose`` is a callable matching ``cover.compose_artist_cover``'s
+    keyword signature, injected so tests can substitute a stub.
+    """
+    new_hash = artwork_sha256(dj_artwork_data)
+    existing = load_artist_manifest(artist_dir)
+    folder_jpg = artist_dir / "folder.jpg"
+    artist_jpg = artist_dir / "artist.jpg"
+    if (
+        existing is not None
+        and existing.dj_artwork_sha256 == new_hash
+        and folder_jpg.exists()
+        and artist_jpg.exists()
+    ):
+        return
+    try:
+        artist_dir.mkdir(parents=True, exist_ok=True)
+        cover_bytes = compose(
+            artist=artist_name, dj_artwork_data=dj_artwork_data,
+        )
+        folder_jpg.write_bytes(cover_bytes)
+        artist_jpg.write_bytes(cover_bytes)
+        save_artist_manifest(
+            artist_dir,
+            ArtistManifest(
+                schema=1, artist=artist_name, dj_artwork_sha256=new_hash,
+            ),
+        )
+        logger.info("Refreshed artist cover: %s", artist_dir.name)
+    except OSError as exc:
+        logger.warning(
+            "Could not refresh artist cover for %s: %s", artist_dir, exc,
+        )
 
 
 def should_regenerate(
@@ -392,21 +439,13 @@ def process_file(
             except OSError:
                 pass
 
-    # Artist cover (only if not already present, tolerates parallel races)
     artist_dir = output_dir / safe_filename(album.artist_folder)
-    artist_cover_path = artist_dir / "folder.jpg"
-    if not artist_cover_path.exists():
-        try:
-            artist_bytes = compose_artist_cover(
-                artist=album.artist,
-                dj_artwork_data=dj_artwork_data,
-            )
-            artist_cover_path.write_bytes(artist_bytes)
-            # Also save as artist.jpg for Lyrion
-            (artist_dir / "artist.jpg").write_bytes(artist_bytes)
-            logger.info("Created artist cover: %s", artist_dir.name)
-        except OSError:
-            pass  # another worker may have written it concurrently
+    refresh_artist_cover(
+        artist_dir,
+        artist_name=album.artist,
+        dj_artwork_data=dj_artwork_data,
+        compose=compose_artist_cover,
+    )
 
     logger.info("Processed %s -> %s", _safe_log_name(input_path), album_dir)
     return True
