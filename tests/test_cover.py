@@ -164,6 +164,11 @@ class TestComposeCover:
             f"below-line text overflows: {L['final_cursor_y']} > "
             f"{L['size'] - L['bottom_margin']}"
         )
+        # Line is pinned at y=720 regardless of content.
+        assert L["line_y"] == int(720 * (L["size"] / 1000.0))
+        # Stage collapses to at most a single line; venue is dropped.
+        assert len(L["stage_parts"]) <= 1
+        assert L["venue_font"] is None
 
 
 class TestFindDjArtwork:

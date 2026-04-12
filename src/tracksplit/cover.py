@@ -391,9 +391,9 @@ def _layout_album_cover(
     photo_h = int(size * PHOTO_HEIGHT_FRAC)
 
     PAD_LINE_TO_ARTIST = int(28 * s)
-    PAD_LINE_TO_FEST = int(26 * s)
-    PAD_FEST_TO_DATE = int(18 * s)
-    PAD_DATE_TO_DETAIL = int(18 * s)
+    PAD_LINE_TO_FEST = int(20 * s)
+    PAD_FEST_TO_DATE = int(14 * s)
+    PAD_DATE_TO_DETAIL = int(14 * s)
     PAD_DETAIL_LINES = int(8 * s)
 
     artist_text = artist.upper()
@@ -407,7 +407,7 @@ def _layout_album_cover(
     fest_h = 0
     if fest_text:
         fest_font = _auto_fit(
-            fest_text, True, max_text_w, start=int(100 * s), minimum=int(36 * s)
+            fest_text, True, max_text_w, start=int(80 * s), minimum=int(36 * s)
         )
         fest_h = _font_height(fest_font)
 
@@ -416,69 +416,22 @@ def _layout_album_cover(
     date_h = 0
     if date_display:
         date_font = _auto_fit(
-            date_display, False, max_text_w, start=int(56 * s), minimum=int(26 * s)
+            date_display, False, max_text_w, start=int(44 * s), minimum=int(26 * s)
         )
         date_h = _font_height(date_font)
 
-    stage_parts = [p.strip() for p in (stage or "").split(",") if p.strip()]
+    # Stage collapses to at most one line: first comma-separated part only.
+    first_stage = (stage or "").split(",")[0].strip()
+    stage_parts = [first_stage] if first_stage else []
     stage_fonts: list = []
     stage_heights: list[int] = []
     for part in stage_parts:
-        sf = _auto_fit(part, False, max_text_w, start=int(44 * s), minimum=int(22 * s))
+        sf = _auto_fit(part, False, max_text_w, start=int(36 * s), minimum=int(22 * s))
         stage_fonts.append(sf)
         stage_heights.append(_font_height(sf))
 
-    show_venue = bool(venue) and venue.lower() != (stage or "").lower()
-    venue_font = None
-    venue_h = 0
-    if show_venue:
-        venue_font = _auto_fit(
-            venue, False, max_text_w, start=int(36 * s), minimum=int(20 * s)
-        )
-        venue_h = _font_height(venue_font)
-
-    def below_height() -> int:
-        total = 0
-        if fest_font is not None:
-            total += fest_h + PAD_FEST_TO_DATE
-        if date_font is not None:
-            total += date_h + PAD_DATE_TO_DETAIL
-        for h in stage_heights:
-            total += h + PAD_DETAIL_LINES
-        if venue_font is not None:
-            total += venue_h + PAD_DETAIL_LINES
-        if total:
-            total = PAD_LINE_TO_FEST + total
-        return total
-
-    # Line must sit below the photo block, leaving room for artist text
-    # in the faded/gradient zone between photo bottom and the line.
-    photo_fade_start = int(photo_h * PHOTO_FADE_START_FRAC)
-    min_line_y = photo_fade_start + PAD_LINE_TO_ARTIST + artist_h + int(8 * s)
-    target_line_y = max(int(720 * s), min_line_y)
-
-    def required_line_y() -> int:
-        return size - below_height() - line_h - bottom_margin
-
-    if required_line_y() < min_line_y and venue_font is not None:
-        venue_font = None
-        venue_h = 0
-        show_venue = False
-
-    if required_line_y() < min_line_y:
-        if date_font is not None and date_display:
-            date_font = _auto_fit(
-                date_display, False, max_text_w, start=int(34 * s), minimum=int(26 * s)
-            )
-            date_h = _font_height(date_font)
-        for i, part in enumerate(stage_parts):
-            stage_fonts[i] = _auto_fit(
-                part, False, max_text_w, start=int(28 * s), minimum=int(22 * s)
-            )
-            stage_heights[i] = _font_height(stage_fonts[i])
-
-    line_y = min(target_line_y, required_line_y())
-    line_y = max(line_y, min_line_y)
+    # Line is pinned so the accent rail sits at the same Y on every cover.
+    line_y = int(720 * s)
 
     artist_y = line_y - PAD_LINE_TO_ARTIST - artist_h
 
@@ -490,8 +443,6 @@ def _layout_album_cover(
         cursor_y += date_h + PAD_DATE_TO_DETAIL
     for h in stage_heights:
         cursor_y += h + PAD_DETAIL_LINES
-    if venue_font is not None:
-        cursor_y += venue_h + PAD_DETAIL_LINES
 
     return {
         "size": size,
@@ -515,9 +466,9 @@ def _layout_album_cover(
         "stage_parts": stage_parts,
         "stage_fonts": stage_fonts,
         "stage_heights": stage_heights,
-        "venue_text": venue if show_venue else "",
-        "venue_font": venue_font,
-        "venue_h": venue_h,
+        "venue_text": "",
+        "venue_font": None,
+        "venue_h": 0,
         "final_cursor_y": cursor_y,
         "top_margin": top_margin,
         "bottom_margin": bottom_margin,
@@ -568,9 +519,6 @@ def compose_cover(
     for part, sf, sh in zip(L["stage_parts"], L["stage_fonts"], L["stage_heights"]):
         _draw_centered_no_shadow(draw, size, cursor_y, part, sf, (255, 255, 255))
         cursor_y += sh + L["pad_detail_lines"]
-
-    if L["venue_font"] is not None:
-        _draw_centered_no_shadow(draw, size, cursor_y, L["venue_text"], L["venue_font"], (200, 200, 200))
 
     buf = io.BytesIO()
     result.save(buf, format="JPEG", quality=90)
