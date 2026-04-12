@@ -143,17 +143,15 @@ def find_prior_album_dirs(
     except OSError:
         return []
 
-    new_resolved = (
-        new_album_dir.resolve() if new_album_dir.exists() else new_album_dir
-    )
+    new_resolved = new_album_dir.resolve(strict=False)
 
     matches: list[Path] = []
     for album_dir in output_root.glob("*/*"):
         if not album_dir.is_dir():
             continue
-        if album_dir.resolve() == (
-            new_resolved if isinstance(new_resolved, Path) else new_resolved
-        ):
+        if album_dir.is_symlink():
+            continue
+        if album_dir.resolve(strict=False) == new_resolved:
             continue
         manifest = load_album_manifest(album_dir)
         if manifest is None:

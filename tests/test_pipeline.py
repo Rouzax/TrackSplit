@@ -631,3 +631,48 @@ class TestFindPriorAlbumDirs:
         assert find_prior_album_dirs(
             out, src, new_album_dir=out / "Artist" / "Other",
         ) == []
+
+    def test_does_not_match_different_path_same_size(self, tmp_path):
+        from tracksplit.pipeline import find_prior_album_dirs
+        srcA = tmp_path / "a.mkv"
+        srcA.write_bytes(b"x" * 10)
+        srcB = tmp_path / "b.mkv"
+        srcB.write_bytes(b"y" * 10)  # same size as srcA, different content/path
+        out = tmp_path / "out"
+        self._write_manifest(
+            out / "ArtistA" / "AlbA", srcA,
+            srcA.stat().st_size, srcA.stat().st_mtime_ns,
+        )
+        self._write_manifest(
+            out / "ArtistB" / "AlbB", srcB,
+            srcB.stat().st_size, srcB.stat().st_mtime_ns,
+        )
+
+        found = find_prior_album_dirs(
+            out, srcA, new_album_dir=out / "Something" / "Else",
+        )
+        assert found == [out / "ArtistA" / "AlbA"]
+
+    def test_skips_symlinked_album_dir(self, tmp_path):
+        from tracksplit.pipeline import find_prior_album_dirs
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        # Real album dir outside the output tree.
+        real = tmp_path / "outside" / "Artist" / "Album"
+        self._write_manifest(
+            real, src, src.stat().st_size, src.stat().st_mtime_ns,
+        )
+        # Symlink under the output root pointing at the real dir.
+        out = tmp_path / "out"
+        (out / "Artist").mkdir(parents=True)
+        link = out / "Artist" / "Album"
+        try:
+            link.symlink_to(real, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            import pytest
+            pytest.skip("symlink creation not supported on this filesystem")
+
+        found = find_prior_album_dirs(
+            out, src, new_album_dir=out / "Artist" / "New Album",
+        )
+        assert found == []
