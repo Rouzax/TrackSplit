@@ -141,6 +141,30 @@ class TestComposeCover:
         img = Image.open(io.BytesIO(result))
         assert img.size == (1000, 1000)
 
+    def test_layout_no_overlap_no_overflow(self):
+        """Worst-case text must sit below the photo and stay within canvas."""
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="Agents Of Time",
+            festival="Tomorrowland Belgium",
+            date="2025-07-25",
+            stage="Live At The Main Stage, Mainstage",
+            venue="De Schorre, Boom, Belgium",
+            size=1000,
+        )
+        # Artist text must land within the fade/gradient zone, i.e. below
+        # the photo's opaque region.
+        photo_fade_start = int(L["photo_h"] * 0.60)
+        assert L["artist_y"] >= photo_fade_start, (
+            f"artist text overlaps opaque photo: artist_y={L['artist_y']} "
+            f"< fade_start={photo_fade_start}"
+        )
+        assert L["final_cursor_y"] <= L["size"] - L["bottom_margin"], (
+            f"below-line text overflows: {L['final_cursor_y']} > "
+            f"{L['size'] - L['bottom_margin']}"
+        )
+
 
 class TestFindDjArtwork:
     def test_finds_dj_artwork_jpg_in_global(self, tmp_path):

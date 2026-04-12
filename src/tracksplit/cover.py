@@ -305,6 +305,225 @@ def format_date_display(date: str) -> str:
 # ---------------------------------------------------------------------------
 # Album cover composition
 # ---------------------------------------------------------------------------
+PHOTO_HEIGHT_FRAC = 0.60
+PHOTO_FADE_START_FRAC = 0.60
+GRADIENT_START_FRAC = 0.40
+GRADIENT_MAX_ALPHA = 200
+GRADIENT_GAMMA = 1.4
+
+
+def _apply_fade_photo(
+    canvas: Image.Image,
+    photo_data: bytes,
+    photo_h: int,
+) -> None:
+    """Paste photo at top of canvas, cover-fit to width, fading to transparent
+    starting at PHOTO_FADE_START_FRAC of photo height.
+    """
+    w = canvas.size[0]
+    try:
+        src = Image.open(io.BytesIO(photo_data)).convert("RGBA")
+    except Exception:
+        logger.warning("Failed to open set artwork for fade photo; skipping")
+        return
+
+    src_w, src_h = src.size
+    scale = max(w / src_w, photo_h / src_h)
+    new_w = int(src_w * scale)
+    new_h = int(src_h * scale)
+    src = src.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+    left = (new_w - w) // 2
+    top = (new_h - photo_h) // 2
+    photo = src.crop((left, top, left + w, top + photo_h))
+
+    fade_mask = Image.new("L", (w, photo_h), 255)
+    fade_start = int(photo_h * PHOTO_FADE_START_FRAC)
+    if photo_h > fade_start:
+        dm = ImageDraw.Draw(fade_mask)
+        span = photo_h - fade_start
+        for y in range(fade_start, photo_h):
+            alpha = int(255 * (1.0 - (y - fade_start) / span))
+            dm.line([(0, y), (w, y)], fill=alpha)
+
+    photo.putalpha(fade_mask)
+    canvas.alpha_composite(photo, dest=(0, 0))
+
+
+def _apply_dark_gradient(canvas: Image.Image) -> None:
+    """Composite a darkening gradient from GRADIENT_START_FRAC down to bottom
+    using a gamma-shaped curve for natural falloff.
+    """
+    w, h = canvas.size
+    start = int(h * GRADIENT_START_FRAC)
+    if start >= h:
+        return
+    overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    dg = ImageDraw.Draw(overlay)
+    span = h - start
+    for y in range(start, h):
+        progress = (y - start) / span
+        a = int(GRADIENT_MAX_ALPHA * (progress ** GRADIENT_GAMMA))
+        dg.line([(0, y), (w, y)], fill=(0, 0, 0, a))
+    canvas.alpha_composite(overlay)
+
+
+def _layout_album_cover(
+    artist: str,
+    festival: str,
+    date: str,
+    stage: str,
+    venue: str,
+    size: int,
+) -> dict:
+    """Measure fonts and compute positions for compose_cover.
+
+    Returns a dict with fitted fonts, their heights, and y-positions.
+    Below-line content shrinks / drops venue to fit within canvas.
+    Line position is pinned below the photo area.
+    """
+    s = size / 1000.0
+    max_text_w = int(size * 0.85)
+    bottom_margin = int(20 * s)
+    top_margin = int(20 * s)
+    line_h = max(1, int(4 * s))
+    line_w = int(400 * s)
+    photo_h = int(size * PHOTO_HEIGHT_FRAC)
+
+    PAD_LINE_TO_ARTIST = int(28 * s)
+    PAD_LINE_TO_FEST = int(26 * s)
+    PAD_FEST_TO_DATE = int(18 * s)
+    PAD_DATE_TO_DETAIL = int(18 * s)
+    PAD_DETAIL_LINES = int(8 * s)
+
+    artist_text = artist.upper()
+    artist_font = _auto_fit(
+        artist_text, True, max_text_w, start=int(100 * s), minimum=int(54 * s)
+    )
+    artist_h = _font_height(artist_font)
+
+    fest_text = festival.upper() if festival else ""
+    fest_font = None
+    fest_h = 0
+    if fest_text:
+        fest_font = _auto_fit(
+            fest_text, True, max_text_w, start=int(100 * s), minimum=int(36 * s)
+        )
+        fest_h = _font_height(fest_font)
+
+    date_display = format_date_display(date)
+    date_font = None
+    date_h = 0
+    if date_display:
+        date_font = _auto_fit(
+            date_display, False, max_text_w, start=int(56 * s), minimum=int(26 * s)
+        )
+        date_h = _font_height(date_font)
+
+    stage_parts = [p.strip() for p in (stage or "").split(",") if p.strip()]
+    stage_fonts: list = []
+    stage_heights: list[int] = []
+    for part in stage_parts:
+        sf = _auto_fit(part, False, max_text_w, start=int(44 * s), minimum=int(22 * s))
+        stage_fonts.append(sf)
+        stage_heights.append(_font_height(sf))
+
+    show_venue = bool(venue) and venue.lower() != (stage or "").lower()
+    venue_font = None
+    venue_h = 0
+    if show_venue:
+        venue_font = _auto_fit(
+            venue, False, max_text_w, start=int(36 * s), minimum=int(20 * s)
+        )
+        venue_h = _font_height(venue_font)
+
+    def below_height() -> int:
+        total = 0
+        if fest_font is not None:
+            total += fest_h + PAD_FEST_TO_DATE
+        if date_font is not None:
+            total += date_h + PAD_DATE_TO_DETAIL
+        for h in stage_heights:
+            total += h + PAD_DETAIL_LINES
+        if venue_font is not None:
+            total += venue_h + PAD_DETAIL_LINES
+        if total:
+            total = PAD_LINE_TO_FEST + total
+        return total
+
+    # Line must sit below the photo block, leaving room for artist text
+    # in the faded/gradient zone between photo bottom and the line.
+    photo_fade_start = int(photo_h * PHOTO_FADE_START_FRAC)
+    min_line_y = photo_fade_start + PAD_LINE_TO_ARTIST + artist_h + int(8 * s)
+    target_line_y = max(int(720 * s), min_line_y)
+
+    def required_line_y() -> int:
+        return size - below_height() - line_h - bottom_margin
+
+    if required_line_y() < min_line_y and venue_font is not None:
+        venue_font = None
+        venue_h = 0
+        show_venue = False
+
+    if required_line_y() < min_line_y:
+        if date_font is not None and date_display:
+            date_font = _auto_fit(
+                date_display, False, max_text_w, start=int(34 * s), minimum=int(26 * s)
+            )
+            date_h = _font_height(date_font)
+        for i, part in enumerate(stage_parts):
+            stage_fonts[i] = _auto_fit(
+                part, False, max_text_w, start=int(28 * s), minimum=int(22 * s)
+            )
+            stage_heights[i] = _font_height(stage_fonts[i])
+
+    line_y = min(target_line_y, required_line_y())
+    line_y = max(line_y, min_line_y)
+
+    artist_y = line_y - PAD_LINE_TO_ARTIST - artist_h
+
+    # Final cursor check after placement.
+    cursor_y = line_y + line_h + PAD_LINE_TO_FEST
+    if fest_font is not None:
+        cursor_y += fest_h + PAD_FEST_TO_DATE
+    if date_font is not None:
+        cursor_y += date_h + PAD_DATE_TO_DETAIL
+    for h in stage_heights:
+        cursor_y += h + PAD_DETAIL_LINES
+    if venue_font is not None:
+        cursor_y += venue_h + PAD_DETAIL_LINES
+
+    return {
+        "size": size,
+        "artist_text": artist_text,
+        "artist_font": artist_font,
+        "artist_y": artist_y,
+        "photo_h": photo_h,
+        "line_y": line_y,
+        "line_h": line_h,
+        "line_w": line_w,
+        "pad_line_to_fest": PAD_LINE_TO_FEST,
+        "pad_fest_to_date": PAD_FEST_TO_DATE,
+        "pad_date_to_detail": PAD_DATE_TO_DETAIL,
+        "pad_detail_lines": PAD_DETAIL_LINES,
+        "fest_text": fest_text,
+        "fest_font": fest_font,
+        "fest_h": fest_h,
+        "date_text": date_display,
+        "date_font": date_font,
+        "date_h": date_h,
+        "stage_parts": stage_parts,
+        "stage_fonts": stage_fonts,
+        "stage_heights": stage_heights,
+        "venue_text": venue if show_venue else "",
+        "venue_font": venue_font,
+        "venue_h": venue_h,
+        "final_cursor_y": cursor_y,
+        "top_margin": top_margin,
+        "bottom_margin": bottom_margin,
+    }
+
+
 def compose_cover(
     artist: str,
     festival: str,
@@ -314,107 +533,44 @@ def compose_cover(
     background_data: bytes | None = None,
     size: int = 1000,
 ) -> bytes:
-    """Compose a line-anchored square album cover.
+    """Compose an album cover with the set thumb fading into the dark.
 
-    Layout: sharp set artwork (1:1, rounded corners) centered above artist
-    name, with blurred version as background. Festival/date/stage/venue
-    below accent line.
+    Layout: set artwork cover-fit to the top portion of the canvas, alpha-
+    fading into a darkening gradient below; accent line with artist above,
+    festival / date / stage / venue below.
     """
-    s = size / 1000.0
-
-    ART_SIZE = int(550 * s)  # same proportion as artist cover photo
-    LINE_Y = int(750 * s)   # same as artist cover
-    LINE_H = max(1, int(4 * s))
-    LINE_W = int(400 * s)
-    PAD_ART_TO_ARTIST = int(24 * s)  # same as artist cover
-    PAD_LINE_TO_ARTIST = int(28 * s)
-    PAD_LINE_TO_FEST = int(26 * s)
-    PAD_FEST_TO_DATE = int(18 * s)
-    PAD_DATE_TO_DETAIL = int(18 * s)
-    PAD_DETAIL_LINES = int(8 * s)
+    L = _layout_album_cover(artist, festival, date, stage, venue, size)
 
     bg, accent = _prepare_background(background_data, size, darkness=0.18)
-
-    max_text_w = int(size * 0.85)
-
-    # Artist text
-    artist_text = artist.upper()
-    artist_font = _auto_fit(artist_text, True, max_text_w, start=int(72 * s), minimum=int(36 * s))
-    artist_h = _font_height(artist_font)
-
-    # Positions: same as artist cover layout
-    artist_y = LINE_Y - PAD_LINE_TO_ARTIST - artist_h
-    art_y = artist_y - PAD_ART_TO_ARTIST - ART_SIZE
-    art_y = max(int(20 * s), art_y)
-
-    # Draw on RGBA canvas
     canvas = bg.convert("RGBA")
-    draw = ImageDraw.Draw(canvas)
 
-    # Sharp set artwork with rounded corners
     if background_data is not None:
-        try:
-            art = Image.open(io.BytesIO(background_data)).convert("RGBA")
-            # Center-crop to square
-            w, h = art.size
-            crop_size = min(w, h)
-            left = (w - crop_size) // 2
-            top = (h - crop_size) // 2
-            art = art.crop((left, top, left + crop_size, top + crop_size))
-            art = art.resize((ART_SIZE, ART_SIZE), Image.Resampling.LANCZOS)
+        _apply_fade_photo(canvas, background_data, L["photo_h"])
+    _apply_dark_gradient(canvas)
 
-            # Rounded corners
-            corner_radius = int(ART_SIZE * 0.06)
-            mask = Image.new("L", (ART_SIZE, ART_SIZE), 0)
-            mask_draw = ImageDraw.Draw(mask)
-            mask_draw.rounded_rectangle(
-                [0, 0, ART_SIZE - 1, ART_SIZE - 1],
-                radius=corner_radius, fill=255,
-            )
-            art.putalpha(mask)
+    draw = ImageDraw.Draw(canvas)
+    _draw_centered(draw, size, L["artist_y"], L["artist_text"], L["artist_font"], (255, 255, 255, 255))
 
-            art_x = (size - ART_SIZE) // 2
-            canvas.paste(art, (art_x, art_y), art)
-        except Exception:
-            logger.warning("Failed to process set artwork for album cover, using plain background")
-
-    # Artist with drop shadow
-    _draw_centered(draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255))
-
-    # Glow line
     result = canvas.convert("RGB")
-    result = _draw_glow_line(result, LINE_Y, LINE_W, LINE_H, accent)
+    result = _draw_glow_line(result, L["line_y"], L["line_w"], L["line_h"], accent)
 
-    # Below-line text
     draw = ImageDraw.Draw(result)
-    cursor_y = LINE_Y + LINE_H + PAD_LINE_TO_FEST
+    cursor_y = L["line_y"] + L["line_h"] + L["pad_line_to_fest"]
 
-    # Festival name: accent color, bold, uppercase
-    if festival:
-        fest_text = festival.upper()
-        fest_font = _auto_fit(fest_text, True, max_text_w, start=int(44 * s), minimum=int(26 * s))
-        _draw_centered_no_shadow(draw, size, cursor_y, fest_text, fest_font, accent)
-        cursor_y += _font_height(fest_font) + PAD_FEST_TO_DATE
+    if L["fest_font"] is not None:
+        _draw_centered_no_shadow(draw, size, cursor_y, L["fest_text"], L["fest_font"], accent)
+        cursor_y += L["fest_h"] + L["pad_fest_to_date"]
 
-    # Date
-    date_display = format_date_display(date)
-    if date_display:
-        date_font = _auto_fit(date_display, False, max_text_w, start=int(36 * s), minimum=int(24 * s))
-        _draw_centered_no_shadow(draw, size, cursor_y, date_display, date_font, (255, 255, 255))
-        cursor_y += _font_height(date_font) + PAD_DATE_TO_DETAIL
+    if L["date_font"] is not None:
+        _draw_centered_no_shadow(draw, size, cursor_y, L["date_text"], L["date_font"], (255, 255, 255))
+        cursor_y += L["date_h"] + L["pad_date_to_detail"]
 
-    # Stage (split on comma: "Set Name, Stage Name")
-    if stage:
-        for part in [p.strip() for p in stage.split(",") if p.strip()]:
-            stage_font = _auto_fit(part, False, max_text_w, start=int(30 * s), minimum=int(20 * s))
-            _draw_centered_no_shadow(draw, size, cursor_y, part, stage_font, (255, 255, 255))
-            cursor_y += _font_height(stage_font) + PAD_DETAIL_LINES
+    for part, sf, sh in zip(L["stage_parts"], L["stage_fonts"], L["stage_heights"]):
+        _draw_centered_no_shadow(draw, size, cursor_y, part, sf, (255, 255, 255))
+        cursor_y += sh + L["pad_detail_lines"]
 
-    # Venue (auto-fit, deduplicate against stage)
-    if venue and venue.lower() != (stage or "").lower():
-        venue_font = _auto_fit(venue, False, max_text_w, start=int(28 * s), minimum=int(18 * s))
-        _draw_centered_no_shadow(draw, size, cursor_y, venue, venue_font, (200, 200, 200))
-        cursor_y += _font_height(venue_font) + PAD_DETAIL_LINES
+    if L["venue_font"] is not None:
+        _draw_centered_no_shadow(draw, size, cursor_y, L["venue_text"], L["venue_font"], (200, 200, 200))
 
     buf = io.BytesIO()
     result.save(buf, format="JPEG", quality=90)
@@ -469,7 +625,6 @@ def compose_artist_cover(
     """
     s = size / 1000.0
 
-    LINE_Y = int(750 * s)  # text at 75%, photo builds up from there
     LINE_H = max(1, int(4 * s))
     LINE_W = int(400 * s)
     PAD_LINE_TO_ARTIST = int(28 * s)
@@ -483,8 +638,13 @@ def compose_artist_cover(
 
     # Artist name
     artist_text = artist.upper()
-    artist_font = _auto_fit(artist_text, True, max_text_w, start=int(90 * s), minimum=int(40 * s))
+    artist_font = _auto_fit(artist_text, True, max_text_w, start=int(100 * s), minimum=int(54 * s))
     artist_h = _font_height(artist_font)
+
+    # Center the photo + artist + line block vertically on the canvas.
+    block_h = PHOTO_SIZE + PAD_PHOTO_TO_ARTIST + artist_h + PAD_LINE_TO_ARTIST + LINE_H
+    block_top = max(int(20 * s), (size - block_h) // 2)
+    LINE_Y = block_top + block_h - LINE_H
     artist_y = LINE_Y - PAD_LINE_TO_ARTIST - artist_h
 
     canvas = bg.convert("RGBA")

@@ -184,7 +184,7 @@ def test_build_album_meta_tier2_with_stage():
     chapters = _make_chapters(["Track A [Armada]", "Track B"])
     meta = build_album_meta(tags, chapters, "ignored_stem", tier=2)
     assert meta.artist == "Armin van Buuren"
-    assert meta.album == "Armin van Buuren @ Tomorrowland 2024 (Mainstage)"
+    assert meta.album == "Tomorrowland 2024 (Mainstage)"
     assert meta.date == "2024-07-21"
     assert meta.genre == ["Trance", "EDM"]
     assert len(meta.tracks) == 2
@@ -205,7 +205,7 @@ def test_build_album_meta_tier2_without_stage():
     }
     chapters = _make_chapters(["Track A"])
     meta = build_album_meta(tags, chapters, "ignored", tier=2)
-    assert meta.album == "Hardwell @ Ultra 2023"
+    assert meta.album == "Ultra 2023"
 
 
 def test_build_album_meta_tier1():
@@ -327,7 +327,7 @@ def test_probe_to_metadata_to_tagger_contract():
     tag_dict = build_tag_dict(meta, meta.tracks[0])
 
     assert tag_dict["ARTIST"] == ["Martin Garrix"]
-    assert tag_dict["ALBUM"] == ["Martin Garrix @ Tomorrowland 2024 (Mainstage)"]
+    assert tag_dict["ALBUM"] == ["Tomorrowland 2024 (Mainstage)"]
     assert tag_dict["GENRE"] == ["House", "Techno"]
     assert tag_dict["FESTIVAL"] == ["Tomorrowland"]
     assert tag_dict["STAGE"] == ["Mainstage"]

@@ -116,7 +116,7 @@ def build_album_meta(
 ) -> AlbumMeta:
     """Build album metadata from parsed tags and chapters.
 
-    Tier 2: album = "Artist @ Festival Year (Stage)" with full tag data.
+    Tier 2: album = "Festival Year (Stage)" with full tag data.
     Tier 1: album = filename_stem, artist/date parsed from filename.
     """
     # Strip labels, then split artist from title
@@ -144,7 +144,7 @@ def build_album_meta(
         year = date[:4] if date else ""
 
         if festival:
-            album = f"{artist} @ {festival} {year}".strip()
+            album = f"{festival} {year}".strip()
             if stage:
                 album = f"{album} ({stage})"
         else:
