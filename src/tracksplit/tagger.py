@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import logging
+import re
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -11,9 +12,35 @@ from mutagen.oggopus import OggOpus
 
 from tracksplit.models import AlbumMeta, TrackMeta
 
+# Matches collab separators in an album-artist string. A single MBID cannot
+# identify two performers, so we suppress MUSICBRAINZ_ALBUMARTISTID when any
+# of these appear as whitespace-delimited tokens: "X & Y", "X | Y", "X vs Y"
+# (with or without trailing dot), "X x Y". Whitespace-delimited so names like
+# "Axwell", "deadmau5", or "Eric Prydz" do not false-positive.
+_COLLAB_SEPARATOR_RE = re.compile(r"\s(?:&|\||vs\.?|x)\s", re.IGNORECASE)
+
+
+def _is_collab_artist(artist: str) -> bool:
+    return bool(_COLLAB_SEPARATOR_RE.search(artist))
+
 
 def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
     """Build a Vorbis comment dict from album and track metadata.
+
+    Tag policy (single source of truth for both FLAC and OggOpus):
+
+    - ``TITLE`` / ``ARTIST``: per-track. ``ARTIST`` falls back to ``album.artist``
+      when the chapter title had no "Artist - Title" separator.
+    - ``ALBUMARTIST``: always the album-level artist (the set headliner).
+    - ``MUSICBRAINZ_ALBUMARTISTID``: the album artist's MusicBrainz ID, under the
+      Picard-canonical key. Suppressed for B2B/collab album artists (those
+      containing "&", "|", "vs.", or " x ") because a single MBID cannot
+      identify two performers; writing it anyway would merge the collab album
+      into one member's solo discography in LMS/Jellyfin.
+    - ``MUSICBRAINZ_ARTISTID`` (per-track MBID) is **never** emitted: TrackSplit
+      has no per-track-artist MBIDs. Writing the album-artist MBID here (the
+      pre-fix behavior) caused Lyrion to dedupe every track to a single
+      contributor row.
 
     All values are lists of strings per the Vorbis comment specification.
     Optional tags are omitted when their source value is empty.
@@ -45,8 +72,8 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
     if album.comment:
         tags["COMMENT"] = [album.comment]
 
-    if album.musicbrainz_artistid:
-        tags["MUSICBRAINZ_ARTISTID"] = [album.musicbrainz_artistid]
+    if album.musicbrainz_artistid and not _is_collab_artist(album.artist):
+        tags["MUSICBRAINZ_ALBUMARTISTID"] = [album.musicbrainz_artistid]
 
     if album.festival:
         tags["FESTIVAL"] = [album.festival]

@@ -38,9 +38,17 @@ The album folder name depends on the metadata tier (see below). With full CrateD
 
 Vorbis comments written on every track:
 
-`TITLE`, `ARTIST`, `ALBUMARTIST`, `ALBUM`, `TRACKNUMBER`, `TRACKTOTAL`, `DISCNUMBER`, `DATE`, `GENRE`, `PUBLISHER`, `COMMENT`, `MUSICBRAINZ_ARTISTID`, `FESTIVAL`, `STAGE`, `VENUE`.
+`TITLE`, `ARTIST`, `ALBUMARTIST`, `ALBUM`, `TRACKNUMBER`, `TRACKTOTAL`, `DISCNUMBER`, `DATE`, `GENRE`, `PUBLISHER`, `COMMENT`, `MUSICBRAINZ_ALBUMARTISTID`, `FESTIVAL`, `STAGE`, `VENUE`.
 
 Most servers only read the common fields (TITLE/ARTIST/ALBUM/TRACKNUMBER/DATE). The custom `FESTIVAL`, `STAGE`, `VENUE` fields preserve festival context for scripts, filters, or smart playlists that care.
+
+### Artist tagging policy
+
+- `ARTIST` is per-track (the performer of that chapter's track). When a chapter title has no "Artist - Title" separator, `ARTIST` falls back to `ALBUMARTIST`.
+- `ALBUMARTIST` is always the set's headliner (the album-level artist).
+- Per-track artists whose case-insensitive form equals `ALBUMARTIST` are normalized to the `ALBUMARTIST` casing, so "AFROJACK - ID" becomes `ARTIST=Afrojack` when the set is by "Afrojack". This prevents Lyrion from listing two contributor rows and prevents Jellyfin from picking up stray upper/lowercase variants.
+- `MUSICBRAINZ_ALBUMARTISTID` holds the album artist's MusicBrainz ID. It is omitted for B2B/collab album artists ("X & Y", "X vs. Y", "X x Y"): a single MBID cannot identify two performers, and emitting only one half's MBID would cause media servers to merge the collab album into that member's solo discography.
+- `MUSICBRAINZ_ARTISTID` (the per-track MBID key) is never written. TrackSplit has no per-track-artist MBIDs; writing the album-artist MBID there caused Lyrion to collapse every track to a single contributor row.
 
 ## Metadata tiers
 
