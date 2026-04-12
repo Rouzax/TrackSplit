@@ -125,11 +125,11 @@ def build_album_manifest(
     )
 
 
-def _atomic_write_text(path: Path, data: str) -> None:
+def atomic_write_bytes(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=path.name + ".", dir=str(path.parent))
     try:
-        with os.fdopen(fd, "w") as f:
+        with os.fdopen(fd, "wb") as f:
             f.write(data)
         os.replace(tmp, path)
     except Exception:
@@ -140,9 +140,13 @@ def _atomic_write_text(path: Path, data: str) -> None:
         raise
 
 
+def atomic_write_text(path: Path, data: str) -> None:
+    atomic_write_bytes(path, data.encode("utf-8"))
+
+
 def save_album_manifest(album_dir: Path, manifest: AlbumManifest) -> None:
     path = album_dir / ALBUM_MANIFEST_FILENAME
-    _atomic_write_text(path, json.dumps(manifest.to_dict(), indent=2))
+    atomic_write_text(path, json.dumps(manifest.to_dict(), indent=2))
 
 
 def load_album_manifest(album_dir: Path) -> AlbumManifest | None:
@@ -196,7 +200,7 @@ def load_artist_manifest(artist_dir: Path) -> ArtistManifest | None:
 
 def save_artist_manifest(artist_dir: Path, manifest: ArtistManifest) -> None:
     path = artist_dir / ARTIST_MANIFEST_FILENAME
-    _atomic_write_text(path, json.dumps(manifest.to_dict(), indent=2))
+    atomic_write_text(path, json.dumps(manifest.to_dict(), indent=2))
 
 
 def artwork_sha256(data: bytes | None) -> str:

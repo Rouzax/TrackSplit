@@ -473,6 +473,59 @@ class TestProcessFileManifest:
         assert not old_album.exists(), "old album dir should be deleted"
         assert (out / "DJ X" / "New Name 2025").exists()
 
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_process_file_refreshes_artist_cover_on_skip(
+        self, mock_probe, mock_dj, mock_artist_cover, tmp_path,
+    ):
+        """When the album is unchanged but DJ artwork bytes differ, artist
+        cover is rewritten during the skip path."""
+        from tracksplit.manifest import (
+            ArtistManifest, artwork_sha256,
+            build_album_manifest, save_album_manifest, save_artist_manifest,
+        )
+        from tracksplit.pipeline import process_file
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+        mock_probe.return_value = self._probe()
+        out = tmp_path / "out"
+        artist_dir = out / "DJ X"
+        album_dir = artist_dir / "Show 2025"
+        album_dir.mkdir(parents=True)
+        from tracksplit.manifest import TAG_KEYS
+        tags = {k: "" for k in TAG_KEYS}
+        tags["artist"] = "DJ X"
+        tags["festival"] = "Show"
+        tags["date"] = "2025"
+        chapter_dicts = [
+            {"index": 1, "title": "Track 1", "start": 0.0, "end": 300.0},
+            {"index": 2, "title": "Track 2", "start": 300.0, "end": 600.0},
+        ]
+        save_album_manifest(album_dir, build_album_manifest(
+            source_path=src, chapters=chapter_dicts, tags=tags,
+            artist_folder="DJ X", album_folder="Show 2025",
+            output_format="flac", codec_mode="copy",
+            track_filenames=["01 - DJ X - Track 1.flac",
+                             "02 - DJ X - Track 2.flac"],
+            cover_bytes=b"",
+        ))
+        artist_dir.mkdir(exist_ok=True)
+        (artist_dir / "folder.jpg").write_bytes(b"OLD")
+        (artist_dir / "artist.jpg").write_bytes(b"OLD")
+        save_artist_manifest(artist_dir, ArtistManifest(
+            schema=1, artist="DJ X",
+            dj_artwork_sha256=artwork_sha256(b"OLD_ARTWORK"),
+        ))
+
+        mock_dj.return_value = b"NEW_ARTWORK"
+        mock_artist_cover.return_value = b"NEW_COVER"
+
+        assert process_file(src, out) is False
+        assert (artist_dir / "folder.jpg").read_bytes() == b"NEW_COVER"
+        assert (artist_dir / "artist.jpg").read_bytes() == b"NEW_COVER"
+
 
 class TestPruneOrphans:
     def _album(self, tmp_path):
@@ -777,3 +830,36 @@ class TestRefreshArtistCover:
             compose=lambda **kw: b"PLAIN",
         )
         assert (artist / "folder.jpg").read_bytes() == b"PLAIN"
+
+    def test_writes_sidecar_hash_for_no_artwork(self, tmp_path):
+        """dj_artwork_data=None results in an empty-hash sidecar entry."""
+        from tracksplit.manifest import load_artist_manifest
+        from tracksplit.pipeline import refresh_artist_cover
+        artist = tmp_path / "A"
+        artist.mkdir()
+        refresh_artist_cover(
+            artist, artist_name="A", dj_artwork_data=None,
+            compose=lambda **kw: b"PLAIN",
+        )
+        m = load_artist_manifest(artist)
+        assert m is not None
+        assert m.dj_artwork_sha256 == ""
+
+    def test_enospc_propagates(self, tmp_path, monkeypatch):
+        """Disk-full errors must not be swallowed."""
+        import errno
+        from tracksplit.pipeline import refresh_artist_cover
+        from tracksplit import manifest as mf
+        artist = tmp_path / "A"
+        artist.mkdir()
+        def _boom(path, data):
+            raise OSError(errno.ENOSPC, "no space")
+        monkeypatch.setattr(mf, "atomic_write_bytes", _boom)
+        from tracksplit import pipeline as pl
+        monkeypatch.setattr(pl, "atomic_write_bytes", _boom)
+        import pytest
+        with pytest.raises(OSError):
+            refresh_artist_cover(
+                artist, artist_name="A", dj_artwork_data=b"x",
+                compose=lambda **kw: b"IGNORED",
+            )

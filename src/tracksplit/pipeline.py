@@ -5,6 +5,7 @@ composition for individual video files and directories of video files.
 """
 from __future__ import annotations
 
+import errno
 import logging
 import shutil
 import tempfile
@@ -26,6 +27,7 @@ from tracksplit.manifest import (
     TAG_KEYS,
     SourceFingerprint,
     artwork_sha256,
+    atomic_write_bytes,
     build_album_manifest,
     load_album_manifest,
     load_artist_manifest,
@@ -46,6 +48,8 @@ from tracksplit.split import split_tracks
 from tracksplit.tagger import tag_all
 
 logger = logging.getLogger(__name__)
+
+FATAL_DISK_ERRNOS = (errno.ENOSPC, errno.EDQUOT, errno.EROFS)
 
 
 def _safe_log_name(path: Path) -> str:
@@ -213,8 +217,8 @@ def refresh_artist_cover(
         cover_bytes = compose(
             artist=artist_name, dj_artwork_data=dj_artwork_data,
         )
-        folder_jpg.write_bytes(cover_bytes)
-        artist_jpg.write_bytes(cover_bytes)
+        atomic_write_bytes(folder_jpg, cover_bytes)
+        atomic_write_bytes(artist_jpg, cover_bytes)
         save_artist_manifest(
             artist_dir,
             ArtistManifest(
@@ -223,6 +227,8 @@ def refresh_artist_cover(
         )
         logger.info("Refreshed artist cover: %s", artist_dir.name)
     except OSError as exc:
+        if exc.errno in FATAL_DISK_ERRNOS:
+            raise
         logger.warning(
             "Could not refresh artist cover for %s: %s", artist_dir, exc,
         )
@@ -352,6 +358,14 @@ def process_file(
         artist_folder, album_folder, ext.lstrip("."), codec_mode,
         force=force,
     ):
+        dj_artwork_data = find_dj_artwork(input_path, artist=album.artist)
+        artist_dir = output_dir / safe_filename(album.artist_folder)
+        refresh_artist_cover(
+            artist_dir,
+            artist_name=album.artist,
+            dj_artwork_data=dj_artwork_data,
+            compose=compose_artist_cover,
+        )
         logger.info(
             "Skipping %s, output unchanged since last run",
             _safe_log_name(input_path),
