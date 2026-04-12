@@ -40,6 +40,6 @@ def test_cli_invalid_format_rejected():
 
 def test_cli_format_flag_in_help():
     """--format flag should appear in help output."""
-    result = runner.invoke(app, ["--help"])
+    result = runner.invoke(app, ["--help"], env={"COLUMNS": "200"})
     assert result.exit_code == 0
     assert "--format" in result.output
