@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, UnidentifiedImageError
 
+from tracksplit.cratedigger import find_cratedigger_dirs
 from tracksplit.fonts import get_font_path
 from tracksplit.tools import get_tool
 
@@ -437,24 +438,7 @@ def find_dj_artwork(
     3. Same for fanart.jpg as fallback
     4. Return None if not found.
     """
-    if home_dir is None:
-        home_dir = Path.home()
-
-    # Collect .cratedigger directories to search: global first, then walk up
-    cratedigger_dirs: list[Path] = []
-    global_cd = home_dir / ".cratedigger"
-    if global_cd.is_dir():
-        cratedigger_dirs.append(global_cd)
-
-    current = input_path.parent
-    for _ in range(10):
-        candidate = current / ".cratedigger"
-        if candidate.is_dir() and candidate != global_cd:
-            cratedigger_dirs.append(candidate)
-        parent = current.parent
-        if parent == current:
-            break
-        current = parent
+    cratedigger_dirs = find_cratedigger_dirs(input_path, home_dir=home_dir)
 
     # 1. Look for artists/{name}/dj-artwork.jpg then fanart.jpg
     if artist:

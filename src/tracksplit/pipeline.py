@@ -18,6 +18,7 @@ from tracksplit.cover import (
     extract_cover_from_mkv,
     find_dj_artwork,
 )
+from tracksplit.cratedigger import apply_cratedigger_canon
 from tracksplit.extract import prepare_audio
 from tracksplit.metadata import build_album_meta, safe_filename
 from tracksplit.models import Chapter, TrackMeta
@@ -145,6 +146,7 @@ def process_file(
 
     chapters = parse_chapters(ffprobe_data)
     tags = parse_tags(ffprobe_data)
+    apply_cratedigger_canon(tags, input_path)
     tier = detect_tier(tags)
 
     # Build album metadata
