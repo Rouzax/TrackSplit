@@ -21,7 +21,7 @@ LEGACY_CHAPTER_CACHE_FILENAME = ".tracksplit_chapters.json"
 MANIFEST_SCHEMA = 1
 
 
-_TAG_KEYS = (
+TAG_KEYS = (
     "artist", "album", "festival", "date", "stage", "venue",
     "mbid", "musicbrainz_artistid", "enriched_at",
 )
@@ -88,7 +88,7 @@ class AlbumManifest:
 
 
 def _filter_tags(tags: dict) -> dict:
-    return {k: tags.get(k, "") for k in _TAG_KEYS}
+    return {k: tags.get(k, "") for k in TAG_KEYS}
 
 
 def build_album_manifest(

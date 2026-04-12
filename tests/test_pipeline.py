@@ -167,7 +167,7 @@ class TestShouldRegenerate:
             album, src, {}, [], "A", "B", "opus", "libopus", force=False,
         ) is True
 
-    def test_legacy_chapter_cache_triggers_regenerate(self, tmp_path):
+    def test_missing_manifest_triggers_regenerate_even_with_legacy_cache(self, tmp_path):
         from tracksplit.pipeline import should_regenerate
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"

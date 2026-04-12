@@ -5,7 +5,6 @@ composition for individual video files and directories of video files.
 """
 from __future__ import annotations
 
-import json
 import logging
 import tempfile
 import threading
@@ -21,7 +20,7 @@ from tracksplit.cover import (
 from tracksplit.cratedigger import apply_cratedigger_canon
 from tracksplit.extract import prepare_audio
 from tracksplit.manifest import (
-    LEGACY_CHAPTER_CACHE_FILENAME,
+    TAG_KEYS,
     SourceFingerprint,
     load_album_manifest,
 )
@@ -39,12 +38,6 @@ from tracksplit.split import split_tracks
 from tracksplit.tagger import tag_all
 
 logger = logging.getLogger(__name__)
-
-
-_TAG_COMPARE_KEYS = (
-    "artist", "album", "festival", "date", "stage", "venue",
-    "mbid", "musicbrainz_artistid", "enriched_at",
-)
 
 
 def _safe_log_name(path: Path) -> str:
@@ -131,7 +124,7 @@ def should_regenerate(
     if manifest.chapters != chapter_dicts:
         return True
 
-    for k in _TAG_COMPARE_KEYS:
+    for k in TAG_KEYS:
         if manifest.tags.get(k, "") != tags.get(k, ""):
             return True
     return False
