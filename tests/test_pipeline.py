@@ -47,52 +47,148 @@ class TestBuildIntroTrack:
 # ---------------------------------------------------------------------------
 
 class TestShouldRegenerate:
+    def _write_manifest(self, album_dir, **overrides):
+        from tracksplit.manifest import (
+            ALBUM_MANIFEST_FILENAME, MANIFEST_SCHEMA,
+        )
+        data = {
+            "schema": MANIFEST_SCHEMA,
+            "source": {"path": overrides.get("source_path", "/x.mkv"),
+                       "mtime_ns": overrides.get("mtime_ns", 1),
+                       "size": overrides.get("size", 10),
+                       "enriched_at": overrides.get("enriched_at", "")},
+            "resolved_artist_folder": overrides.get("artist_folder", "A"),
+            "resolved_album_folder": overrides.get("album_folder", "B"),
+            "output_format": overrides.get("output_format", "flac"),
+            "codec_mode": overrides.get("codec_mode", "copy"),
+            "chapters": overrides.get("chapters",
+                [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}]),
+            "tags": overrides.get("tags",
+                {"artist": "A", "album": "", "festival": "", "date": "",
+                 "stage": "", "venue": "", "mbid": "",
+                 "musicbrainz_artistid": "", "enriched_at": ""}),
+            "track_filenames": overrides.get("track_filenames", ["01 - T.flac"]),
+            "cover_sha256": overrides.get("cover_sha256", "a" * 64),
+        }
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
+
+    def _mk_source(self, tmp_path, size=10):
+        p = tmp_path / "src.mkv"
+        p.write_bytes(b"x" * size)
+        return p
+
+    def _fingerprint(self, src):
+        return {"source_path": str(src), "mtime_ns": src.stat().st_mtime_ns,
+                "size": src.stat().st_size}
+
     def test_no_existing_dir(self, tmp_path):
-        """Nonexistent directory means regeneration is needed."""
-        nonexistent = tmp_path / "does_not_exist"
-        chapters = [Chapter(index=1, title="T", start=0.0, end=60.0)]
-        assert should_regenerate(nonexistent, chapters, force=False) is True
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        assert should_regenerate(
+            tmp_path / "nope", src, {}, [], "A", "B", "flac", "copy",
+            force=False,
+        ) is True
 
     def test_force_always_true(self, tmp_path):
-        """Force flag always triggers regeneration."""
-        album_dir = tmp_path / "album"
-        album_dir.mkdir()
-        # Even with a matching cache, force should return True
-        chapters = [Chapter(index=1, title="T", start=0.0, end=60.0)]
-        cache_data = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}]
-        cache_file = album_dir / ".tracksplit_chapters.json"
-        cache_file.write_text(json.dumps(cache_data))
-        assert should_regenerate(album_dir, chapters, force=True) is True
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, **self._fingerprint(src))
+        assert should_regenerate(
+            album, src, {}, [], "A", "B", "flac", "copy", force=True,
+        ) is True
 
-    def test_unchanged_chapters(self, tmp_path):
-        """Same chapters as cached means no regeneration needed."""
-        album_dir = tmp_path / "album"
-        album_dir.mkdir()
-        chapters = [
-            Chapter(index=1, title="Track A", start=0.0, end=60.0),
-            Chapter(index=2, title="Track B", start=60.0, end=120.0),
-        ]
-        cache_data = [
-            {"index": 1, "title": "Track A", "start": 0.0, "end": 60.0},
-            {"index": 2, "title": "Track B", "start": 60.0, "end": 120.0},
-        ]
-        cache_file = album_dir / ".tracksplit_chapters.json"
-        cache_file.write_text(json.dumps(cache_data))
-        assert should_regenerate(album_dir, chapters, force=False) is False
+    def test_unchanged_everything(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        fp = self._fingerprint(src)
+        self._write_manifest(album, **fp)
+        tags = {"artist": "A", "album": "", "festival": "", "date": "",
+                "stage": "", "venue": "", "mbid": "",
+                "musicbrainz_artistid": "", "enriched_at": ""}
+        assert should_regenerate(
+            album, src, tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is False
 
-    def test_changed_chapters(self, tmp_path):
-        """Different chapters from cached means regeneration needed."""
-        album_dir = tmp_path / "album"
-        album_dir.mkdir()
-        chapters = [
-            Chapter(index=1, title="New Track", start=0.0, end=90.0),
-        ]
-        cache_data = [
-            {"index": 1, "title": "Old Track", "start": 0.0, "end": 60.0},
-        ]
-        cache_file = album_dir / ".tracksplit_chapters.json"
-        cache_file.write_text(json.dumps(cache_data))
-        assert should_regenerate(album_dir, chapters, force=False) is True
+    def test_chapter_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, **self._fingerprint(src))
+        new_chapters = [{"index": 1, "title": "T2", "start": 0.0, "end": 90.0}]
+        assert should_regenerate(
+            album, src, {}, new_chapters, "A", "B", "flac", "copy",
+            force=False,
+        ) is True
+
+    def test_metadata_only_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        fp = self._fingerprint(src)
+        self._write_manifest(album, **fp)
+        tags = {"artist": "A", "album": "", "festival": "NEW-FESTIVAL",
+                "date": "", "stage": "", "venue": "", "mbid": "",
+                "musicbrainz_artistid": "", "enriched_at": ""}
+        assert should_regenerate(
+            album, src, tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_source_mtime_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(
+            album, source_path=str(src), mtime_ns=1, size=src.stat().st_size,
+        )
+        assert should_regenerate(
+            album, src, {}, [], "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_format_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(
+            album, **self._fingerprint(src), output_format="flac",
+        )
+        assert should_regenerate(
+            album, src, {}, [], "A", "B", "opus", "libopus", force=False,
+        ) is True
+
+    def test_legacy_chapter_cache_triggers_regenerate(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        (album / ".tracksplit_chapters.json").write_text(json.dumps([
+            {"index": 1, "title": "T", "start": 0.0, "end": 60.0}
+        ]))
+        assert should_regenerate(
+            album, src, {}, [], "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_corrupt_manifest_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        (album / ALBUM_MANIFEST_FILENAME).write_text("{not json")
+        assert should_regenerate(
+            album, src, {}, [], "A", "B", "flac", "copy", force=False,
+        ) is True
 
 
 # ---------------------------------------------------------------------------

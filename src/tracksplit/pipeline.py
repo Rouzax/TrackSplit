@@ -20,6 +20,11 @@ from tracksplit.cover import (
 )
 from tracksplit.cratedigger import apply_cratedigger_canon
 from tracksplit.extract import prepare_audio
+from tracksplit.manifest import (
+    LEGACY_CHAPTER_CACHE_FILENAME,
+    SourceFingerprint,
+    load_album_manifest,
+)
 from tracksplit.metadata import build_album_meta, safe_filename
 from tracksplit.models import Chapter, TrackMeta
 from tracksplit.probe import (
@@ -35,7 +40,11 @@ from tracksplit.tagger import tag_all
 
 logger = logging.getLogger(__name__)
 
-_CACHE_FILENAME = ".tracksplit_chapters.json"
+
+_TAG_COMPARE_KEYS = (
+    "artist", "album", "festival", "date", "stage", "venue",
+    "mbid", "musicbrainz_artistid", "enriched_at",
+)
 
 
 def _safe_log_name(path: Path) -> str:
@@ -82,35 +91,50 @@ def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
 
 def should_regenerate(
     album_dir: Path,
-    chapters: list[Chapter],
+    source_path: Path,
+    tags: dict,
+    chapter_dicts: list[dict],
+    artist_folder: str,
+    album_folder: str,
+    output_format: str,
+    codec_mode: str,
+    *,
     force: bool,
 ) -> bool:
-    """Determine whether the album needs to be (re)generated.
-
-    Returns True if force is set, the album directory does not exist,
-    or the chapter data differs from the cached version.
-    """
+    """Return True when the album must be (re)generated."""
     if force:
         return True
     if not album_dir.exists():
         return True
 
-    cache_file = album_dir / _CACHE_FILENAME
-    if not cache_file.exists():
+    manifest = load_album_manifest(album_dir)
+    if manifest is None:
         return True
 
     try:
-        cached = json.loads(cache_file.read_text())
-    except (json.JSONDecodeError, OSError):
+        current_source = SourceFingerprint.from_path(
+            source_path, enriched_at=tags.get("enriched_at", ""),
+        )
+    except OSError:
         return True
 
-    return cached != _chapters_to_dicts(chapters)
+    if manifest.source != current_source:
+        return True
+    if manifest.resolved_artist_folder != artist_folder:
+        return True
+    if manifest.resolved_album_folder != album_folder:
+        return True
+    if manifest.output_format != output_format:
+        return True
+    if manifest.codec_mode != codec_mode:
+        return True
+    if manifest.chapters != chapter_dicts:
+        return True
 
-
-def _save_chapter_cache(album_dir: Path, chapters: list[Chapter]) -> None:
-    """Write chapter data to the cache file in album_dir."""
-    cache_file = album_dir / _CACHE_FILENAME
-    cache_file.write_text(json.dumps(_chapters_to_dicts(chapters)))
+    for k in _TAG_COMPARE_KEYS:
+        if manifest.tags.get(k, "") != tags.get(k, ""):
+            return True
+    return False
 
 
 def process_file(
