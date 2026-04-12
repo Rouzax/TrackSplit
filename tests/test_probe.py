@@ -399,3 +399,23 @@ class TestMojibakeFix:
         }
         chapters = parse_chapters(data)
         assert chapters[0].title == "Kölsch - Loreley"
+
+
+def test_parse_tags_returns_enriched_at():
+    ffprobe_data = {
+        "format": {
+            "tags": {
+                "ARTIST": "X",
+                "CRATEDIGGER_ENRICHED_AT": "2026-04-10T12:34:56Z",
+            }
+        }
+    }
+    from tracksplit.probe import parse_tags
+    tags = parse_tags(ffprobe_data)
+    assert tags["enriched_at"] == "2026-04-10T12:34:56Z"
+
+
+def test_parse_tags_enriched_at_missing_is_empty():
+    from tracksplit.probe import parse_tags
+    tags = parse_tags({"format": {"tags": {"ARTIST": "X"}}})
+    assert tags["enriched_at"] == ""
