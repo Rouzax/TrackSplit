@@ -22,7 +22,7 @@ Issues = "https://github.com/Rouzax/TrackSplit/issues"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
+    "pytest>=9.0.3",
     "pytest-mock>=3.10",
 ]
 
