@@ -347,3 +347,55 @@ class TestIsLosslessCodec:
 
     def test_empty_string(self):
         assert is_lossless_codec("") is False
+
+
+class TestMojibakeFix:
+    """Verify ffprobe output with mojibake is repaired via ftfy."""
+
+    def test_parse_tags_fixes_artist_mojibake(self):
+        """Classic UTF-8-as-Latin-1 mojibake should be repaired."""
+        from tracksplit.probe import parse_tags
+        data = {
+            "format": {
+                "tags": {
+                    "ARTIST": "KÃ¶lsch",
+                },
+            },
+        }
+        tags = parse_tags(data)
+        assert tags["artist"] == "Kölsch"
+
+    def test_parse_tags_leaves_correct_artist_unchanged(self):
+        """Already-correct UTF-8 strings should pass through unchanged."""
+        from tracksplit.probe import parse_tags
+        data = {
+            "format": {
+                "tags": {
+                    "ARTIST": "Kölsch",
+                },
+            },
+        }
+        tags = parse_tags(data)
+        assert tags["artist"] == "Kölsch"
+
+    def test_parse_tags_plain_ascii(self):
+        """Plain ASCII unchanged."""
+        from tracksplit.probe import parse_tags
+        data = {"format": {"tags": {"ARTIST": "Tiesto"}}}
+        tags = parse_tags(data)
+        assert tags["artist"] == "Tiesto"
+
+    def test_parse_chapters_fixes_title_mojibake(self):
+        """Chapter titles with mojibake should be repaired."""
+        from tracksplit.probe import parse_chapters
+        data = {
+            "chapters": [
+                {
+                    "start_time": "0.0",
+                    "end_time": "60.0",
+                    "tags": {"title": "KÃ¶lsch - Loreley"},
+                },
+            ],
+        }
+        chapters = parse_chapters(data)
+        assert chapters[0].title == "Kölsch - Loreley"

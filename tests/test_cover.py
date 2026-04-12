@@ -8,6 +8,9 @@ from unittest.mock import MagicMock, patch
 from PIL import Image
 
 from tracksplit.cover import (
+    _is_image_attachment,
+    _load_font,
+    _pick_image_attachment,
     _wcag_contrast,
     build_cover_command,
     compose_artist_cover,
@@ -285,3 +288,103 @@ class TestExtractCoverFromMkv:
 
         result = extract_cover_from_mkv(Path("/tmp/video.mp4"))
         assert result is None
+
+
+class TestLoadFont:
+    def test_returns_freetype_font(self):
+        """Bundled Inter font should load as a FreeTypeFont, not bitmap."""
+        from PIL import ImageFont
+        font = _load_font(90, bold=True)
+        assert isinstance(font, ImageFont.FreeTypeFont)
+
+    def test_size_scales_width(self):
+        """Rendered text width must scale with size (not fixed bitmap width)."""
+        from tracksplit.cover import _measure_w
+        small = _load_font(40, bold=True)
+        large = _load_font(90, bold=True)
+        w_small = _measure_w(small, "TIESTO")
+        w_large = _measure_w(large, "TIESTO")
+        assert w_large > w_small * 1.5
+
+    def test_unicode_glyph_rendered(self):
+        """Inter includes 'ë' so measured width should be reasonable."""
+        from tracksplit.cover import _measure_w
+        font = _load_font(90, bold=True)
+        plain = _measure_w(font, "TIESTO")
+        accented = _measure_w(font, "TIëSTO")
+        # The accented version should be similar width to the plain version
+        # (not tiny because the glyph is missing)
+        assert accented >= plain * 0.8
+
+
+class TestIsImageAttachment:
+    def test_by_content_type(self):
+        assert _is_image_attachment({"content_type": "image/jpeg"}) is True
+        assert _is_image_attachment({"content_type": "image/png"}) is True
+
+    def test_by_file_name(self):
+        assert _is_image_attachment(
+            {"content_type": "", "file_name": "cover.jpg"}
+        ) is True
+        assert _is_image_attachment(
+            {"file_name": "COVER.PNG"}
+        ) is True
+
+    def test_non_image(self):
+        assert _is_image_attachment({"content_type": "text/plain"}) is False
+        assert _is_image_attachment({"file_name": "notes.txt"}) is False
+        assert _is_image_attachment({}) is False
+
+
+class TestPickImageAttachment:
+    def test_prefers_cover_named(self):
+        atts = [
+            {"id": 1, "content_type": "image/jpeg", "file_name": "other.jpg"},
+            {"id": 2, "content_type": "image/jpeg", "file_name": "cover.jpg"},
+        ]
+        result = _pick_image_attachment(atts)
+        assert result is not None
+        assert result["id"] == 2
+
+    def test_picks_only_image(self):
+        atts = [
+            {"id": 1, "content_type": "text/plain"},
+            {"id": 2, "content_type": "image/png", "file_name": "pic.png"},
+        ]
+        result = _pick_image_attachment(atts)
+        assert result is not None
+        assert result["id"] == 2
+
+    def test_empty(self):
+        assert _pick_image_attachment([]) is None
+
+
+class TestMkvtoolsTempFileUnique:
+    """Verify unique temp file names to prevent parallel worker races."""
+
+    @patch("tracksplit.cover.subprocess.run")
+    def test_different_calls_use_different_temp_files(self, mock_run, tmp_path):
+        """Two parallel extractions must not share a temp file path."""
+        identify_json = '{"attachments": [{"id": 1, "content_type": "image/jpeg", "file_name": "cover.jpg"}]}'
+        seen_paths = []
+
+        def side_effect(cmd, **kwargs):
+            if "mkvmerge" in cmd[0] if cmd else "":
+                return MagicMock(stdout=identify_json, returncode=0)
+            elif "mkvextract" in (cmd[0] if cmd else ""):
+                import re
+                for part in cmd:
+                    m = re.match(r"\d+:(.*)", part)
+                    if m:
+                        seen_paths.append(m.group(1))
+                        Path(m.group(1)).write_bytes(b"data")
+                return MagicMock(returncode=0)
+            return MagicMock(returncode=0)
+
+        mock_run.side_effect = side_effect
+
+        extract_cover_from_mkv(Path("/tmp/video1.mkv"))
+        extract_cover_from_mkv(Path("/tmp/video2.mkv"))
+
+        assert len(seen_paths) == 2
+        assert seen_paths[0] != seen_paths[1]

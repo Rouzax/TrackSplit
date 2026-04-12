@@ -12,43 +12,19 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, UnidentifiedImageError
 
+from tracksplit.fonts import get_font_path
 from tracksplit.tools import get_tool
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Font paths
-# ---------------------------------------------------------------------------
-_DEJAVU_BOLD_PATHS = [
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-    "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf",
-    "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
-]
-
-_DEJAVU_REGULAR_PATHS = [
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-    "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
-    "/usr/share/fonts/TTF/DejaVuSans.ttf",
-]
-
-
-# ---------------------------------------------------------------------------
 # Font helpers
 # ---------------------------------------------------------------------------
-def _load_font(size: int, bold: bool = True) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """Load DejaVu Sans at the given size, with fallback to default."""
-    paths = _DEJAVU_BOLD_PATHS if bold else _DEJAVU_REGULAR_PATHS
-    for path in paths:
-        try:
-            return ImageFont.truetype(path, size)
-        except OSError:
-            continue
-    name = "DejaVuSans-Bold" if bold else "DejaVuSans"
-    try:
-        return ImageFont.truetype(name, size)
-    except OSError:
-        logger.debug("DejaVu font not found, using default font")
-        return ImageFont.load_default()
+def _load_font(size: int, bold: bool = True) -> ImageFont.FreeTypeFont:
+    """Load the bundled Inter font at the given size."""
+    weight = "bold" if bold else "regular"
+    path = get_font_path(weight)
+    return ImageFont.truetype(path, size)
 
 
 def _measure_w(font: ImageFont.FreeTypeFont | ImageFont.ImageFont, text: str) -> int:
@@ -626,8 +602,32 @@ def _extract_cover_ffmpeg(input_path: Path) -> bytes | None:
     return None
 
 
+_IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp")
+
+
+def _is_image_attachment(att: dict) -> bool:
+    """Return True if an mkvmerge attachment entry looks like an image."""
+    content_type = att.get("content_type", "") or ""
+    if content_type.startswith("image/"):
+        return True
+    name = (att.get("file_name") or "").lower()
+    return name.endswith(_IMAGE_EXTS)
+
+
+def _pick_image_attachment(attachments: list[dict]) -> dict | None:
+    """Pick the best image attachment, preferring one named cover.*."""
+    images = [a for a in attachments if _is_image_attachment(a)]
+    if not images:
+        return None
+    images.sort(
+        key=lambda a: not (a.get("file_name") or "").lower().startswith("cover"),
+    )
+    return images[0]
+
+
 def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
     """Extract cover art from MKV using mkvmerge identify + mkvextract."""
+    tmp_file: Path | None = None
     try:
         identify_cmd = [
             get_tool("mkvmerge"),
@@ -643,21 +643,18 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
         )
         info = json.loads(identify_result.stdout)
 
-        attachments = info.get("attachments", [])
-        image_attachment = None
-        for att in attachments:
-            content_type = att.get("content_type", "")
-            if content_type.startswith("image/"):
-                image_attachment = att
-                break
-
+        image_attachment = _pick_image_attachment(info.get("attachments", []))
         if image_attachment is None:
             logger.debug("No image attachments found in %s", input_path.name)
             return None
 
         att_id = image_attachment["id"]
-        tmp_dir = Path(tempfile.gettempdir())
-        tmp_file = tmp_dir / f"tracksplit_cover_{att_id}.jpg"
+
+        # Create a unique temp file to avoid collisions under parallel workers
+        fd, tmp_path_str = tempfile.mkstemp(prefix="tracksplit_cover_", suffix=".jpg")
+        import os
+        os.close(fd)
+        tmp_file = Path(tmp_path_str)
 
         extract_cmd = [
             get_tool("mkvextract"),
@@ -668,20 +665,20 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
         logger.debug("Extracting attachment: %s", " ".join(extract_cmd))
         subprocess.run(extract_cmd, capture_output=True, check=True, timeout=30)
 
-        if tmp_file.exists():
-            try:
-                data = tmp_file.read_bytes()
-                logger.info(
-                    "Extracted cover art via mkvextract from %s", input_path.name
-                )
-                return data
-            finally:
-                tmp_file.unlink(missing_ok=True)
+        if tmp_file.exists() and tmp_file.stat().st_size > 0:
+            data = tmp_file.read_bytes()
+            logger.info(
+                "Extracted cover art via mkvextract from %s", input_path.name
+            )
+            return data
 
     except (
         subprocess.CalledProcessError, subprocess.TimeoutExpired,
         json.JSONDecodeError, KeyError, OSError,
     ) as exc:
         logger.debug("mkvmerge/mkvextract failed: %s", exc)
+    finally:
+        if tmp_file is not None:
+            tmp_file.unlink(missing_ok=True)
 
     return None

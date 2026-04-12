@@ -9,6 +9,7 @@ dependencies = [
     "mutagen>=1.47",
     "rich>=13.0",
     "numpy>=1.24",
+    "ftfy>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -19,6 +20,9 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+tracksplit = ["fonts/*.ttf"]
 
 [project.scripts]
 tracksplit = "tracksplit.cli:run"

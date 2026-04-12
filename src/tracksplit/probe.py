@@ -4,8 +4,17 @@ import logging
 import subprocess
 from pathlib import Path
 
+import ftfy
+
 from tracksplit.models import Chapter
 from tracksplit.tools import get_tool
+
+
+def _fix_text(s: str) -> str:
+    """Normalize text using ftfy to repair mojibake and other issues."""
+    if not s:
+        return s
+    return ftfy.fix_text(s)
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +59,7 @@ def parse_chapters(ffprobe_data: dict) -> list[Chapter]:
             )
             continue
 
-        title = (raw.get("tags") or {}).get("title", "").strip()
+        title = _fix_text((raw.get("tags") or {}).get("title", "").strip())
         if not title:
             title = f"Track {len(chapters) + 1:02d}"
 
@@ -74,8 +83,8 @@ def parse_tags(ffprobe_data: dict) -> dict:
     """
     raw_tags = ffprobe_data.get("format", {}).get("tags", {})
 
-    # Build a case-insensitive lookup map
-    ci: dict[str, str] = {k.upper(): v for k, v in raw_tags.items()}
+    # Build a case-insensitive lookup map with mojibake repair
+    ci: dict[str, str] = {k.upper(): _fix_text(v) for k, v in raw_tags.items()}
 
     genres_raw = ci.get("CRATEDIGGER_1001TL_GENRES", "").strip()
     genres = [g.strip() for g in genres_raw.split("|") if g.strip()] if genres_raw else []
