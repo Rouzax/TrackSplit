@@ -143,3 +143,39 @@ class TestPrepareAudio:
 
         with pytest.raises(ValueError, match="Unknown output format"):
             prepare_audio(input_path, data, "wav", tmp_path)
+
+
+class TestDecideCodec:
+    def _data(self, codec):
+        return {"streams": [{"codec_type": "audio", "codec_name": codec}]}
+
+    def test_auto_opus_source_copies(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("opus"), "auto") == (".opus", "copy")
+
+    def test_auto_lossless_source_transcodes_to_flac(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("flac"), "auto") == (".flac", "copy")
+        assert decide_codec(self._data("alac"), "auto") == (".flac", "copy")
+
+    def test_auto_lossy_source_reencodes_to_opus(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("aac"), "auto") == (".opus", "libopus")
+
+    def test_explicit_flac_always_flac_copy(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("aac"), "flac") == (".flac", "copy")
+
+    def test_explicit_opus_copies_opus_source(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("opus"), "opus") == (".opus", "copy")
+
+    def test_explicit_opus_reencodes_non_opus(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("aac"), "opus") == (".opus", "libopus")
+
+    def test_unknown_format_raises(self):
+        from tracksplit.extract import decide_codec
+        import pytest
+        with pytest.raises(ValueError):
+            decide_codec(self._data("aac"), "wav")

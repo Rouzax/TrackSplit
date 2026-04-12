@@ -18,11 +18,14 @@ from tracksplit.cover import (
     find_dj_artwork,
 )
 from tracksplit.cratedigger import apply_cratedigger_canon
-from tracksplit.extract import prepare_audio
+from tracksplit.extract import decide_codec, prepare_audio
 from tracksplit.manifest import (
+    LEGACY_CHAPTER_CACHE_FILENAME,
     TAG_KEYS,
     SourceFingerprint,
+    build_album_manifest,
     load_album_manifest,
+    save_album_manifest,
 )
 from tracksplit.metadata import build_album_meta, safe_filename
 from tracksplit.models import Chapter, TrackMeta
@@ -34,7 +37,7 @@ from tracksplit.probe import (
     parse_tags,
     run_ffprobe,
 )
-from tracksplit.split import split_tracks
+from tracksplit.split import build_track_filename, split_tracks  # noqa: F401
 from tracksplit.tagger import tag_all
 
 logger = logging.getLogger(__name__)
@@ -198,8 +201,14 @@ def process_file(
     album_folder = safe_filename(album.album_folder)
     album_dir = output_dir / artist_folder / album_folder
 
-    # Check if regeneration is needed
-    if not should_regenerate(album_dir, chapters, force):
+    ext, codec_mode = decide_codec(ffprobe_data, output_format)
+    chapter_dicts = _chapters_to_dicts(chapters)
+
+    if not should_regenerate(
+        album_dir, input_path, tags, chapter_dicts,
+        artist_folder, album_folder, ext.lstrip("."), codec_mode,
+        force=force,
+    ):
         logger.info(
             "Skipping %s, output unchanged since last run",
             _safe_log_name(input_path),
@@ -264,8 +273,24 @@ def process_file(
         cover_path = album_dir / "cover.jpg"
         cover_path.write_bytes(cover_bytes)
 
-    # Save chapter cache
-    _save_chapter_cache(album_dir, chapters)
+        manifest = build_album_manifest(
+            source_path=input_path,
+            chapters=chapter_dicts,
+            tags=tags,
+            artist_folder=artist_folder,
+            album_folder=album_folder,
+            output_format=ext.lstrip("."),
+            codec_mode=codec_mode,
+            track_filenames=[p.name for p in track_paths],
+            cover_bytes=cover_bytes,
+        )
+        save_album_manifest(album_dir, manifest)
+        legacy = album_dir / LEGACY_CHAPTER_CACHE_FILENAME
+        if legacy.exists():
+            try:
+                legacy.unlink()
+            except OSError:
+                pass
 
     # Artist cover (only if not already present, tolerates parallel races)
     artist_dir = output_dir / safe_filename(album.artist_folder)
