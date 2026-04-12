@@ -626,7 +626,12 @@ section { padding: 7rem 2rem; }
   margin-bottom: 1.5rem;
 }
 
-.related-actions { display: flex; justify-content: center; }
+.related-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
 
 /* ---- Footer ---- */
 .footer {
