@@ -40,8 +40,19 @@ TrackSplit tracks re-run state via `.tracksplit_chapters.json` (a manifest) insi
 ## Parallel mode is slow or hanging
 
 - Set `--workers 1` to rule out contention.
-- Fast SSDs can go higher than the default; try `--workers 8`.
 - On spinning disks or network shares, sequential (`--workers 1`) is usually faster.
+
+### Tuning `--workers` by workload
+
+The default (`logical_cores // 4`, clamped to `[2, 12]`) is sized for FLAC / forced-Opus **re-encode** batches, where each ffmpeg process is CPU-heavy and multi-threaded. For other workloads you can go higher:
+
+| Workload | What ffmpeg does | CPU per worker | Good `--workers` |
+|---|---|---|---|
+| **Stream-copy** (Opus source → Opus output, common with CrateDigger MKVs) | Mux only, no decode/encode | Near zero | 2-3x the default; a 40-thread box happily runs `-w 20` to `-w 30`. Bottleneck becomes disk I/O or ffmpeg spawn overhead, not CPU. |
+| **Re-encode** (FLAC output, or `--format opus` on a lossy source that fails stream-copy safety checks) | Full decode + encode | High (libopus / FLAC are multi-threaded) | Stick with the default; raising further risks oversubscription. |
+| **Mixed batch** | Varies per file | Varies | Default is the right compromise. |
+
+Quick check for which regime you're in: watch CPU while a batch runs. Sitting at ~10% with headroom means stream-copy and you can raise `--workers`. Sitting near 100% means re-encode and you should not.
 
 ## Cover art looks wrong or fonts are missing
 

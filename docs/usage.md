@@ -17,7 +17,7 @@ tracksplit [OPTIONS] INPUT_PATH
 | `--output`, `-o PATH` | Output directory. Defaults to the current working directory. |
 | `--force` | Regenerate even if the per-album manifest matches. |
 | `--format`, `-f {auto,flac,opus}` | Output codec. `auto` picks FLAC for lossless sources and Opus for lossy. |
-| `--workers`, `-w N` | Parallel workers for directory mode. Default `min(4, CPU count)`. Set `1` for sequential; raise for fast disks. |
+| `--workers`, `-w N` | Parallel workers for directory mode. Default scales with CPU: `logical_cores // 4`, clamped to `[2, 12]` (so 2 on a dual-core laptop, 4 on a 16-thread workstation, 10 on a 40-thread server). Set `1` for sequential; raise for stream-copy batches (see [Troubleshooting](troubleshooting.md#parallel-mode-is-slow-or-hanging)). |
 | `--dry-run` | Probe and plan without writing anything. Pairs well with `--verbose`. |
 | `--verbose`, `-v` | INFO-level logging. Shows the current step and file. |
 | `--debug` | DEBUG-level logging. Includes full command lines and subprocess details. |
