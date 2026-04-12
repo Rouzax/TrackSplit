@@ -768,7 +768,7 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  Artist/
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    folder.jpg
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    artist.jpg
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    Artist @ Festival Year (Stage)/
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    Festival Year (Stage)/
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>      00 - Intro.flac      (or .opus)
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>      01 - Track Title.flac
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>      02 - Track Title.flac
@@ -776,6 +776,7 @@
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>      cover.jpg
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>      .tracksplit_chapters.json
 </code></pre></div>
+<p>The album folder name depends on the metadata tier (see below). With full CrateDigger tags (Tier 2) it is <code>Festival Year (Stage)</code> or <code>Festival Year</code> when no stage is set. Without them (Tier 1) it falls back to the source filename stem.</p>
 <ul>
 <li><code>folder.jpg</code> and <code>artist.jpg</code> live at the artist level so Jellyfin, Kodi, and other servers can pick them up as artist artwork.</li>
 <li><code>cover.jpg</code> at the album level is the 1:1 cover image, also embedded into every track.</li>

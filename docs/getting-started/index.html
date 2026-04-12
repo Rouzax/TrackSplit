@@ -798,7 +798,7 @@
 <li>It decides on a codec (FLAC stays FLAC; Opus stream-copies when safe, re-encodes otherwise; change it with <code>--format</code>).</li>
 <li>It splits the audio at chapter boundaries with sample accuracy.</li>
 <li>It generates album cover art and (if the source has DJ artwork) an artist folder image.</li>
-<li>It writes all tracks into <code>Artist/Artist @ Festival Year (Stage)/</code>, tags them, and drops a <code>.tracksplit_chapters.json</code> manifest.</li>
+<li>It writes all tracks into <code>Artist/Festival Year (Stage)/</code> (or <code>Artist/&lt;filename-stem&gt;/</code> for untagged sources), tags them, and drops a <code>.tracksplit_chapters.json</code> manifest.</li>
 <li>It prints a one-line summary naming the album directory and track count.</li>
 </ol>
 <p>Run it again on the same file and it will skip instantly: TrackSplit compares the manifest to the source and only regenerates when something actually changed. Pass <code>--force</code> to override.</p>
