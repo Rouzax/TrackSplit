@@ -24,6 +24,7 @@ from tracksplit.extract import decide_codec, prepare_audio
 from tracksplit.manifest import (
     ArtistManifest,
     LEGACY_CHAPTER_CACHE_FILENAME,
+    MANIFEST_SCHEMA,
     TAG_KEYS,
     SourceFingerprint,
     artwork_sha256,
@@ -222,7 +223,7 @@ def refresh_artist_cover(
         save_artist_manifest(
             artist_dir,
             ArtistManifest(
-                schema=1, artist=artist_name, dj_artwork_sha256=new_hash,
+                schema=MANIFEST_SCHEMA, artist=artist_name, dj_artwork_sha256=new_hash,
             ),
         )
         logger.info("Refreshed artist cover: %s", artist_dir.name)
@@ -432,7 +433,7 @@ def process_file(
         # Save cover.jpg
         _progress("Saving")
         cover_path = album_dir / "cover.jpg"
-        cover_path.write_bytes(cover_bytes)
+        atomic_write_bytes(cover_path, cover_bytes)
 
         manifest = build_album_manifest(
             source_path=input_path,
