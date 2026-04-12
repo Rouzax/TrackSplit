@@ -115,13 +115,15 @@ See [`docs/troubleshooting.md`](docs/troubleshooting.md) if something goes wrong
 Artist/
   folder.jpg
   artist.jpg
-  Artist @ Festival Year (Stage)/
+  Festival Year (Stage)/
     00 - Intro.flac (or .opus)
     01 - Track Title.flac
     02 - Track Title.flac
     cover.jpg
     .tracksplit_chapters.json
 ```
+
+(Tier 2, CrateDigger-tagged source.) Tier 1 sources without festival metadata get `Artist/<filename-stem>/` instead.
 
 `.tracksplit_chapters.json` is a manifest TrackSplit uses to detect whether a source file has changed since the last run. Safe to delete if you want to force one album to rebuild; safe to ignore in version control.
 

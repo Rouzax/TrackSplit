@@ -9,7 +9,7 @@ TrackSplit writes one directory per album, grouped by artist.
   Artist/
     folder.jpg
     artist.jpg
-    Artist @ Festival Year (Stage)/
+    Festival Year (Stage)/
       00 - Intro.flac      (or .opus)
       01 - Track Title.flac
       02 - Track Title.flac
@@ -17,6 +17,8 @@ TrackSplit writes one directory per album, grouped by artist.
       cover.jpg
       .tracksplit_chapters.json
 ```
+
+The album folder name depends on the metadata tier (see below). With full CrateDigger tags (Tier 2) it is `Festival Year (Stage)` or `Festival Year` when no stage is set. Without them (Tier 1) it falls back to the source filename stem.
 
 - `folder.jpg` and `artist.jpg` live at the artist level so Jellyfin, Kodi, and other servers can pick them up as artist artwork.
 - `cover.jpg` at the album level is the 1:1 cover image, also embedded into every track.
