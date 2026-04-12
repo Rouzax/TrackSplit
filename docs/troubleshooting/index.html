@@ -645,6 +645,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Parallel mode is slow or hanging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tuning-workers-by-workload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tuning --workers by workload
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -805,6 +822,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Parallel mode is slow or hanging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tuning-workers-by-workload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tuning --workers by workload
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -880,9 +914,41 @@
 <h2 id="parallel-mode-is-slow-or-hanging">Parallel mode is slow or hanging</h2>
 <ul>
 <li>Set <code>--workers 1</code> to rule out contention.</li>
-<li>Fast SSDs can go higher than the default; try <code>--workers 8</code>.</li>
 <li>On spinning disks or network shares, sequential (<code>--workers 1</code>) is usually faster.</li>
 </ul>
+<h3 id="tuning-workers-by-workload">Tuning <code>--workers</code> by workload</h3>
+<p>The default (<code>logical_cores // 4</code>, clamped to <code>[2, 12]</code>) is sized for FLAC / forced-Opus <strong>re-encode</strong> batches, where each ffmpeg process is CPU-heavy and multi-threaded. For other workloads you can go higher:</p>
+<table>
+<thead>
+<tr>
+<th>Workload</th>
+<th>What ffmpeg does</th>
+<th>CPU per worker</th>
+<th>Good <code>--workers</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stream-copy</strong> (Opus source → Opus output, common with CrateDigger MKVs)</td>
+<td>Mux only, no decode/encode</td>
+<td>Near zero</td>
+<td>2-3x the default; a 40-thread box happily runs <code>-w 20</code> to <code>-w 30</code>. Bottleneck becomes disk I/O or ffmpeg spawn overhead, not CPU.</td>
+</tr>
+<tr>
+<td><strong>Re-encode</strong> (FLAC output, or <code>--format opus</code> on a lossy source that fails stream-copy safety checks)</td>
+<td>Full decode + encode</td>
+<td>High (libopus / FLAC are multi-threaded)</td>
+<td>Stick with the default; raising further risks oversubscription.</td>
+</tr>
+<tr>
+<td><strong>Mixed batch</strong></td>
+<td>Varies per file</td>
+<td>Varies</td>
+<td>Default is the right compromise.</td>
+</tr>
+</tbody>
+</table>
+<p>Quick check for which regime you're in: watch CPU while a batch runs. Sitting at ~10% with headroom means stream-copy and you can raise <code>--workers</code>. Sitting near 100% means re-encode and you should not.</p>
 <h2 id="cover-art-looks-wrong-or-fonts-are-missing">Cover art looks wrong or fonts are missing</h2>
 <p>Fonts are bundled with the package. If you see a <code>FileNotFoundError</code> about a weight, reinstall the package: <code>pip install -e . --force-reinstall</code>.</p>
 <h2 id="still-stuck">Still stuck?</h2>

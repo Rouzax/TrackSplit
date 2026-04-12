@@ -790,7 +790,7 @@
 </tr>
 <tr>
 <td><code>--workers</code>, <code>-w N</code></td>
-<td>Parallel workers for directory mode. Default <code>min(4, CPU count)</code>. Set <code>1</code> for sequential; raise for fast disks.</td>
+<td>Parallel workers for directory mode. Default scales with CPU: <code>logical_cores // 4</code>, clamped to <code>[2, 12]</code> (so 2 on a dual-core laptop, 4 on a 16-thread workstation, 10 on a 40-thread server). Set <code>1</code> for sequential; raise for stream-copy batches (see <a href="../troubleshooting/#parallel-mode-is-slow-or-hanging">Troubleshooting</a>).</td>
 </tr>
 <tr>
 <td><code>--dry-run</code></td>
