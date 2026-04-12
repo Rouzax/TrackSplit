@@ -4,7 +4,12 @@ from unittest.mock import patch
 
 import pytest
 
-from tracksplit.extract import build_extract_command, extract_audio, prepare_audio
+from tracksplit.extract import (
+    build_extract_command,
+    decide_codec,
+    extract_audio,
+    prepare_audio,
+)
 
 
 def test_build_extract_command():
@@ -72,8 +77,11 @@ class TestPrepareAudio:
         """Auto format with Opus source: stream copy, no extraction."""
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("opus")
+        ext, codec_mode = decide_codec(data, "auto")
 
-        audio_path, ext, codec_mode = prepare_audio(input_path, data, "auto", tmp_path)
+        audio_path, ext, codec_mode = prepare_audio(
+            input_path, ext, codec_mode, tmp_path,
+        )
 
         assert audio_path == input_path
         assert ext == ".opus"
@@ -83,9 +91,12 @@ class TestPrepareAudio:
         """Auto format with FLAC source: extract to temp FLAC."""
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("flac")
+        ext, codec_mode = decide_codec(data, "auto")
 
         with patch("tracksplit.extract.tracked_run"):
-            audio_path, ext, codec_mode = prepare_audio(input_path, data, "auto", tmp_path)
+            audio_path, ext, codec_mode = prepare_audio(
+                input_path, ext, codec_mode, tmp_path,
+            )
 
         assert audio_path == tmp_path / "video_tracksplit_full.flac"
         assert ext == ".flac"
@@ -95,8 +106,11 @@ class TestPrepareAudio:
         """Auto format with AAC source: re-encode to Opus."""
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("aac")
+        ext, codec_mode = decide_codec(data, "auto")
 
-        audio_path, ext, codec_mode = prepare_audio(input_path, data, "auto", tmp_path)
+        audio_path, ext, codec_mode = prepare_audio(
+            input_path, ext, codec_mode, tmp_path,
+        )
 
         assert audio_path == input_path
         assert ext == ".opus"
@@ -106,9 +120,12 @@ class TestPrepareAudio:
         """Explicit flac format: always extract regardless of source codec."""
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("opus")
+        ext, codec_mode = decide_codec(data, "flac")
 
         with patch("tracksplit.extract.tracked_run"):
-            audio_path, ext, codec_mode = prepare_audio(input_path, data, "flac", tmp_path)
+            audio_path, ext, codec_mode = prepare_audio(
+                input_path, ext, codec_mode, tmp_path,
+            )
 
         assert audio_path == tmp_path / "video_tracksplit_full.flac"
         assert ext == ".flac"
@@ -118,8 +135,11 @@ class TestPrepareAudio:
         """Explicit opus format with Opus source: stream copy."""
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("opus")
+        ext, codec_mode = decide_codec(data, "opus")
 
-        audio_path, ext, codec_mode = prepare_audio(input_path, data, "opus", tmp_path)
+        audio_path, ext, codec_mode = prepare_audio(
+            input_path, ext, codec_mode, tmp_path,
+        )
 
         assert audio_path == input_path
         assert ext == ".opus"
@@ -129,17 +149,55 @@ class TestPrepareAudio:
         """Explicit opus format with non-Opus source: re-encode."""
         input_path = Path("/tmp/video.mkv")
         data = _ffprobe_with_codec("flac")
+        ext, codec_mode = decide_codec(data, "opus")
 
-        audio_path, ext, codec_mode = prepare_audio(input_path, data, "opus", tmp_path)
+        audio_path, ext, codec_mode = prepare_audio(
+            input_path, ext, codec_mode, tmp_path,
+        )
 
         assert audio_path == input_path
         assert ext == ".opus"
         assert codec_mode == "libopus"
 
     def test_unknown_format_raises(self, tmp_path):
-        """Unknown format raises ValueError."""
-        input_path = Path("/tmp/video.mkv")
+        """Unknown format raises ValueError via decide_codec."""
         data = _ffprobe_with_codec("opus")
 
         with pytest.raises(ValueError, match="Unknown output format"):
-            prepare_audio(input_path, data, "wav", tmp_path)
+            decide_codec(data, "wav")
+
+
+class TestDecideCodec:
+    def _data(self, codec):
+        return {"streams": [{"codec_type": "audio", "codec_name": codec}]}
+
+    def test_auto_opus_source_copies(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("opus"), "auto") == (".opus", "copy")
+
+    def test_auto_lossless_source_transcodes_to_flac(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("flac"), "auto") == (".flac", "copy")
+        assert decide_codec(self._data("alac"), "auto") == (".flac", "copy")
+
+    def test_auto_lossy_source_reencodes_to_opus(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("aac"), "auto") == (".opus", "libopus")
+
+    def test_explicit_flac_always_flac_copy(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("aac"), "flac") == (".flac", "copy")
+
+    def test_explicit_opus_copies_opus_source(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("opus"), "opus") == (".opus", "copy")
+
+    def test_explicit_opus_reencodes_non_opus(self):
+        from tracksplit.extract import decide_codec
+        assert decide_codec(self._data("aac"), "opus") == (".opus", "libopus")
+
+    def test_unknown_format_raises(self):
+        from tracksplit.extract import decide_codec
+        import pytest
+        with pytest.raises(ValueError):
+            decide_codec(self._data("aac"), "wav")

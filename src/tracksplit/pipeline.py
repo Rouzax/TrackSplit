@@ -5,8 +5,9 @@ composition for individual video files and directories of video files.
 """
 from __future__ import annotations
 
-import json
+import errno
 import logging
+import shutil
 import tempfile
 import threading
 from collections.abc import Callable
@@ -19,7 +20,21 @@ from tracksplit.cover import (
     find_dj_artwork,
 )
 from tracksplit.cratedigger import apply_cratedigger_canon
-from tracksplit.extract import prepare_audio
+from tracksplit.extract import decide_codec, prepare_audio
+from tracksplit.manifest import (
+    ArtistManifest,
+    LEGACY_CHAPTER_CACHE_FILENAME,
+    MANIFEST_SCHEMA,
+    TAG_KEYS,
+    SourceFingerprint,
+    artwork_sha256,
+    atomic_write_bytes,
+    build_album_manifest,
+    load_album_manifest,
+    load_artist_manifest,
+    save_album_manifest,
+    save_artist_manifest,
+)
 from tracksplit.metadata import build_album_meta, safe_filename
 from tracksplit.models import Chapter, TrackMeta
 from tracksplit.probe import (
@@ -35,7 +50,7 @@ from tracksplit.tagger import tag_all
 
 logger = logging.getLogger(__name__)
 
-_CACHE_FILENAME = ".tracksplit_chapters.json"
+FATAL_DISK_ERRNOS = (errno.ENOSPC, errno.EDQUOT, errno.EROFS)
 
 
 def _safe_log_name(path: Path) -> str:
@@ -61,6 +76,44 @@ def _chapters_to_dicts(chapters: list[Chapter]) -> list[dict]:
     ]
 
 
+_AUDIO_EXTS = (".flac", ".opus")
+
+
+def prune_orphan_tracks(album_dir: Path, expected: set[str]) -> list[str]:
+    """Delete audio files in album_dir whose filename is not in expected.
+
+    Only top-level *.flac and *.opus files are considered. Subdirectories,
+    cover.jpg, sidecar JSON files, and unrelated files are untouched.
+
+    Returns the list of removed filenames. Returns an empty list and
+    deletes nothing if ``expected`` is empty, which guards against
+    mass-deletion when an upstream step silently produced no tracks.
+
+    Assumes a single writer per album_dir: callers must not invoke this
+    concurrently with split_tracks or tag_all for the same album.
+    """
+    if not expected:
+        return []
+    removed: list[str] = []
+    for p in album_dir.iterdir():
+        if not p.is_file():
+            continue
+        if p.suffix.lower() not in _AUDIO_EXTS:
+            continue
+        if p.name in expected:
+            continue
+        try:
+            p.unlink()
+            removed.append(p.name)
+        except OSError as exc:
+            logger.warning("Could not remove orphan %s: %s", p, exc)
+    if removed:
+        logger.info(
+            "Pruned %d orphan track file(s) from %s", len(removed), album_dir,
+        )
+    return removed
+
+
 def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
     """Build an intro track if the first chapter starts after 0.0.
 
@@ -80,37 +133,154 @@ def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
     )
 
 
+def find_prior_album_dirs(
+    output_root: Path,
+    source_path: Path,
+    new_album_dir: Path,
+) -> list[Path]:
+    """Return album dirs under output_root whose manifest matches source_path
+    (by resolved path AND size) but whose directory differs from new_album_dir.
+
+    Matches are keyed on source identity, not heuristic name similarity, so
+    this is safe to call whenever ``should_regenerate`` returns True.
+    """
+    if not output_root.exists():
+        return []
+    try:
+        src_resolved = source_path.resolve()
+        src_size = source_path.stat().st_size
+    except OSError:
+        return []
+
+    new_resolved = new_album_dir.resolve(strict=False)
+
+    matches: list[Path] = []
+    for album_dir in output_root.glob("*/*"):
+        if not album_dir.is_dir():
+            continue
+        if album_dir.is_symlink():
+            continue
+        if album_dir.resolve(strict=False) == new_resolved:
+            continue
+        manifest = load_album_manifest(album_dir)
+        if manifest is None:
+            continue
+        try:
+            stored_resolved = Path(manifest.source.path).resolve()
+        except OSError:
+            continue
+        if stored_resolved != src_resolved:
+            continue
+        if manifest.source.size != src_size:
+            continue
+        matches.append(album_dir)
+    return matches
+
+
+def _remove_stale_album_dirs(
+    output_root: Path, source_path: Path, new_album_dir: Path,
+) -> None:
+    for stale in find_prior_album_dirs(output_root, source_path, new_album_dir):
+        logger.info(
+            "Removing renamed album dir: %s -> %s", stale, new_album_dir,
+        )
+        try:
+            shutil.rmtree(stale)
+        except OSError as exc:
+            logger.warning("Could not remove %s: %s", stale, exc)
+
+
+def refresh_artist_cover(
+    artist_dir: Path,
+    *,
+    artist_name: str,
+    dj_artwork_data: bytes | None,
+    compose,
+) -> None:
+    """Write folder.jpg / artist.jpg iff the DJ artwork hash changed.
+
+    ``compose`` is a callable matching ``cover.compose_artist_cover``'s
+    keyword signature, injected so tests can substitute a stub.
+    """
+    new_hash = artwork_sha256(dj_artwork_data)
+    existing = load_artist_manifest(artist_dir)
+    folder_jpg = artist_dir / "folder.jpg"
+    artist_jpg = artist_dir / "artist.jpg"
+    if (
+        existing is not None
+        and existing.dj_artwork_sha256 == new_hash
+        and folder_jpg.exists()
+        and artist_jpg.exists()
+    ):
+        return
+    try:
+        artist_dir.mkdir(parents=True, exist_ok=True)
+        cover_bytes = compose(
+            artist=artist_name, dj_artwork_data=dj_artwork_data,
+        )
+        atomic_write_bytes(folder_jpg, cover_bytes)
+        atomic_write_bytes(artist_jpg, cover_bytes)
+        save_artist_manifest(
+            artist_dir,
+            ArtistManifest(
+                schema=MANIFEST_SCHEMA, artist=artist_name, dj_artwork_sha256=new_hash,
+            ),
+        )
+        logger.info("Refreshed artist cover: %s", artist_dir.name)
+    except OSError as exc:
+        if exc.errno in FATAL_DISK_ERRNOS:
+            raise
+        logger.warning(
+            "Could not refresh artist cover for %s: %s", artist_dir, exc,
+        )
+
+
 def should_regenerate(
     album_dir: Path,
-    chapters: list[Chapter],
+    source_path: Path,
+    tags: dict,
+    chapter_dicts: list[dict],
+    artist_folder: str,
+    album_folder: str,
+    output_format: str,
+    codec_mode: str,
+    *,
     force: bool,
 ) -> bool:
-    """Determine whether the album needs to be (re)generated.
-
-    Returns True if force is set, the album directory does not exist,
-    or the chapter data differs from the cached version.
-    """
+    """Return True when the album must be (re)generated."""
     if force:
         return True
     if not album_dir.exists():
         return True
 
-    cache_file = album_dir / _CACHE_FILENAME
-    if not cache_file.exists():
+    manifest = load_album_manifest(album_dir)
+    if manifest is None:
         return True
 
     try:
-        cached = json.loads(cache_file.read_text())
-    except (json.JSONDecodeError, OSError):
+        current_source = SourceFingerprint.from_path(
+            source_path, enriched_at=tags.get("enriched_at", ""),
+        )
+    except OSError:
         return True
 
-    return cached != _chapters_to_dicts(chapters)
+    if manifest.source != current_source:
+        return True
+    if manifest.resolved_artist_folder != artist_folder:
+        return True
+    if manifest.resolved_album_folder != album_folder:
+        return True
+    if manifest.output_format != output_format:
+        return True
+    if manifest.codec_mode != codec_mode:
+        return True
+    if manifest.chapters != chapter_dicts:
+        return True
 
-
-def _save_chapter_cache(album_dir: Path, chapters: list[Chapter]) -> None:
-    """Write chapter data to the cache file in album_dir."""
-    cache_file = album_dir / _CACHE_FILENAME
-    cache_file.write_text(json.dumps(_chapters_to_dicts(chapters)))
+    for k in TAG_KEYS:
+        if manifest.tags.get(k, "") != tags.get(k, ""):
+            return True
+    return False
 
 
 def process_file(
@@ -181,8 +351,22 @@ def process_file(
     album_folder = safe_filename(album.album_folder)
     album_dir = output_dir / artist_folder / album_folder
 
-    # Check if regeneration is needed
-    if not should_regenerate(album_dir, chapters, force):
+    ext, codec_mode = decide_codec(ffprobe_data, output_format)
+    chapter_dicts = _chapters_to_dicts(chapters)
+
+    if not should_regenerate(
+        album_dir, input_path, tags, chapter_dicts,
+        artist_folder, album_folder, ext.lstrip("."), codec_mode,
+        force=force,
+    ):
+        dj_artwork_data = find_dj_artwork(input_path, artist=album.artist)
+        artist_dir = output_dir / safe_filename(album.artist_folder)
+        refresh_artist_cover(
+            artist_dir,
+            artist_name=album.artist,
+            dj_artwork_data=dj_artwork_data,
+            compose=compose_artist_cover,
+        )
         logger.info(
             "Skipping %s, output unchanged since last run",
             _safe_log_name(input_path),
@@ -199,6 +383,8 @@ def process_file(
         )
         return True
 
+    _remove_stale_album_dirs(output_dir, input_path, album_dir)
+
     # Extract, split, tag
     album_dir.mkdir(parents=True, exist_ok=True)
 
@@ -208,7 +394,7 @@ def process_file(
         # Prepare audio (detect codec, extract if needed)
         _progress("Extracting audio")
         audio_path, ext, codec_mode = prepare_audio(
-            input_path, ffprobe_data, output_format, tmp_dir,
+            input_path, ext, codec_mode, tmp_dir,
             cancel_event=cancel_event,
         )
         from_video = (audio_path == input_path)
@@ -242,29 +428,39 @@ def process_file(
         _progress("Tagging tracks")
         tag_all(track_paths, album, cover_data=cover_bytes, on_progress=on_progress)
 
+        prune_orphan_tracks(album_dir, {p.name for p in track_paths})
+
         # Save cover.jpg
         _progress("Saving")
         cover_path = album_dir / "cover.jpg"
-        cover_path.write_bytes(cover_bytes)
+        atomic_write_bytes(cover_path, cover_bytes)
 
-    # Save chapter cache
-    _save_chapter_cache(album_dir, chapters)
+        manifest = build_album_manifest(
+            source_path=input_path,
+            chapters=chapter_dicts,
+            tags=tags,
+            artist_folder=artist_folder,
+            album_folder=album_folder,
+            output_format=ext.lstrip("."),
+            codec_mode=codec_mode,
+            track_filenames=[p.name for p in track_paths],
+            cover_bytes=cover_bytes,
+        )
+        save_album_manifest(album_dir, manifest)
+        legacy = album_dir / LEGACY_CHAPTER_CACHE_FILENAME
+        if legacy.exists():
+            try:
+                legacy.unlink()
+            except OSError:
+                pass
 
-    # Artist cover (only if not already present, tolerates parallel races)
     artist_dir = output_dir / safe_filename(album.artist_folder)
-    artist_cover_path = artist_dir / "folder.jpg"
-    if not artist_cover_path.exists():
-        try:
-            artist_bytes = compose_artist_cover(
-                artist=album.artist,
-                dj_artwork_data=dj_artwork_data,
-            )
-            artist_cover_path.write_bytes(artist_bytes)
-            # Also save as artist.jpg for Lyrion
-            (artist_dir / "artist.jpg").write_bytes(artist_bytes)
-            logger.info("Created artist cover: %s", artist_dir.name)
-        except OSError:
-            pass  # another worker may have written it concurrently
+    refresh_artist_cover(
+        artist_dir,
+        artist_name=album.artist,
+        dj_artwork_data=dj_artwork_data,
+        compose=compose_artist_cover,
+    )
 
     logger.info("Processed %s -> %s", _safe_log_name(input_path), album_dir)
     return True

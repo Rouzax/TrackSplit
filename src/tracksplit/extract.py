@@ -63,43 +63,43 @@ def extract_audio(
     return output_path
 
 
+def decide_codec(ffprobe_data: dict, output_format: str) -> tuple[str, str]:
+    """Decide output extension and codec_mode without performing extraction.
+
+    Returns (ext, codec_mode) where codec_mode is 'copy' or 'libopus'.
+    """
+    codec = get_audio_codec(ffprobe_data)
+    if output_format == "auto":
+        if codec == "opus":
+            return (".opus", "copy")
+        if is_lossless_codec(codec):
+            return (".flac", "copy")
+        return (".opus", "libopus")
+    if output_format == "flac":
+        return (".flac", "copy")
+    if output_format == "opus":
+        if codec == "opus":
+            return (".opus", "copy")
+        return (".opus", "libopus")
+    raise ValueError(f"Unknown output format: {output_format}")
+
+
 def prepare_audio(
     input_path: Path,
-    ffprobe_data: dict,
-    output_format: str,
+    ext: str,
+    codec_mode: str,
     temp_dir: Path,
     cancel_event: threading.Event | None = None,
 ) -> tuple[Path, str, str]:
-    """Prepare audio source for splitting. Returns (audio_path, extension, codec_mode).
+    """Prepare audio source for splitting using an already-resolved codec decision.
 
-    codec_mode is one of: "copy" (stream copy), "flac" (transcode to FLAC),
-    "libopus" (re-encode to Opus).
+    Returns (audio_path, ext, codec_mode). Extracts to a temporary FLAC only
+    when (ext, codec_mode) == (".flac", "copy"); otherwise passes input_path
+    through. Caller must have obtained (ext, codec_mode) from `decide_codec`.
     """
-    codec = get_audio_codec(ffprobe_data)
-
-    if output_format == "auto":
-        if codec == "opus":
-            return (input_path, ".opus", "copy")
-        elif is_lossless_codec(codec):
-            flac_path = extract_audio(
-                input_path, temp_dir=temp_dir, cancel_event=cancel_event,
-            )
-            return (flac_path, ".flac", "copy")
-        else:
-            # Other lossy codecs: re-encode to Opus
-            return (input_path, ".opus", "libopus")
-
-    elif output_format == "flac":
+    if ext == ".flac" and codec_mode == "copy":
         flac_path = extract_audio(
             input_path, temp_dir=temp_dir, cancel_event=cancel_event,
         )
-        return (flac_path, ".flac", "copy")
-
-    elif output_format == "opus":
-        if codec == "opus":
-            return (input_path, ".opus", "copy")
-        else:
-            return (input_path, ".opus", "libopus")
-
-    else:
-        raise ValueError(f"Unknown output format: {output_format}")
+        return (flac_path, ext, codec_mode)
+    return (input_path, ext, codec_mode)
