@@ -461,3 +461,15 @@ class TestPruneOrphans:
         prune_orphan_tracks(album, expected=set())
 
         assert (sub / "01 - nested.flac").exists()
+
+    def test_empty_expected_set_preserves_everything(self, tmp_path):
+        from tracksplit.pipeline import prune_orphan_tracks
+        album = self._album(tmp_path)
+        (album / "01 - keep.flac").write_bytes(b"x")
+        (album / "02 - keep.opus").write_bytes(b"x")
+
+        removed = prune_orphan_tracks(album, expected=set())
+
+        assert removed == []
+        assert (album / "01 - keep.flac").exists()
+        assert (album / "02 - keep.opus").exists()

@@ -72,10 +72,18 @@ _AUDIO_EXTS = (".flac", ".opus")
 def prune_orphan_tracks(album_dir: Path, expected: set[str]) -> list[str]:
     """Delete audio files in album_dir whose filename is not in expected.
 
-    Only touches *.flac and *.opus files at the top level of album_dir.
-    Subdirectories, cover.jpg, sidecar JSON files, and unrelated files
-    are untouched. Returns the list of removed filenames.
+    Only top-level *.flac and *.opus files are considered. Subdirectories,
+    cover.jpg, sidecar JSON files, and unrelated files are untouched.
+
+    Returns the list of removed filenames. Returns an empty list and
+    deletes nothing if ``expected`` is empty, which guards against
+    mass-deletion when an upstream step silently produced no tracks.
+
+    Assumes a single writer per album_dir: callers must not invoke this
+    concurrently with split_tracks or tag_all for the same album.
     """
+    if not expected:
+        return []
     removed: list[str] = []
     for p in album_dir.iterdir():
         if not p.is_file():
