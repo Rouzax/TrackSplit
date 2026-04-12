@@ -361,3 +361,103 @@ class TestProcessFileManifest:
 
         assert process_file(src, out) is True
         assert not (album_dir / LEGACY_CHAPTER_CACHE_FILENAME).exists()
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_process_file_prunes_orphan_tracks(
+        self, mock_probe, mock_cover_mkv, mock_dj, mock_artist_cover,
+        mock_compose, mock_prepare, mock_split, mock_tag, tmp_path,
+    ):
+        from tracksplit.pipeline import process_file
+        mock_probe.return_value = self._probe()
+        mock_cover_mkv.return_value = None
+        mock_dj.return_value = None
+        mock_compose.return_value = b"JPEG"
+        mock_artist_cover.return_value = b"JPEG2"
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+        out = tmp_path / "out"
+        album_dir = out / "DJ X" / "Show 2025"
+        album_dir.mkdir(parents=True)
+
+        (album_dir / "01 - old track.flac").write_bytes(b"stale")
+        (album_dir / "99 - extra.opus").write_bytes(b"stale")
+        (album_dir / "notes.txt").write_bytes(b"keep")
+
+        mock_prepare.return_value = (src, ".flac", "copy")
+        new_tracks = [
+            album_dir / "01 - DJ X - Track 1.flac",
+            album_dir / "02 - DJ X - Track 2.flac",
+        ]
+        mock_split.return_value = new_tracks
+
+        assert process_file(src, out) is True
+        assert not (album_dir / "01 - old track.flac").exists()
+        assert not (album_dir / "99 - extra.opus").exists()
+        assert (album_dir / "notes.txt").exists()
+
+
+class TestPruneOrphans:
+    def _album(self, tmp_path):
+        d = tmp_path / "album"
+        d.mkdir()
+        return d
+
+    def test_prunes_unexpected_flac(self, tmp_path):
+        from tracksplit.pipeline import prune_orphan_tracks
+        album = self._album(tmp_path)
+        (album / "01 - old.flac").write_bytes(b"x")
+        (album / "02 - keep.flac").write_bytes(b"x")
+        (album / "cover.jpg").write_bytes(b"c")
+        (album / ".tracksplit_manifest.json").write_text("{}")
+
+        removed = prune_orphan_tracks(album, expected={"02 - keep.flac"})
+
+        assert "01 - old.flac" in removed
+        assert not (album / "01 - old.flac").exists()
+        assert (album / "02 - keep.flac").exists()
+        assert (album / "cover.jpg").exists()
+        assert (album / ".tracksplit_manifest.json").exists()
+
+    def test_prunes_across_extensions(self, tmp_path):
+        from tracksplit.pipeline import prune_orphan_tracks
+        album = self._album(tmp_path)
+        (album / "01 - old.flac").write_bytes(b"x")
+        (album / "01 - old.opus").write_bytes(b"x")
+        (album / "01 - new.opus").write_bytes(b"x")
+
+        prune_orphan_tracks(album, expected={"01 - new.opus"})
+
+        assert not (album / "01 - old.flac").exists()
+        assert not (album / "01 - old.opus").exists()
+        assert (album / "01 - new.opus").exists()
+
+    def test_leaves_non_audio_files_alone(self, tmp_path):
+        from tracksplit.pipeline import prune_orphan_tracks
+        album = self._album(tmp_path)
+        (album / "notes.txt").write_bytes(b"x")
+        (album / "folder.jpg").write_bytes(b"x")
+
+        removed = prune_orphan_tracks(album, expected=set())
+
+        assert removed == []
+        assert (album / "notes.txt").exists()
+        assert (album / "folder.jpg").exists()
+
+    def test_ignores_subdirectories(self, tmp_path):
+        from tracksplit.pipeline import prune_orphan_tracks
+        album = self._album(tmp_path)
+        sub = album / "sub"
+        sub.mkdir()
+        (sub / "01 - nested.flac").write_bytes(b"x")
+
+        prune_orphan_tracks(album, expected=set())
+
+        assert (sub / "01 - nested.flac").exists()

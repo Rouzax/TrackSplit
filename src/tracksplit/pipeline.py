@@ -66,6 +66,36 @@ def _chapters_to_dicts(chapters: list[Chapter]) -> list[dict]:
     ]
 
 
+_AUDIO_EXTS = (".flac", ".opus")
+
+
+def prune_orphan_tracks(album_dir: Path, expected: set[str]) -> list[str]:
+    """Delete audio files in album_dir whose filename is not in expected.
+
+    Only touches *.flac and *.opus files at the top level of album_dir.
+    Subdirectories, cover.jpg, sidecar JSON files, and unrelated files
+    are untouched. Returns the list of removed filenames.
+    """
+    removed: list[str] = []
+    for p in album_dir.iterdir():
+        if not p.is_file():
+            continue
+        if p.suffix.lower() not in _AUDIO_EXTS:
+            continue
+        if p.name in expected:
+            continue
+        try:
+            p.unlink()
+            removed.append(p.name)
+        except OSError as exc:
+            logger.warning("Could not remove orphan %s: %s", p, exc)
+    if removed:
+        logger.info(
+            "Pruned %d orphan track file(s) from %s", len(removed), album_dir,
+        )
+    return removed
+
+
 def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
     """Build an intro track if the first chapter starts after 0.0.
 
@@ -267,6 +297,8 @@ def process_file(
         # Tag all tracks
         _progress("Tagging tracks")
         tag_all(track_paths, album, cover_data=cover_bytes, on_progress=on_progress)
+
+        prune_orphan_tracks(album_dir, {p.name for p in track_paths})
 
         # Save cover.jpg
         _progress("Saving")
