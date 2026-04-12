@@ -6,6 +6,7 @@ composition for individual video files and directories of video files.
 from __future__ import annotations
 
 import logging
+import shutil
 import tempfile
 import threading
 from collections.abc import Callable
@@ -121,6 +122,65 @@ def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
         start=0.0,
         end=chapters[0].start,
     )
+
+
+def find_prior_album_dirs(
+    output_root: Path,
+    source_path: Path,
+    new_album_dir: Path,
+) -> list[Path]:
+    """Return album dirs under output_root whose manifest matches source_path
+    (by resolved path AND size) but whose directory differs from new_album_dir.
+
+    Matches are keyed on source identity, not heuristic name similarity, so
+    this is safe to call whenever ``should_regenerate`` returns True.
+    """
+    if not output_root.exists():
+        return []
+    try:
+        src_resolved = source_path.resolve()
+        src_size = source_path.stat().st_size
+    except OSError:
+        return []
+
+    new_resolved = (
+        new_album_dir.resolve() if new_album_dir.exists() else new_album_dir
+    )
+
+    matches: list[Path] = []
+    for album_dir in output_root.glob("*/*"):
+        if not album_dir.is_dir():
+            continue
+        if album_dir.resolve() == (
+            new_resolved if isinstance(new_resolved, Path) else new_resolved
+        ):
+            continue
+        manifest = load_album_manifest(album_dir)
+        if manifest is None:
+            continue
+        try:
+            stored_resolved = Path(manifest.source.path).resolve()
+        except OSError:
+            continue
+        if stored_resolved != src_resolved:
+            continue
+        if manifest.source.size != src_size:
+            continue
+        matches.append(album_dir)
+    return matches
+
+
+def _remove_stale_album_dirs(
+    output_root: Path, source_path: Path, new_album_dir: Path,
+) -> None:
+    for stale in find_prior_album_dirs(output_root, source_path, new_album_dir):
+        logger.info(
+            "Removing renamed album dir: %s -> %s", stale, new_album_dir,
+        )
+        try:
+            shutil.rmtree(stale)
+        except OSError as exc:
+            logger.warning("Could not remove %s: %s", stale, exc)
 
 
 def should_regenerate(
@@ -262,6 +322,8 @@ def process_file(
             len(album.tracks),
         )
         return True
+
+    _remove_stale_album_dirs(output_dir, input_path, album_dir)
 
     # Extract, split, tag
     album_dir.mkdir(parents=True, exist_ok=True)

@@ -403,6 +403,76 @@ class TestProcessFileManifest:
         assert not (album_dir / "99 - extra.opus").exists()
         assert (album_dir / "notes.txt").exists()
 
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    @patch("tracksplit.pipeline.apply_cratedigger_canon")
+    def test_process_file_deletes_old_album_dir_on_rename(
+        self, mock_canon, mock_probe, mock_cover_mkv, mock_dj,
+        mock_artist_cover, mock_compose, mock_prepare, mock_split, mock_tag,
+        tmp_path,
+    ):
+        from tracksplit.manifest import (
+            ALBUM_MANIFEST_FILENAME, MANIFEST_SCHEMA,
+        )
+        from tracksplit.pipeline import process_file
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 100)
+        out = tmp_path / "out"
+        old_album = out / "DJ X" / "Old Name"
+        old_album.mkdir(parents=True)
+        (old_album / "01 - stale.flac").write_bytes(b"stale")
+        (old_album / ALBUM_MANIFEST_FILENAME).write_text(json.dumps({
+            "schema": MANIFEST_SCHEMA,
+            "source": {
+                "path": str(src),
+                "mtime_ns": src.stat().st_mtime_ns,
+                "size": src.stat().st_size,
+                "enriched_at": "",
+            },
+            "resolved_artist_folder": "DJ X",
+            "resolved_album_folder": "Old Name",
+            "output_format": "flac",
+            "codec_mode": "copy",
+            "chapters": [],
+            "tags": {},
+            "track_filenames": ["01 - stale.flac"],
+            "cover_sha256": "",
+        }))
+
+        # Probe yields CrateDigger tags that resolve album_folder to "New Name 2025".
+        mock_probe.return_value = {
+            "streams": [{"codec_type": "audio", "codec_name": "flac"}],
+            "format": {"tags": {
+                "ARTIST": "DJ X",
+                "TITLE": "New Name",
+                "CRATEDIGGER_1001TL_FESTIVAL": "New Name",
+                "CRATEDIGGER_1001TL_DATE": "2025",
+            }, "duration": "600.0"},
+            "chapters": [
+                {"start_time": "0.0", "end_time": "600.0",
+                 "tags": {"title": "T1"}},
+            ],
+        }
+        mock_cover_mkv.return_value = None
+        mock_dj.return_value = None
+        mock_compose.return_value = b"JPEG"
+        mock_artist_cover.return_value = b"JPEG2"
+        mock_prepare.return_value = (src, ".flac", "copy")
+        mock_split.return_value = [
+            out / "DJ X" / "New Name 2025" / "01 - DJ X - T1.flac",
+        ]
+
+        assert process_file(src, out) is True
+        assert not old_album.exists(), "old album dir should be deleted"
+        assert (out / "DJ X" / "New Name 2025").exists()
+
 
 class TestPruneOrphans:
     def _album(self, tmp_path):
@@ -473,3 +543,91 @@ class TestPruneOrphans:
         assert removed == []
         assert (album / "01 - keep.flac").exists()
         assert (album / "02 - keep.opus").exists()
+
+
+class TestFindPriorAlbumDirs:
+    def _write_manifest(self, album_dir, source_path, size, mtime_ns,
+                         artist_folder=None, album_folder=None):
+        from tracksplit.manifest import (
+            ALBUM_MANIFEST_FILENAME, MANIFEST_SCHEMA,
+        )
+        album_dir.mkdir(parents=True, exist_ok=True)
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps({
+            "schema": MANIFEST_SCHEMA,
+            "source": {
+                "path": str(source_path),
+                "mtime_ns": mtime_ns,
+                "size": size,
+                "enriched_at": "",
+            },
+            "resolved_artist_folder": artist_folder or album_dir.parent.name,
+            "resolved_album_folder": album_folder or album_dir.name,
+            "output_format": "flac",
+            "codec_mode": "copy",
+            "chapters": [],
+            "tags": {},
+            "track_filenames": [],
+            "cover_sha256": "",
+        }))
+
+    def test_finds_prior_album_dir_same_source(self, tmp_path):
+        from tracksplit.pipeline import find_prior_album_dirs
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        out = tmp_path / "out"
+        self._write_manifest(out / "ArtistA" / "Old Name", src,
+                             src.stat().st_size, src.stat().st_mtime_ns)
+        self._write_manifest(out / "ArtistA" / "Other Album",
+                             tmp_path / "other.mkv", 99, 99)
+
+        found = find_prior_album_dirs(
+            out, src, new_album_dir=out / "ArtistA" / "New Name",
+        )
+        assert found == [out / "ArtistA" / "Old Name"]
+
+    def test_skips_when_path_unchanged(self, tmp_path):
+        from tracksplit.pipeline import find_prior_album_dirs
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        out = tmp_path / "out"
+        album = out / "ArtistA" / "Same Name"
+        self._write_manifest(album, src, src.stat().st_size,
+                             src.stat().st_mtime_ns)
+
+        assert find_prior_album_dirs(out, src, new_album_dir=album) == []
+
+    def test_handles_artist_rename_too(self, tmp_path):
+        from tracksplit.pipeline import find_prior_album_dirs
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        out = tmp_path / "out"
+        old = out / "OldArtist" / "Album"
+        self._write_manifest(old, src, src.stat().st_size,
+                             src.stat().st_mtime_ns)
+
+        found = find_prior_album_dirs(
+            out, src, new_album_dir=out / "NewArtist" / "Album",
+        )
+        assert found == [old]
+
+    def test_missing_output_root_returns_empty(self, tmp_path):
+        from tracksplit.pipeline import find_prior_album_dirs
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x")
+        assert find_prior_album_dirs(
+            tmp_path / "nope", src, new_album_dir=tmp_path / "whatever",
+        ) == []
+
+    def test_ignores_manifest_with_different_size(self, tmp_path):
+        from tracksplit.pipeline import find_prior_album_dirs
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        out = tmp_path / "out"
+        other = out / "Artist" / "Album"
+        # Same path, different size, should not match.
+        self._write_manifest(other, src, size=999,
+                             mtime_ns=src.stat().st_mtime_ns)
+
+        assert find_prior_album_dirs(
+            out, src, new_album_dir=out / "Artist" / "Other",
+        ) == []
