@@ -322,12 +322,16 @@ def main(
         help="Output format: auto, flac, or opus.",
     ),
     workers: int = typer.Option(
-        min(4, os.cpu_count() or 4),
+        # Each worker spawns its own ffmpeg, which is already multi-threaded,
+        # so 1:1 with logical cores oversubscribes. Scale with the box:
+        # dual-core → 2, 16 logical cores → 4, 40 logical cores → 10.
+        # Cap at 12 so very large servers don't thrash disk I/O.
+        min(max((os.cpu_count() or 4) // 4, 2), 12),
         "--workers",
         "-w",
         help=(
-            "Parallel workers for directory mode. Default min(4, CPU count). "
-            "Use 1 for sequential; raise for fast disks."
+            "Parallel workers for directory mode. Default scales with CPU "
+            "(logical_cores // 4, clamped to [2, 12]). Use 1 for sequential."
         ),
     ),
     check: bool = typer.Option(
