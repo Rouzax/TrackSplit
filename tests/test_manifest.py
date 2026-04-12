@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 import pytest
@@ -7,7 +6,6 @@ from tracksplit.manifest import (
     ALBUM_MANIFEST_FILENAME,
     LEGACY_CHAPTER_CACHE_FILENAME,
     MANIFEST_SCHEMA,
-    AlbumManifest,
     SourceFingerprint,
     build_album_manifest,
     load_album_manifest,
@@ -85,3 +83,52 @@ def test_source_fingerprint_equality(tmp_path):
     a = SourceFingerprint.from_path(src, enriched_at="x")
     b = SourceFingerprint.from_path(src, enriched_at="x")
     assert a == b
+
+
+def test_load_album_manifest_schema_mismatch_returns_none(tmp_path):
+    from tracksplit.manifest import ALBUM_MANIFEST_FILENAME, load_album_manifest
+    (tmp_path / ALBUM_MANIFEST_FILENAME).write_text(
+        '{"schema": 999, "source": {"path":"","mtime_ns":0,"size":0,"enriched_at":""},'
+        ' "resolved_artist_folder":"","resolved_album_folder":"","output_format":"",'
+        ' "codec_mode":"","chapters":[],"tags":{},"track_filenames":[],"cover_sha256":""}'
+    )
+    assert load_album_manifest(tmp_path) is None
+
+
+def test_load_artist_manifest_schema_mismatch_returns_none(tmp_path):
+    from tracksplit.manifest import ARTIST_MANIFEST_FILENAME, load_artist_manifest
+    (tmp_path / ARTIST_MANIFEST_FILENAME).write_text(
+        '{"schema": 999, "artist": "X", "dj_artwork_sha256": "abc"}'
+    )
+    assert load_artist_manifest(tmp_path) is None
+
+
+def test_save_album_manifest_is_atomic(tmp_path, monkeypatch):
+    """A failure inside the atomic write leaves no partial file behind."""
+    from tracksplit.manifest import (
+        ALBUM_MANIFEST_FILENAME, build_album_manifest, save_album_manifest,
+    )
+    src = tmp_path / "s.mkv"
+    src.write_bytes(b"x")
+    album = tmp_path / "album"
+    album.mkdir()
+    m = build_album_manifest(
+        source_path=src, chapters=[], tags={}, artist_folder="A",
+        album_folder="B", output_format="flac", codec_mode="copy",
+        track_filenames=[], cover_bytes=b"",
+    )
+    save_album_manifest(album, m)
+    content = (album / ALBUM_MANIFEST_FILENAME).read_text()
+
+    import os as _os
+    orig_replace = _os.replace
+    def _boom(a, b): raise OSError("boom")
+    monkeypatch.setattr(_os, "replace", _boom)
+    with pytest.raises(OSError):
+        save_album_manifest(album, m)
+    assert (album / ALBUM_MANIFEST_FILENAME).read_text() == content
+    leftovers = [p.name for p in album.iterdir()
+                 if p.name.startswith(ALBUM_MANIFEST_FILENAME + ".")]
+    assert leftovers == []
+
+    monkeypatch.setattr(_os, "replace", orig_replace)

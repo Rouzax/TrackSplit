@@ -8,6 +8,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
+import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -117,9 +119,24 @@ def build_album_manifest(
     )
 
 
+def _atomic_write_text(path: Path, data: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=path.name + ".", dir=str(path.parent))
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(data)
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
 def save_album_manifest(album_dir: Path, manifest: AlbumManifest) -> None:
     path = album_dir / ALBUM_MANIFEST_FILENAME
-    path.write_text(json.dumps(manifest.to_dict(), indent=2))
+    _atomic_write_text(path, json.dumps(manifest.to_dict(), indent=2))
 
 
 def load_album_manifest(album_dir: Path) -> AlbumManifest | None:
@@ -128,6 +145,12 @@ def load_album_manifest(album_dir: Path) -> AlbumManifest | None:
         return None
     try:
         data = json.loads(path.read_text())
+        if data.get("schema") != MANIFEST_SCHEMA:
+            logger.warning(
+                "Manifest schema mismatch at %s: got %r, expected %r",
+                path, data.get("schema"), MANIFEST_SCHEMA,
+            )
+            return None
         return AlbumManifest.from_dict(data)
     except (json.JSONDecodeError, OSError, KeyError, TypeError) as exc:
         logger.warning("Manifest unreadable at %s: %s", path, exc)
@@ -150,6 +173,12 @@ def load_artist_manifest(artist_dir: Path) -> ArtistManifest | None:
         return None
     try:
         d = json.loads(path.read_text())
+        if d.get("schema") != MANIFEST_SCHEMA:
+            logger.warning(
+                "Artist manifest schema mismatch at %s: got %r, expected %r",
+                path, d.get("schema"), MANIFEST_SCHEMA,
+            )
+            return None
         return ArtistManifest(
             schema=d["schema"], artist=d["artist"],
             dj_artwork_sha256=d["dj_artwork_sha256"],
@@ -161,7 +190,7 @@ def load_artist_manifest(artist_dir: Path) -> ArtistManifest | None:
 
 def save_artist_manifest(artist_dir: Path, manifest: ArtistManifest) -> None:
     path = artist_dir / ARTIST_MANIFEST_FILENAME
-    path.write_text(json.dumps(manifest.to_dict(), indent=2))
+    _atomic_write_text(path, json.dumps(manifest.to_dict(), indent=2))
 
 
 def artwork_sha256(data: bytes | None) -> str:
