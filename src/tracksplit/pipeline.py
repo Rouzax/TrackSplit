@@ -221,7 +221,7 @@ def process_file(
 
         # Cover art
         _progress("Extracting cover art")
-        cover_data = extract_cover_from_mkv(input_path)
+        cover_data = extract_cover_from_mkv(input_path, ffprobe_data=ffprobe_data)
         dj_artwork_data = find_dj_artwork(
             input_path, artist=album.artist,
         )

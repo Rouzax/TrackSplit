@@ -251,28 +251,18 @@ class TestBuildCoverCommand:
 
 class TestExtractCoverFromMkv:
     @patch("tracksplit.cover.subprocess.run")
-    def test_ffmpeg_success_non_mkv(self, mock_run):
-        """Non-MKV files use ffmpeg image2pipe extraction."""
-        fake_image = b"\xff\xd8\xff\xe0fake_jpeg_data"
-        mock_run.return_value = MagicMock(stdout=fake_image, returncode=0)
-
-        result = extract_cover_from_mkv(Path("/tmp/video.mp4"))
-        assert result == fake_image
-
-    @patch("tracksplit.cover.subprocess.run")
     def test_mkvtools_success(self, mock_run):
         """MKV files try mkvmerge/mkvextract first."""
         identify_json = '{"attachments": [{"id": 1, "content_type": "image/jpeg"}]}'
         fake_image = b"\xff\xd8\xff\xe0fake_jpeg_data"
 
         def side_effect(cmd, **kwargs):
-            if "mkvmerge" in cmd:
+            if any("mkvmerge" in str(c) for c in cmd):
                 return MagicMock(stdout=identify_json, returncode=0)
-            elif "mkvextract" in cmd:
-                # Write a temp file that the function will read
+            elif any("mkvextract" in str(c) for c in cmd):
                 import re
                 for part in cmd:
-                    m = re.match(r"\d+:(.*)", part)
+                    m = re.match(r"\d+:(.*)", str(part))
                     if m:
                         Path(m.group(1)).write_bytes(fake_image)
                 return MagicMock(returncode=0)
@@ -283,10 +273,49 @@ class TestExtractCoverFromMkv:
         assert result == fake_image
 
     @patch("tracksplit.cover.subprocess.run")
-    def test_ffmpeg_failure_returns_none_for_non_mkv(self, mock_run):
-        mock_run.side_effect = subprocess.CalledProcessError(1, "ffmpeg")
+    def test_ffmpeg_stream_extraction(self, mock_run):
+        """Non-MKV and mkvtools-unavailable paths use ffmpeg stream mapping."""
+        fake_image = b"\xff\xd8\xff\xe0fake_jpeg_data"
+        ffprobe_data = {
+            "streams": [
+                {"index": 0, "codec_type": "video", "codec_name": "av1"},
+                {"index": 1, "codec_type": "audio", "codec_name": "opus"},
+                {
+                    "index": 2, "codec_type": "video", "codec_name": "png",
+                    "tags": {"filename": "cover.png", "mimetype": "image/png"},
+                },
+            ],
+        }
 
-        result = extract_cover_from_mkv(Path("/tmp/video.mp4"))
+        def side_effect(cmd, **kwargs):
+            if any("ffmpeg" in str(c) for c in cmd):
+                # Find the output path (last arg) and write fake image
+                for i, part in enumerate(cmd):
+                    if str(part).endswith((".png", ".jpg", ".webp")):
+                        try:
+                            Path(str(part)).write_bytes(fake_image)
+                        except OSError:
+                            pass
+                return MagicMock(returncode=0)
+            return MagicMock(returncode=0)
+
+        mock_run.side_effect = side_effect
+        result = extract_cover_from_mkv(
+            Path("/tmp/video.mp4"), ffprobe_data=ffprobe_data,
+        )
+        assert result == fake_image
+
+    def test_no_cover_stream_returns_none(self):
+        """Files without an image stream return None."""
+        ffprobe_data = {
+            "streams": [
+                {"index": 0, "codec_type": "video", "codec_name": "h264"},
+                {"index": 1, "codec_type": "audio", "codec_name": "aac"},
+            ],
+        }
+        result = extract_cover_from_mkv(
+            Path("/tmp/video.mp4"), ffprobe_data=ffprobe_data,
+        )
         assert result is None
 
 

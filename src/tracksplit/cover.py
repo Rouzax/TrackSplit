@@ -561,48 +561,104 @@ def build_cover_command(input_path: Path, output_path: Path) -> list[str]:
     ]
 
 
-def extract_cover_from_mkv(input_path: Path) -> bytes | None:
+_IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp")
+_IMAGE_CODECS = ("png", "mjpeg", "jpeg", "webp", "bmp")
+_STREAM_EXT = {"png": ".png", "mjpeg": ".jpg", "jpeg": ".jpg", "webp": ".webp", "bmp": ".bmp"}
+
+
+def extract_cover_from_mkv(
+    input_path: Path, ffprobe_data: dict | None = None,
+) -> bytes | None:
     """Extract embedded cover art from a video file.
 
-    For MKV files, uses mkvmerge/mkvextract exclusively (the ffmpeg
-    image2pipe approach dumps the entire video stream for MKV, not
-    just attachments). For other formats, tries ffmpeg with a timeout.
+    For MKV files, tries mkvmerge/mkvextract first (fastest, most reliable
+    when available). Falls back to ffmpeg stream mapping for all formats
+    when mkvtools are missing, using ffprobe to locate the image stream.
     """
     if input_path.suffix.lower() == ".mkv":
-        return _extract_cover_mkvtools(input_path)
+        result = _extract_cover_mkvtools(input_path)
+        if result is not None:
+            return result
 
-    return _extract_cover_ffmpeg(input_path)
+    return _extract_cover_ffmpeg_stream(input_path, ffprobe_data)
 
 
-def _extract_cover_ffmpeg(input_path: Path) -> bytes | None:
-    """Try ffmpeg image2pipe extraction with a timeout."""
-    try:
-        cmd = [
-            get_tool("ffmpeg"),
-            "-i",
-            str(input_path),
-            "-an",
-            "-vcodec",
-            "copy",
-            "-f",
-            "image2pipe",
-            "-",
-        ]
-        logger.debug("Trying ffmpeg cover extraction: %s", " ".join(cmd))
-        result = subprocess.run(
-            cmd, capture_output=True, check=True, timeout=15,
+def _find_cover_stream(ffprobe_data: dict) -> tuple[int, str] | None:
+    """Find an attached picture stream index and output extension.
+
+    MKV stores cover art as a video stream with an image codec plus
+    filename/mimetype tags. MP4/MOV uses disposition.attached_pic.
+    """
+    for stream in ffprobe_data.get("streams", []):
+        if stream.get("codec_type") != "video":
+            continue
+        codec_name = stream.get("codec_name", "")
+        if codec_name not in _IMAGE_CODECS:
+            continue
+        tags = stream.get("tags") or {}
+        mimetype = (tags.get("mimetype") or "").lower()
+        filename = (tags.get("filename") or "").lower()
+        disposition = stream.get("disposition") or {}
+        is_attached = (
+            mimetype.startswith("image/")
+            or filename.endswith(_IMAGE_EXTS)
+            or disposition.get("attached_pic") == 1
         )
-        if result.stdout:
-            logger.info("Extracted cover art via ffmpeg from %s", input_path.name)
-            return result.stdout
-    except subprocess.TimeoutExpired:
-        logger.debug("ffmpeg cover extraction timed out for %s", input_path.name)
-    except subprocess.CalledProcessError:
-        logger.debug("ffmpeg cover extraction failed for %s", input_path.name)
+        if is_attached:
+            return (stream["index"], _STREAM_EXT.get(codec_name, ".jpg"))
     return None
 
 
-_IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp")
+def _extract_cover_ffmpeg_stream(
+    input_path: Path, ffprobe_data: dict | None,
+) -> bytes | None:
+    """Extract cover art by mapping a specific image stream via ffmpeg."""
+    if ffprobe_data is None:
+        try:
+            from tracksplit.probe import run_ffprobe
+            ffprobe_data = run_ffprobe(input_path)
+        except (subprocess.CalledProcessError, OSError) as exc:
+            logger.debug("ffprobe failed for cover lookup on %s: %s", input_path.name, exc)
+            return None
+
+    found = _find_cover_stream(ffprobe_data)
+    if found is None:
+        logger.debug("No cover art stream found in %s", input_path.name)
+        return None
+    stream_index, ext = found
+
+    tmp_file: Path | None = None
+    try:
+        fd, tmp_path_str = tempfile.mkstemp(prefix="tracksplit_cover_", suffix=ext)
+        import os
+        os.close(fd)
+        tmp_file = Path(tmp_path_str)
+
+        cmd = [
+            get_tool("ffmpeg"),
+            "-hide_banner", "-loglevel", "error", "-y",
+            "-i", str(input_path),
+            "-map", f"0:{stream_index}",
+            "-c", "copy",
+            "-frames:v", "1",
+            "-update", "1",
+            str(tmp_file),
+        ]
+        logger.debug("Extracting cover via ffmpeg stream map: %s", " ".join(cmd))
+        subprocess.run(cmd, capture_output=True, check=True, timeout=30)
+
+        if tmp_file.exists() and tmp_file.stat().st_size > 0:
+            data = tmp_file.read_bytes()
+            logger.info(
+                "Extracted cover art via ffmpeg stream from %s", input_path.name,
+            )
+            return data
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        logger.debug("ffmpeg cover stream extraction failed: %s", exc)
+    finally:
+        if tmp_file is not None:
+            tmp_file.unlink(missing_ok=True)
+    return None
 
 
 def _is_image_attachment(att: dict) -> bool:
