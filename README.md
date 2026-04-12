@@ -24,6 +24,30 @@ Extract audio from video chapters into FLAC music albums for Jellyfin and Lyrion
 pip install -e .
 ```
 
+After install, run `tracksplit check` to confirm `ffmpeg`/`ffprobe` are reachable.
+
+## Configuration
+
+TrackSplit works out of the box if `ffmpeg`, `ffprobe`, and (optionally) `mkvextract` are on your `PATH`. If they are installed elsewhere, point TrackSplit at them via a TOML config. Copy [`tracksplit.toml.example`](tracksplit.toml.example) and uncomment the keys you need.
+
+Search order (first hit wins):
+
+1. `./tracksplit.toml`
+2. `./config.toml`
+3. `~/.config/tracksplit/config.toml` (Linux/macOS) or `%APPDATA%/tracksplit/config.toml` (Windows)
+4. `~/tracksplit.toml`, `~/.tracksplit.toml`
+
+Example:
+
+```toml
+[tools]
+ffmpeg     = "/usr/local/bin/ffmpeg"
+ffprobe    = "/usr/local/bin/ffprobe"
+mkvextract = "/usr/bin/mkvextract"
+```
+
+See [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) if something goes wrong on first run.
+
 ## Usage
 
 ```bash

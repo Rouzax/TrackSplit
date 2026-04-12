@@ -1,0 +1,25 @@
+# TrackSplit configuration example.
+#
+# Copy this file to one of the locations TrackSplit searches (see README
+# "Configuration") and uncomment the keys for tools that are not on your
+# PATH. All keys are optional; anything left unset falls back to the bare
+# command name and is resolved via PATH.
+#
+# Search order:
+#   1. ./tracksplit.toml            (current directory)
+#   2. ./config.toml                (current directory, alternate name)
+#   3. ~/.config/tracksplit/config.toml   (Linux/macOS)
+#      %APPDATA%/tracksplit/config.toml   (Windows)
+#   4. ~/tracksplit.toml, ~/.tracksplit.toml
+
+[tools]
+# ffmpeg     = "/usr/local/bin/ffmpeg"
+# ffprobe    = "/usr/local/bin/ffprobe"
+# mkvextract = "/usr/bin/mkvextract"
+# mkvmerge   = "/usr/bin/mkvmerge"
+
+# Windows example:
+# ffmpeg     = "C:/ffmpeg/bin/ffmpeg.exe"
+# ffprobe    = "C:/ffmpeg/bin/ffprobe.exe"
+# mkvextract = "C:/Program Files/MKVToolNix/mkvextract.exe"
+# mkvmerge   = "C:/Program Files/MKVToolNix/mkvmerge.exe"

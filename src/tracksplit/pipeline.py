@@ -291,6 +291,7 @@ def process_file(
     output_format: str = "auto",
     on_progress: Callable[[str, int, int], None] | None = None,
     cancel_event: threading.Event | None = None,
+    on_complete: Callable[[Path, int], None] | None = None,
 ) -> bool:
     """Process a single video file through the full pipeline.
 
@@ -381,6 +382,8 @@ def process_file(
             album_dir,
             len(album.tracks),
         )
+        if on_complete:
+            on_complete(album_dir, len(album.tracks))
         return True
 
     _remove_stale_album_dirs(output_dir, input_path, album_dir)
@@ -463,6 +466,8 @@ def process_file(
     )
 
     logger.info("Processed %s -> %s", _safe_log_name(input_path), album_dir)
+    if on_complete:
+        on_complete(album_dir, len(album.tracks))
     return True
 
 

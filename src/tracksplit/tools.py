@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
@@ -99,3 +101,62 @@ def get_tool(name: str) -> str:
         _tool_paths.update(_load_config())
         _config_loaded = True
     return _tool_paths.get(name, name)
+
+
+def _install_hint(tool: str) -> str:
+    """Return an OS-specific install suggestion for a missing tool."""
+    if tool in ("ffmpeg", "ffprobe"):
+        pkg = "ffmpeg"
+    elif tool in ("mkvextract", "mkvmerge"):
+        pkg = "mkvtoolnix"
+    else:
+        pkg = tool
+    if sys.platform == "darwin":
+        return f"brew install {pkg}"
+    if sys.platform == "win32":
+        return f"choco install {pkg}  (or scoop install {pkg})"
+    return f"apt install {pkg}  # or your distro's equivalent"
+
+
+def verify_tool(name: str) -> tuple[bool, str]:
+    """Probe a configured tool. Returns (ok, detail).
+
+    ``detail`` is a version string on success, or an error message.
+    """
+    path = get_tool(name)
+    # Absolute path: check file exists
+    if os.path.sep in path or (sys.platform == "win32" and "/" in path):
+        if not Path(path).is_file():
+            return False, f"configured path not found: {path}"
+    else:
+        # Bare command: search PATH
+        if shutil.which(path) is None:
+            return False, f"not found on PATH (looked for '{path}')"
+
+    version_flag = "--version" if name in ("mkvextract", "mkvmerge") else "-version"
+    try:
+        result = subprocess.run(
+            [path, version_flag],
+            capture_output=True, text=True, timeout=5, check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        return False, f"failed to run: {exc}"
+    if result.returncode != 0:
+        return False, f"exited {result.returncode}"
+    first_line = (result.stdout or result.stderr).splitlines()[0] if (result.stdout or result.stderr) else ""
+    return True, first_line.strip()
+
+
+def verify_required_tools() -> list[tuple[str, str]]:
+    """Verify ffmpeg/ffprobe are available. Return list of (tool, error) for failures."""
+    errors: list[tuple[str, str]] = []
+    for name in ("ffmpeg", "ffprobe"):
+        ok, detail = verify_tool(name)
+        if not ok:
+            errors.append((name, detail))
+    return errors
+
+
+def install_hint(tool: str) -> str:
+    """Public wrapper for the install hint helper."""
+    return _install_hint(tool)
