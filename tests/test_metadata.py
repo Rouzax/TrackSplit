@@ -333,6 +333,62 @@ def test_probe_to_metadata_to_tagger_contract():
     assert tag_dict["STAGE"] == ["Mainstage"]
     assert tag_dict["VENUE"] == ["Boom"]
     assert tag_dict["COMMENT"] == ["https://1001tl.com/abc"]
-    assert tag_dict["MUSICBRAINZ_ARTISTID"] == ["uuid-456"]
+    assert tag_dict["MUSICBRAINZ_ALBUMARTISTID"] == ["uuid-456"]
     assert tag_dict["PUBLISHER"] == ["Spinnin"]
     assert tag_dict["TITLE"] == ["Animals"]
+
+
+# --- Per-track artist case normalization (defense-in-depth) ---
+
+def test_track_artist_case_normalized_uppercase_chapter():
+    """Chapter 'AFROJACK - ID' with album ARTIST 'Afrojack' → normalized."""
+    tags = {"artist": "Afrojack", "festival": "EDC", "date": "2025-05-17"}
+    chapters = _make_chapters(["AFROJACK - ID", "AFROJACK - Bringin It Back"])
+    meta = build_album_meta(tags, chapters, "", tier=2)
+    assert meta.tracks[0].artist == "Afrojack"
+    assert meta.tracks[1].artist == "Afrojack"
+
+
+def test_track_artist_case_normalized_lowercase_chapter():
+    """Chapter 'deadmau5 - Strobe' with album ARTIST 'Deadmau5' → normalized."""
+    tags = {"artist": "Deadmau5", "festival": "Tomorrowland Brasil", "date": "2025"}
+    chapters = _make_chapters(["deadmau5 - Strobe"])
+    meta = build_album_meta(tags, chapters, "", tier=2)
+    assert meta.tracks[0].artist == "Deadmau5"
+
+
+def test_track_artist_preserved_when_not_whole_match():
+    """Multi-artist strings containing the album artist stay as-is."""
+    tags = {"artist": "Afrojack", "festival": "EDC", "date": "2025-05-17"}
+    chapters = _make_chapters([
+        "AFROJACK & Steve Aoki ft. Miss Palmer - No Beef",
+        "AFROJACK & Martin Garrix - Turn Up The Speakers",
+    ])
+    meta = build_album_meta(tags, chapters, "", tier=2)
+    assert meta.tracks[0].artist == "AFROJACK & Steve Aoki ft. Miss Palmer"
+    assert meta.tracks[1].artist == "AFROJACK & Martin Garrix"
+
+
+def test_track_artist_empty_when_chapter_has_no_separator():
+    """Chapter 'Intro' (no ' - ') → track.artist stays empty, falls back later."""
+    tags = {"artist": "Tiësto", "festival": "EDC", "date": "2025"}
+    chapters = _make_chapters(["Intro", "ID"])
+    meta = build_album_meta(tags, chapters, "", tier=2)
+    assert meta.tracks[0].artist == ""
+    assert meta.tracks[1].artist == ""
+
+
+def test_unicode_artist_preserved_through_build_album_meta():
+    """Diacritics in artist names must survive the pipeline untouched."""
+    tags = {"artist": "Tiësto", "festival": "EDC", "date": "2025-05-17"}
+    chapters = _make_chapters([
+        "RÜFÜS DU SOL - Innerbloom",
+        "Kölsch - Grey",
+        "Amél - Birds Of A Feather",
+    ])
+    meta = build_album_meta(tags, chapters, "", tier=2)
+    assert meta.artist == "Tiësto"
+    assert meta.tracks[0].artist == "RÜFÜS DU SOL"
+    assert meta.tracks[1].artist == "Kölsch"
+    assert meta.tracks[2].artist == "Amél"
+    assert meta.tracks[2].title == "Birds Of A Feather"

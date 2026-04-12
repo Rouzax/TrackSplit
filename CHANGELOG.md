@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-04-12
+
+### Fixed
+
+- Per-track artist display in Lyrion/LMS: the album-artist MusicBrainz ID was being written as the per-track `MUSICBRAINZ_ARTISTID`, causing LMS to dedupe all tracks to a single contributor row and show the first track's artist for every row. The MBID now goes to `MUSICBRAINZ_ALBUMARTISTID` (Picard-canonical), and the per-track key is never written. Jellyfin display is unchanged by this fix (it dedupes by name, not MBID).
+- Per-track artists whose case-insensitive form equals the album artist are now normalized to the album artist's casing (e.g. "AFROJACK - ID" with album artist "Afrojack" → `ARTIST=Afrojack`). Prevents duplicate contributor rows in Lyrion and stray upper/lowercase variants in Jellyfin. Applied as defense-in-depth so tier-1 sources and un-cached artists still get clean output.
+- Album-artist MBID is now suppressed for B2B/collab album artists ("X & Y", "X vs. Y", "X x Y"): a single MBID cannot identify two performers, and emitting only one half's MBID would merge the collab album into that member's solo discography.
+
 ## [0.5.0] - 2026-04-12
 
 First release with a proper project presence: a hero README, a published docs site, an animated landing page, CI, and a rounded-out CLI UX.

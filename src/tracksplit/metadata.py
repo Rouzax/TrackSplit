@@ -119,23 +119,8 @@ def build_album_meta(
     Tier 2: album = "Festival Year (Stage)" with full tag data.
     Tier 1: album = filename_stem, artist/date parsed from filename.
     """
-    # Strip labels, then split artist from title
-    clean_titles = []
-    track_artists = []
-    publishers = []
-    for ch in chapters:
-        title, label = strip_label(ch.title)
-        track_artist, track_title = split_track_artist(title)
-        clean_titles.append(track_title)
-        track_artists.append(track_artist)
-        publishers.append(label)
-
-    # Deduplicate titles
-    clean_titles = deduplicate_titles(clean_titles)
-
-    # Get genres from tags
-    genres = tags.get("genres", [])
-
+    # Resolve album-level fields up front so we can case-normalize per-track
+    # artists against the album artist below (see loop).
     if tier == 2:
         artist = tags.get("artist", "")
         festival = tags.get("festival", "")
@@ -155,6 +140,40 @@ def build_album_meta(
         artist, year = parse_filename(filename_stem)
         date = year
         album = filename_stem
+
+    # Strip labels, then split artist from title.
+    #
+    # Defense-in-depth: if a chapter's per-track artist matches the album
+    # artist case-insensitively (e.g. chapter "AFROJACK - ID" with album
+    # ARTIST "Afrojack"), normalize to the album artist's canonical casing.
+    # Without this, Lyrion treats "AFROJACK" and "Afrojack" as two separate
+    # contributors, and Jellyfin collapses them but keeps the first-scanned
+    # casing as the display name. CrateDigger ideally normalizes upstream,
+    # but 40% of DJs are missing from its cache and tier-1 (non-CrateDigger)
+    # sources make no such guarantee, so we apply the cheap local fix here.
+    # Whole-string match only: "AFROJACK & Steve Aoki" stays as-is because
+    # that's a genuinely different contributor string.
+    clean_titles = []
+    track_artists = []
+    publishers = []
+    for ch in chapters:
+        title, label = strip_label(ch.title)
+        track_artist, track_title = split_track_artist(title)
+        if (
+            track_artist
+            and artist
+            and track_artist.casefold() == artist.casefold()
+        ):
+            track_artist = artist
+        clean_titles.append(track_title)
+        track_artists.append(track_artist)
+        publishers.append(label)
+
+    # Deduplicate titles
+    clean_titles = deduplicate_titles(clean_titles)
+
+    # Get genres from tags
+    genres = tags.get("genres", [])
 
     # Build tracks
     tracks = []
