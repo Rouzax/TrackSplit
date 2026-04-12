@@ -574,6 +574,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Tags written">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#artist-tagging-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Artist tagging policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -717,6 +734,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Tags written">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#artist-tagging-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Artist tagging policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -815,8 +849,16 @@
 </table>
 <h2 id="tags-written">Tags written</h2>
 <p>Vorbis comments written on every track:</p>
-<p><code>TITLE</code>, <code>ARTIST</code>, <code>ALBUMARTIST</code>, <code>ALBUM</code>, <code>TRACKNUMBER</code>, <code>TRACKTOTAL</code>, <code>DISCNUMBER</code>, <code>DATE</code>, <code>GENRE</code>, <code>PUBLISHER</code>, <code>COMMENT</code>, <code>MUSICBRAINZ_ARTISTID</code>, <code>FESTIVAL</code>, <code>STAGE</code>, <code>VENUE</code>.</p>
+<p><code>TITLE</code>, <code>ARTIST</code>, <code>ALBUMARTIST</code>, <code>ALBUM</code>, <code>TRACKNUMBER</code>, <code>TRACKTOTAL</code>, <code>DISCNUMBER</code>, <code>DATE</code>, <code>GENRE</code>, <code>PUBLISHER</code>, <code>COMMENT</code>, <code>MUSICBRAINZ_ALBUMARTISTID</code>, <code>FESTIVAL</code>, <code>STAGE</code>, <code>VENUE</code>.</p>
 <p>Most servers only read the common fields (TITLE/ARTIST/ALBUM/TRACKNUMBER/DATE). The custom <code>FESTIVAL</code>, <code>STAGE</code>, <code>VENUE</code> fields preserve festival context for scripts, filters, or smart playlists that care.</p>
+<h3 id="artist-tagging-policy">Artist tagging policy</h3>
+<ul>
+<li><code>ARTIST</code> is per-track (the performer of that chapter's track). When a chapter title has no "Artist - Title" separator, <code>ARTIST</code> falls back to <code>ALBUMARTIST</code>.</li>
+<li><code>ALBUMARTIST</code> is always the set's headliner (the album-level artist).</li>
+<li>Per-track artists whose case-insensitive form equals <code>ALBUMARTIST</code> are normalized to the <code>ALBUMARTIST</code> casing, so "AFROJACK - ID" becomes <code>ARTIST=Afrojack</code> when the set is by "Afrojack". This prevents Lyrion from listing two contributor rows and prevents Jellyfin from picking up stray upper/lowercase variants.</li>
+<li><code>MUSICBRAINZ_ALBUMARTISTID</code> holds the album artist's MusicBrainz ID. It is omitted for B2B/collab album artists ("X &amp; Y", "X vs. Y", "X x Y"): a single MBID cannot identify two performers, and emitting only one half's MBID would cause media servers to merge the collab album into that member's solo discography.</li>
+<li><code>MUSICBRAINZ_ARTISTID</code> (the per-track MBID key) is never written. TrackSplit has no per-track-artist MBIDs; writing the album-artist MBID there caused Lyrion to collapse every track to a single contributor row.</li>
+</ul>
 <h2 id="metadata-tiers">Metadata tiers</h2>
 <ul>
 <li><strong>Tier 1 (basic):</strong> any chaptered video. TrackSplit infers artist and album from the filename and embedded tags, numbers tracks, and writes whatever metadata it can find.</li>
