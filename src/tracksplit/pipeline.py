@@ -37,7 +37,7 @@ from tracksplit.probe import (
     parse_tags,
     run_ffprobe,
 )
-from tracksplit.split import build_track_filename, split_tracks  # noqa: F401
+from tracksplit.split import split_tracks
 from tracksplit.tagger import tag_all
 
 logger = logging.getLogger(__name__)
@@ -234,7 +234,7 @@ def process_file(
         # Prepare audio (detect codec, extract if needed)
         _progress("Extracting audio")
         audio_path, ext, codec_mode = prepare_audio(
-            input_path, ffprobe_data, output_format, tmp_dir,
+            input_path, ext, codec_mode, tmp_dir,
             cancel_event=cancel_event,
         )
         from_video = (audio_path == input_path)

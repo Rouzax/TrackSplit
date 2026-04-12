@@ -51,6 +51,12 @@ class SourceFingerprint:
 
 @dataclass
 class AlbumManifest:
+    """Sidecar manifest for a generated album.
+
+    `output_format` holds the RESOLVED extension (``"flac"`` or ``"opus"``) that
+    was actually written to disk, not the CLI argument (which may have been
+    ``"auto"``). Compare against ``ext.lstrip('.')`` when deciding reruns.
+    """
     schema: int
     source: SourceFingerprint
     resolved_artist_folder: str

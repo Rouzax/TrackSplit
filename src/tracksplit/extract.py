@@ -86,13 +86,17 @@ def decide_codec(ffprobe_data: dict, output_format: str) -> tuple[str, str]:
 
 def prepare_audio(
     input_path: Path,
-    ffprobe_data: dict,
-    output_format: str,
+    ext: str,
+    codec_mode: str,
     temp_dir: Path,
     cancel_event: threading.Event | None = None,
 ) -> tuple[Path, str, str]:
-    """Prepare audio source for splitting. Returns (audio_path, extension, codec_mode)."""
-    ext, codec_mode = decide_codec(ffprobe_data, output_format)
+    """Prepare audio source for splitting using an already-resolved codec decision.
+
+    Returns (audio_path, ext, codec_mode). Extracts to a temporary FLAC only
+    when (ext, codec_mode) == (".flac", "copy"); otherwise passes input_path
+    through. Caller must have obtained (ext, codec_mode) from `decide_codec`.
+    """
     if ext == ".flac" and codec_mode == "copy":
         flac_path = extract_audio(
             input_path, temp_dir=temp_dir, cancel_event=cancel_event,
