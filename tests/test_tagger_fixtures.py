@@ -11,6 +11,7 @@ regression coverage against real data without shipping the corpus.
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -20,7 +21,12 @@ from tracksplit.metadata import build_album_meta
 from tracksplit.models import Chapter
 from tracksplit.tagger import build_tag_dict
 
-DUMP_DIR = Path("/home/user/_temp/cratedigger/data/mkv-info-dump")
+DUMP_DIR = Path(
+    os.environ.get(
+        "TRACKSPLIT_FIXTURE_DIR",
+        str(Path.home() / "_temp/cratedigger/data/mkv-info-dump"),
+    )
+).expanduser()
 
 pytestmark = pytest.mark.skipif(
     not DUMP_DIR.is_dir(),
