@@ -204,6 +204,24 @@ class CrateDiggerConfig:
             return entry.get("mbid", "") or ""
         return ""
 
+    def fill_mbids(self, names: list[str], mbids: list[str]) -> list[str]:
+        """Return an MBID list aligned positionally with ``names``.
+
+        For each position where ``mbids`` is missing or empty, look the
+        corresponding name up in ``mbid_cache.json`` (case-insensitive via
+        ``lookup_mbid``). Unknown names stay as empty strings so downstream
+        consumers can still zip the list positionally. Result length
+        matches ``len(names)`` (input padded/truncated as needed).
+        """
+        result: list[str] = []
+        for i, name in enumerate(names):
+            current = mbids[i] if i < len(mbids) else ""
+            if current:
+                result.append(current)
+            else:
+                result.append(self.lookup_mbid(name))
+        return result
+
 
 def _invert_alias_map(raw: dict[str, list[str]]) -> dict[str, str]:
     """CrateDigger stores {canonical: [aliases]}; flatten to {alias: canonical}."""

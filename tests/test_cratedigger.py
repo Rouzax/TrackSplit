@@ -180,6 +180,46 @@ class TestLookupMbid:
         assert cfg.lookup_mbid("") == ""
 
 
+def test_fill_mbids_gap_fills_empties():
+    from tracksplit.cratedigger import CrateDiggerConfig
+    cfg = CrateDiggerConfig(mbid_cache={
+        "Alle Farben": "mbid-af",
+        "JOA": "mbid-joa",
+    })
+    names = ["Armin van Buuren", "Alle Farben", "JOA"]
+    mbids = ["mbid-arm", "", ""]
+    filled = cfg.fill_mbids(names, mbids)
+    assert filled == ["mbid-arm", "mbid-af", "mbid-joa"]
+
+
+def test_fill_mbids_leaves_unknown_empty():
+    from tracksplit.cratedigger import CrateDiggerConfig
+    cfg = CrateDiggerConfig(mbid_cache={"A": "mbid-a"})
+    filled = cfg.fill_mbids(["A", "B"], ["", ""])
+    assert filled == ["mbid-a", ""]
+
+
+def test_fill_mbids_pads_shorter_mbid_list():
+    from tracksplit.cratedigger import CrateDiggerConfig
+    cfg = CrateDiggerConfig(mbid_cache={"B": "mbid-b"})
+    filled = cfg.fill_mbids(["A", "B", "C"], ["mbid-a"])
+    assert filled == ["mbid-a", "mbid-b", ""]
+
+
+def test_fill_mbids_truncates_longer_mbid_list():
+    from tracksplit.cratedigger import CrateDiggerConfig
+    cfg = CrateDiggerConfig()
+    filled = cfg.fill_mbids(["A"], ["mbid-a", "extra"])
+    assert filled == ["mbid-a"]
+
+
+def test_fill_mbids_does_not_overwrite_existing():
+    from tracksplit.cratedigger import CrateDiggerConfig
+    cfg = CrateDiggerConfig(mbid_cache={"A": "mbid-cache"})
+    filled = cfg.fill_mbids(["A"], ["mbid-existing"])
+    assert filled == ["mbid-existing"]
+
+
 class TestFindCratediggerDirs:
     def test_finds_global(self, cd_home: Path):
         dirs = find_cratedigger_dirs(cd_home / "video.mkv", home_dir=cd_home)
