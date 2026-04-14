@@ -445,10 +445,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-it-fits-your-workflow" class="md-nav__link">
+  <a href="#better-together-with-cratedigger" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How it fits your workflow
+        Better together with CrateDigger
       
     </span>
   </a>
@@ -456,10 +456,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pairs-with-cratedigger" class="md-nav__link">
+  <a href="#how-it-fits-your-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pairs with CrateDigger
+        How it fits your workflow
       
     </span>
   </a>
@@ -685,10 +685,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-it-fits-your-workflow" class="md-nav__link">
+  <a href="#better-together-with-cratedigger" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How it fits your workflow
+        Better together with CrateDigger
       
     </span>
   </a>
@@ -696,10 +696,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pairs-with-cratedigger" class="md-nav__link">
+  <a href="#how-it-fits-your-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pairs with CrateDigger
+        How it fits your workflow
       
     </span>
   </a>
@@ -738,26 +738,27 @@
 
 
 <h1 id="tracksplit">TrackSplit</h1>
-<p>Chapter-based audio extractor for music servers. TrackSplit turns chaptered video files into gapless, tagged FLAC or Opus albums ready for Jellyfin and Lyrion.</p>
+<p>Turn your chaptered video library into a tagged music library, ready for Jellyfin, Lyrion, or any music server that reads standard audio files.</p>
 <h2 id="what-it-does">What it does</h2>
-<p>Point TrackSplit at a video with chapter markers and it will split the audio at chapter boundaries, write one file per track, embed rich metadata and cover art, and lay everything out in an <code>Artist/Album/</code> structure your music server will scan without complaint. Lossless sources stay lossless. Lossy sources are stream-copied when possible, re-encoded only when needed.</p>
+<p>Point TrackSplit at a video file with chapter markers and it splits the audio into one file per chapter, tags every track, generates album and artist cover art, and lays everything out in an <code>Artist/Album/</code> folder structure your music server can scan immediately. Lossless sources stay lossless. Repeat runs skip albums that have not changed.</p>
+<h2 id="better-together-with-cratedigger">Better together with CrateDigger</h2>
+<p>TrackSplit works on any chaptered video, but it works best when those videos were prepared by <strong><a href="https://github.com/Rouzax/CrateDigger">CrateDigger</a></strong>.</p>
+<p>CrateDigger identifies festival sets and concert recordings, embeds chapter markers at every track boundary, and writes rich metadata into your MKV files: canonical artist names, festival and venue details, MusicBrainz IDs, and DJ artwork. TrackSplit reads all of that and produces a music library where every artist, album, and collaborator is named and linked correctly.</p>
+<p>Without CrateDigger you still get a properly split, tagged album from any chaptered video. With CrateDigger the result is a fully enriched music library that stays in sync with your video library. That is the 1+1=3.</p>
 <h2 id="how-it-fits-your-workflow">How it fits your workflow</h2>
 <ol>
-<li><strong><a href="getting-started/">Install and check</a></strong> the required tools (FFmpeg, optionally MKVToolNix) and confirm with <code>tracksplit --check</code>.</li>
-<li><strong><a href="usage/">Run on a file or folder</a></strong> and let TrackSplit handle probing, splitting, tagging, and cover art.</li>
-<li><strong><a href="output/">Point your music server</a></strong> at the output directory. Jellyfin, Lyrion, Plex, anything that reads Vorbis comments will pick it up.</li>
+<li><strong><a href="getting-started/">Install and verify</a>:</strong> install FFmpeg (required) and optionally MKVToolNix, then confirm everything works with <code>tracksplit --check</code>.</li>
+<li><strong><a href="usage/">Run on a file or folder</a>:</strong> one command handles probing, splitting, tagging, and cover art.</li>
+<li><strong><a href="output/">Point your music server at the output</a>:</strong> Jellyfin, Lyrion, Plex, or anything that reads standard audio tags will pick it up.</li>
 </ol>
-<p>A second run on the same input is near-instant unless the chapters actually changed, thanks to the per-album manifest.</p>
-<h2 id="pairs-with-cratedigger">Pairs with CrateDigger</h2>
-<p>TrackSplit reads any chaptered video but shines when paired with <strong><a href="https://github.com/Rouzax/CrateDigger">CrateDigger</a></strong>, which embeds 1001Tracklists metadata, chapter markers, and DJ artwork into your MKV library in the first place. Together they keep canonical artist names, festival spellings, and MusicBrainz IDs consistent across your video and music libraries.</p>
 <h2 id="learn-more">Learn more</h2>
 <ul>
-<li><strong><a href="getting-started/">Getting Started</a></strong>: prerequisites, install, first run.</li>
-<li><strong><a href="usage/">Usage</a></strong>: every CLI flag, with examples.</li>
-<li><strong><a href="configuration/">Configuration</a></strong>: TOML config for custom tool paths.</li>
-<li><strong><a href="output/">Output Structure</a></strong>: what gets written where, and what every tag means, including Picard-standard multi-artist tags (<code>ARTISTS</code>, aligned <code>MUSICBRAINZ_ARTISTID</code>) that let Lyrion and Jellyfin link every collaborator and remixer.</li>
-<li><strong><a href="troubleshooting/">Troubleshooting</a></strong>: what to do when something goes wrong.</li>
-<li><strong><a href="faq/">FAQ</a></strong>: short answers to common questions.</li>
+<li><strong><a href="getting-started/">Getting Started</a>:</strong> prerequisites, install, and your first run.</li>
+<li><strong><a href="usage/">Usage</a>:</strong> every option explained as a user decision, with examples.</li>
+<li><strong><a href="configuration/">Configuration</a>:</strong> only needed if TrackSplit cannot find your tools automatically.</li>
+<li><strong><a href="output/">Output Structure</a>:</strong> every file and tag TrackSplit creates, and what each is for.</li>
+<li><strong><a href="troubleshooting/">Troubleshooting</a>:</strong> organized by symptom, with fixes and confirmation steps.</li>
+<li><strong><a href="faq/">FAQ</a>:</strong> plain answers to common questions.</li>
 </ul>
 
 

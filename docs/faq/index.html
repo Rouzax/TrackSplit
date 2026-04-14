@@ -618,10 +618,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#a-file-got-skipped-even-though-i-expected-it-to-be-processed-why" class="md-nav__link">
+  <a href="#a-file-was-skipped-even-though-i-expected-it-to-be-processed-why" class="md-nav__link">
     <span class="md-ellipsis">
       
-        A file got skipped even though I expected it to be processed. Why?
+        A file was skipped even though I expected it to be processed. Why?
       
     </span>
   </a>
@@ -629,32 +629,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#can-i-delete-tracksplit_chaptersjson" class="md-nav__link">
+  <a href="#can-i-delete-tracksplit_manifestjson" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Can I delete .tracksplit_chapters.json?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-do-lyrion-and-jellyfin-surface-multi-artist-tracks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do Lyrion and Jellyfin surface multi-artist tracks?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-does-tracksplit-differ-from-cratedigger" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How does TrackSplit differ from CrateDigger?
+        Can I delete .tracksplit_manifest.json?
       
     </span>
   </a>
@@ -699,6 +677,28 @@
     <span class="md-ellipsis">
       
         Parallel mode is slow on my disk. What do I do?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-do-jellyfin-and-lyrion-show-multi-artist-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do Jellyfin and Lyrion show multi-artist tracks?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-does-tracksplit-differ-from-cratedigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How does TrackSplit differ from CrateDigger?
       
     </span>
   </a>
@@ -762,10 +762,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#a-file-got-skipped-even-though-i-expected-it-to-be-processed-why" class="md-nav__link">
+  <a href="#a-file-was-skipped-even-though-i-expected-it-to-be-processed-why" class="md-nav__link">
     <span class="md-ellipsis">
       
-        A file got skipped even though I expected it to be processed. Why?
+        A file was skipped even though I expected it to be processed. Why?
       
     </span>
   </a>
@@ -773,32 +773,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#can-i-delete-tracksplit_chaptersjson" class="md-nav__link">
+  <a href="#can-i-delete-tracksplit_manifestjson" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Can I delete .tracksplit_chapters.json?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-do-lyrion-and-jellyfin-surface-multi-artist-tracks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do Lyrion and Jellyfin surface multi-artist tracks?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-does-tracksplit-differ-from-cratedigger" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How does TrackSplit differ from CrateDigger?
+        Can I delete .tracksplit_manifest.json?
       
     </span>
   </a>
@@ -849,6 +827,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#how-do-jellyfin-and-lyrion-show-multi-artist-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do Jellyfin and Lyrion show multi-artist tracks?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-does-tracksplit-differ-from-cratedigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How does TrackSplit differ from CrateDigger?
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -871,34 +871,37 @@
 
 <h1 id="faq">FAQ</h1>
 <h2 id="do-i-need-cratedigger-to-use-tracksplit">Do I need CrateDigger to use TrackSplit?</h2>
-<p>No. TrackSplit works on any video file that has chapter markers and an audio stream. It just reads more metadata when CrateDigger-style tags are present.</p>
+<p>No. TrackSplit works on any video file that has chapter markers and an audio stream.</p>
+<p>Without CrateDigger you still get a properly split, tagged album: one file per chapter, numbered tracks, cover art, and whatever metadata the source file carries. With CrateDigger-tagged sources you also get canonical artist names, festival and venue details, MusicBrainz IDs for every artist, and per-track genre. That richer metadata is what lets Jellyfin and Lyrion link artists, albums, and collaborators correctly across your library.</p>
+<p>See <a href="../getting-started/">Getting Started</a> for more on how the two tools work together.</p>
 <h2 id="my-video-has-no-chapters-what-happens">My video has no chapters. What happens?</h2>
-<p>If <code>ffprobe</code> can read a duration, TrackSplit writes a single track covering the whole file. If it can not, the file is skipped with a warning. If you expected chapters but there are none, check the source: some downloaders strip chapters, and some containers need to be re-muxed. <a href="https://github.com/Rouzax/CrateDigger">CrateDigger</a> can embed chapters for you.</p>
-<h2 id="a-file-got-skipped-even-though-i-expected-it-to-be-processed-why">A file got skipped even though I expected it to be processed. Why?</h2>
+<p>If the video has a readable duration, TrackSplit produces a single-track album covering the whole file. If it cannot read the duration either, the file is skipped with a warning.</p>
+<p>If you expected chapters but there are none, the source may have had them stripped by a downloader or remuxer. <a href="https://github.com/Rouzax/CrateDigger">CrateDigger</a> can identify recordings and embed chapter markers automatically. You can also add chapters manually with MKVToolNix.</p>
+<h2 id="a-file-was-skipped-even-though-i-expected-it-to-be-processed-why">A file was skipped even though I expected it to be processed. Why?</h2>
 <p>Two common reasons:</p>
 <ol>
-<li><strong>The manifest matched.</strong> TrackSplit saw no meaningful change since the last run. Pass <code>--force</code> to rebuild.</li>
-<li><strong>No audio stream, or zero-duration.</strong> TrackSplit warns and moves on.</li>
+<li><strong>The output is already up to date.</strong> TrackSplit keeps a record of the last run in each album folder. If nothing changed (same chapters, same metadata, same format), it skips the album. Pass <code>--force</code> to rebuild it anyway.</li>
+<li><strong>No audio stream or zero duration.</strong> TrackSplit warns and moves on.</li>
 </ol>
-<p>Re-run with <code>--verbose</code> to see which branch triggered.</p>
-<h2 id="can-i-delete-tracksplit_chaptersjson">Can I delete <code>.tracksplit_chapters.json</code>?</h2>
-<p>Yes. It is a re-run manifest, nothing more. Delete it to force TrackSplit to rebuild that one album the next time you run. It does not need to be backed up and it contains no information that is not already in the source file.</p>
-<h2 id="how-do-lyrion-and-jellyfin-surface-multi-artist-tracks">How do Lyrion and Jellyfin surface multi-artist tracks?</h2>
-<p>TrackSplit writes the Picard-standard <code>ARTISTS</code> multi-value tag alongside the display <code>ARTIST</code>, plus a positionally-aligned <code>MUSICBRAINZ_ARTISTID</code> multi-value tag. Both Lyrion and current Jellyfin read these and link each individual contributor to its own artist page. After upgrading TrackSplit and re-running it against previously-split albums, trigger a library rescan in your music server so it picks up the new multi-value fields.</p>
-<h2 id="how-does-tracksplit-differ-from-cratedigger">How does TrackSplit differ from CrateDigger?</h2>
-<p>They are complementary, not redundant. <strong>CrateDigger</strong> curates a video library: it identifies recordings, embeds chapters and metadata, generates posters, and syncs with Kodi. <strong>TrackSplit</strong> reads that video library and produces a parallel music library (FLAC/Opus albums, tagged and cover-embedded) for music servers like Jellyfin and Lyrion. The two share naming conventions and canonical IDs so the same set shows up consistently in both worlds.</p>
+<p>Re-run with <code>--verbose</code> to see which reason triggered.</p>
+<h2 id="can-i-delete-tracksplit_manifestjson">Can I delete <code>.tracksplit_manifest.json</code>?</h2>
+<p>Yes. It is only used by TrackSplit to decide whether to skip an album on the next run. Delete it to force a full rebuild of that album. You do not need to back it up, and your music server ignores it entirely.</p>
 <h2 id="does-tracksplit-modify-my-source-videos">Does TrackSplit modify my source videos?</h2>
-<p>No. It only reads. All writes go to the output directory you specify (or the current working directory if you omit <code>--output</code>).</p>
+<p>No. TrackSplit only reads your source files. All output goes to the directory you specify with <code>--output</code>, or your current working directory if you omit it. Your source videos are never touched.</p>
 <h2 id="can-i-change-the-folder-or-filename-template">Can I change the folder or filename template?</h2>
-<p>Not yet. Album folders follow <code>Artist @ Festival Year (Stage)</code> derived from the tags; track filenames follow <code>NN - Title</code>. The template is fixed in the current release.</p>
+<p>Not yet. The album folder is named <code>Festival Year (Stage)</code> for CrateDigger-tagged sources, or the source filename for plain chaptered videos, and is always placed inside an <code>Artist/</code> folder. Track filenames follow <code>NN - Title</code>. The template is fixed in the current release.</p>
 <h2 id="does-it-need-the-internet">Does it need the internet?</h2>
-<p>No. TrackSplit is fully offline. No API keys, no external lookups. All metadata comes from the source file.</p>
+<p>No. TrackSplit is fully offline. It reads metadata from your source files and does all processing locally. No API keys, no external lookups.</p>
 <h2 id="parallel-mode-is-slow-on-my-disk-what-do-i-do">Parallel mode is slow on my disk. What do I do?</h2>
-<ul>
-<li>On spinning disks or network shares, try <code>--workers 1</code>.</li>
-<li>On fast SSDs, the default <code>min(4, CPU count)</code> is usually good; push to 8 if your CPU has cores to spare and your disk is not saturated.</li>
-<li>If the bottleneck is FFmpeg re-encoding, more workers help. If it is disk I/O, fewer workers help.</li>
-</ul>
+<p>Try <code>--workers 1</code> first. On spinning disks and network shares, sequential processing is usually faster because parallel writes cause expensive disk seeks.</p>
+<p>On fast SSDs, the default (roughly <code>logical_cores / 4</code>, between 2 and 12) is a good starting point. You can push it higher if your sources use Opus audio, because in that case TrackSplit copies the audio directly without re-encoding and CPU usage per worker is near zero. If your sources require re-encoding (FLAC output or Opus from a lossy source), raising workers beyond the default risks overloading your CPU.</p>
+<p>See <a href="../troubleshooting/#batch-processing-is-slow-or-hanging">Troubleshooting</a> for a full breakdown.</p>
+<h2 id="how-do-jellyfin-and-lyrion-show-multi-artist-tracks">How do Jellyfin and Lyrion show multi-artist tracks?</h2>
+<p>TrackSplit writes a multi-value <code>ARTISTS</code> tag listing every individual contributor alongside the display <code>ARTIST</code> string. It also writes a positionally-aligned <code>MUSICBRAINZ_ARTISTID</code> tag so each artist links to their own page. Both Jellyfin and Lyrion read these tags and surface every collaborator, not just the headliner.</p>
+<p>If you upgraded TrackSplit and re-ran it against existing albums, trigger a library rescan in your music server so it picks up the updated tags.</p>
+<h2 id="how-does-tracksplit-differ-from-cratedigger">How does TrackSplit differ from CrateDigger?</h2>
+<p>They do different jobs and work best together. <strong>CrateDigger</strong> builds a video library: it identifies recordings, embeds chapter markers and metadata, generates posters, and syncs with Kodi. <strong>TrackSplit</strong> reads that video library and produces a parallel music library of tagged FLAC or Opus albums for music servers like Jellyfin and Lyrion.</p>
+<p>Because they share the same artist names, festival spellings, and MusicBrainz IDs, the same set shows up consistently whether you are browsing your video library or your music library.</p>
 
 
 
