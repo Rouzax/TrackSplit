@@ -926,7 +926,7 @@
 <p><strong>Fix:</strong> Always pass <code>--output</code> explicitly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/
 </code></pre></div>
-<p>The full output path for an album is: <code>&lt;output&gt;/&lt;Artist&gt;/&lt;Festival Year (Stage)&gt;/</code> for CrateDigger-tagged sources, or <code>&lt;output&gt;/&lt;Artist&gt;/&lt;filename-stem&gt;/</code> for plain chaptered videos.</p>
+<p>The full output path for an album is: <code>&lt;output&gt;/&lt;Artist&gt;/&lt;Festival Year (Stage)&gt;/</code> for CrateDigger-tagged festival sets, <code>&lt;output&gt;/&lt;Artist&gt;/&lt;Venue Year&gt;/</code> for CrateDigger-tagged venue recordings without a festival tag, or <code>&lt;output&gt;/&lt;Artist&gt;/&lt;filename-stem&gt;/</code> for plain chaptered videos.</p>
 <hr />
 <h2 id="files-are-rebuilt-every-run-even-though-nothing-changed">Files are rebuilt every run even though nothing changed</h2>
 <p><strong>What you see:</strong> TrackSplit processes the same files repeatedly instead of skipping them.</p>

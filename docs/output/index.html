@@ -705,6 +705,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#cratedigger-cache-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CrateDigger cache reuse
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#re-run-manifest-details" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -970,6 +981,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#cratedigger-cache-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CrateDigger cache reuse
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#re-run-manifest-details" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1022,7 +1044,7 @@
 <p>Every file in that structure has a specific purpose. Some are for your music server. One is for TrackSplit only.</p>
 <h2 id="the-two-levels-of-output">The two levels of output</h2>
 <p>The quality of your output depends on what metadata is in the source video.</p>
-<p><strong>With CrateDigger tags (enriched sources):</strong> TrackSplit has everything it needs. The album folder is named <code>Festival Year (Stage)</code> (or <code>Festival Year</code> when no stage is specified). Tracks get canonical artist names, MusicBrainz IDs, festival and venue details, and per-track genre. Your music server can link every artist, album, and collaborator correctly.</p>
+<p><strong>With CrateDigger tags (enriched sources):</strong> TrackSplit has everything it needs. The album folder is named <code>Festival Year (Stage)</code> when the source carries a festival name (most common case), or <code>Venue Year</code> for non-festival venue recordings (e.g. a club or arena set with no named festival). Tracks get canonical artist names, MusicBrainz IDs, festival and venue details, and per-track genre. Your music server can link every artist, album, and collaborator correctly.</p>
 <p><strong>Without CrateDigger tags (any chaptered video):</strong> TrackSplit still works. It infers the artist and album from whatever it finds in the filename and embedded tags, numbers the tracks, and writes what it can. The album folder is named after the source filename. You get a properly split, tagged album, just without the rich festival metadata.</p>
 <p>In both cases you get the same files. The difference is in how accurate and complete the metadata inside those files is.</p>
 <h2 id="directory-layout-explained">Directory layout explained</h2>
@@ -1046,7 +1068,8 @@
 </code></pre></div>
 <p>Each video gets its own album folder inside the artist folder. The folder name comes from the metadata:</p>
 <ul>
-<li><strong>CrateDigger source:</strong> <code>Festival Year (Stage)</code> or <code>Festival Year</code> when no stage is set.</li>
+<li><strong>CrateDigger source with a festival tag:</strong> <code>Festival Year (Stage)</code>, or <code>Festival Year</code> when no stage is set.</li>
+<li><strong>CrateDigger source without a festival tag (venue recording):</strong> <code>Venue Year</code> using the venue name, or the stage name if no venue is set. If that location string already contains the year (e.g. <code>"Bay Oval Park 2026-01-31"</code>), the year is not appended a second time.</li>
 <li><strong>Plain chaptered video:</strong> the source filename (without extension).</li>
 </ul>
 <h3 id="track-files">Track files</h3>
@@ -1209,8 +1232,52 @@
 <h3 id="metadata-tiers">Metadata tiers</h3>
 <ul>
 <li><strong>Tier 1 (any chaptered video):</strong> TrackSplit infers artist and album from filename and embedded tags. The album folder uses the filename stem. You get numbered, tagged tracks with whatever metadata the source carries.</li>
-<li><strong>Tier 2 (CrateDigger-tagged source):</strong> TrackSplit uses the canonical artist, festival, venue, date, and MusicBrainz IDs embedded by CrateDigger. The album folder uses the <code>Festival Year (Stage)</code> naming. Every tag is populated precisely with no guessing.</li>
+<li><strong>Tier 2 (CrateDigger-tagged source):</strong> TrackSplit uses the canonical artist, festival, venue, date, and MusicBrainz IDs embedded by CrateDigger. The album folder uses <code>Festival Year (Stage)</code> naming for festival sets, or <code>Venue Year</code> for venue recordings without a festival name. Every tag is populated precisely with no guessing.</li>
 </ul>
+<h3 id="cratedigger-cache-reuse">CrateDigger cache reuse</h3>
+<p>TrackSplit reads CrateDigger's caches directly, not just the tags baked into the MKV. This is how consistent artist spellings, festival aliases, MusicBrainz IDs, and DJ artwork stay in sync between your video library (CrateDigger) and your music library (TrackSplit) without TrackSplit needing any of its own config.</p>
+<p><strong>Lookup chain.</strong> For each input video, TrackSplit searches for <code>.cratedigger</code> directories in this order:</p>
+<ol>
+<li>Global: <code>~/.cratedigger/</code> on Linux and macOS, or <code>%USERPROFILE%\.cratedigger\</code> on Windows.</li>
+<li>Walk-up: starting from the folder containing the input video, walk up to 10 parent directories looking for a <code>.cratedigger</code> subfolder. All matches are collected (nearest last).</li>
+</ol>
+<p>Directories closer to the input file override the global cache, so you can keep a per-project override next to a library without disturbing your global setup. Missing files or directories are silently skipped, so TrackSplit keeps working when no CrateDigger config exists.</p>
+<p><strong>Cache files TrackSplit reads:</strong></p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What TrackSplit uses it for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>festivals.json</code></td>
+<td>Canonical festival name and alias resolution. Rewrites raw festival names (e.g. <code>"TML"</code>, <code>"A State Of Trance Festival"</code>) to their canonical form (<code>"Tomorrowland"</code>, <code>"ASOT"</code>), and decomposes edition suffixes (<code>"Tomorrowland Winter"</code> to <code>"Tomorrowland"</code> + edition <code>"Winter"</code>). Drives the <code>FESTIVAL</code> tag and the album folder name.</td>
+</tr>
+<tr>
+<td><code>artists.json</code></td>
+<td>Canonical artist name resolution (e.g. <code>"tiesto"</code> to <code>"Tiësto"</code>). Applied before the artist folder name and the <code>ALBUMARTIST</code> tag are written. Case- and diacritic-insensitive, so both <code>"Tiesto"</code> and <code>"TIËSTO"</code> resolve correctly.</td>
+</tr>
+<tr>
+<td><code>dj_cache.json</code></td>
+<td>Supplements <code>artists.json</code> with per-DJ aliases scraped by CrateDigger. Loaded before <code>artists.json</code> so manual entries in <code>artists.json</code> win when the same alias appears in both.</td>
+</tr>
+<tr>
+<td><code>mbid_cache.json</code></td>
+<td>Fills missing MusicBrainz artist IDs. For Tier-1 sources (no CrateDigger tags) the <code>ALBUMARTIST</code> is looked up here to populate <code>MUSICBRAINZ_ALBUMARTISTID</code>. For Tier-2 sources, any empty slot in the positional MBID list (per-track <code>MUSICBRAINZ_ARTISTID</code> and album-level <code>MUSICBRAINZ_ALBUMARTISTID</code>) is backfilled from this cache. Unknown names stay empty.</td>
+</tr>
+<tr>
+<td><code>artists/{Artist}/dj-artwork.jpg</code></td>
+<td>DJ portrait used to compose the artist cover (<code>folder.jpg</code> / <code>artist.jpg</code>). Looked up by the canonical artist name.</td>
+</tr>
+<tr>
+<td><code>artists/{Artist}/fanart.jpg</code></td>
+<td>Fallback portrait used when <code>dj-artwork.jpg</code> is not present.</td>
+</tr>
+</tbody>
+</table>
+<p>The resolver merges all discovered <code>.cratedigger</code> directories into one config view before any tag is written. If you have CrateDigger installed and its caches populated, TrackSplit picks them up automatically. No TrackSplit-side configuration is required.</p>
 <h3 id="re-run-manifest-details">Re-run manifest details</h3>
 <p><code>.tracksplit_manifest.json</code> records:</p>
 <ul>
