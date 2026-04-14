@@ -1,10 +1,10 @@
 """End-to-end TrackSplit starting from fresh (unidentified) MKVs.
 
 For each fixture, the test:
-  1. Copies the fresh MKV to tmp_path (originals stay untouched).
+  1. Copies the fresh MKV to tmp_path/inbox (originals stay untouched).
   2. Runs ``cratedigger identify`` against the copy.
-  3. Runs ``cratedigger enrich`` against the copy.
-  4. Runs ``tracksplit`` to produce FLAC output.
+  3. Runs ``cratedigger organize --enrich`` to lay out a library and enrich.
+  4. Runs ``tracksplit`` on the organized+enriched MKV.
   5. Asserts multi-artist Vorbis tags on the output.
 
 Opt-in and machine-local (hits 1001TL). Requires:
@@ -125,13 +125,22 @@ def _cratedigger_identify(mkv: Path, tracklist_id: str) -> None:
     )
 
 
-def _cratedigger_enrich(mkv: Path) -> None:
-    """Run CrateDigger's enrich against *mkv* in place."""
+def _cratedigger_organize_and_enrich(inbox: Path, library: Path) -> None:
+    """Organize everything in *inbox* into *library* and enrich in one pass.
+
+    ``cratedigger organize`` expects a directory as the root argument (it
+    reports ``Files: 0`` when given a single file). ``cratedigger enrich``
+    separately requires a CrateDigger-layout library root, so ``organize
+    --enrich`` handles both steps in a single invocation.
+    """
     subprocess.run(
         [
-            "cratedigger", "enrich",
+            "cratedigger", "organize",
             "--config", str(CD_CONFIG),
-            str(mkv),
+            "--output", str(library),
+            "--enrich",
+            "--yes",
+            str(inbox),
         ],
         check=True,
         capture_output=True,
@@ -142,7 +151,7 @@ def _cratedigger_enrich(mkv: Path) -> None:
 
 def _tracksplit_run(mkv: Path, out_dir: Path) -> None:
     subprocess.run(
-        ["tracksplit", str(mkv), "--out-dir", str(out_dir)],
+        ["tracksplit", str(mkv), "--output", str(out_dir)],
         check=True,
         capture_output=True,
         text=True,
@@ -150,8 +159,19 @@ def _tracksplit_run(mkv: Path, out_dir: Path) -> None:
     )
 
 
-def _collect_flacs(out_dir: Path) -> list[Path]:
-    return sorted(out_dir.rglob("*.flac"))
+def _collect_audio(out_dir: Path) -> list[Path]:
+    """Return output audio files (flac + opus, matching tracksplit's auto format)."""
+    flacs = list(out_dir.rglob("*.flac"))
+    opuses = list(out_dir.rglob("*.opus"))
+    return sorted(flacs + opuses)
+
+
+def _open_audio(path: Path):
+    """Open a FLAC or Opus file as a tag-bearing mutagen object."""
+    if path.suffix.lower() == ".opus":
+        from mutagen.oggopus import OggOpus
+        return OggOpus(path)
+    return FLAC(path)
 
 
 _SKIP_REASONS = []
@@ -164,27 +184,36 @@ if CD_CONFIG is None:
 @pytest.mark.skipif(bool(_SKIP_REASONS), reason="; ".join(_SKIP_REASONS))
 @pytest.mark.parametrize("key", list(FIXTURES))
 def test_identify_enrich_split(tmp_path, key):
-    """Fresh MKV -> identify -> enrich -> tracksplit -> assert FLAC tags."""
+    """Fresh MKV -> identify -> organize+enrich -> tracksplit -> assert FLAC tags."""
     src = _fixture_mkv(key)
     if src is None:
         pytest.skip(f"fixture MKV missing: {FIXTURES[key]['filename']}")
 
-    work = tmp_path / "work"
-    work.mkdir()
-    mkv = work / src.name
-    shutil.copy2(src, mkv)
+    inbox = tmp_path / "inbox"
+    inbox.mkdir()
+    inbox_mkv = inbox / src.name
+    shutil.copy2(src, inbox_mkv)
 
-    _cratedigger_identify(mkv, FIXTURES[key]["tracklist_id"])
-    _cratedigger_enrich(mkv)
+    _cratedigger_identify(inbox_mkv, FIXTURES[key]["tracklist_id"])
+
+    library = tmp_path / "library"
+    library.mkdir()
+    _cratedigger_organize_and_enrich(inbox, library)
+
+    organized = sorted(library.rglob("*.mkv"))
+    assert len(organized) == 1, (
+        f"expected one organized MKV in {library}, got {organized!r}"
+    )
+    enriched_mkv = organized[0]
 
     out = tmp_path / "out"
     out.mkdir()
-    _tracksplit_run(mkv, out)
+    _tracksplit_run(enriched_mkv, out)
 
-    flacs = _collect_flacs(out)
-    assert flacs, "TrackSplit produced no FLAC output"
+    outputs = _collect_audio(out)
+    assert outputs, "TrackSplit produced no audio output"
 
-    first = FLAC(flacs[0])
+    first = _open_audio(outputs[0])
 
     expected_aa = FIXTURES[key].get("expect_albumartists")
     if expected_aa is not None:
@@ -206,8 +235,8 @@ def test_identify_enrich_split(tmp_path, key):
         assert len(mbids) == len(list(first.get("ALBUMARTISTS", [])))
 
     saw_multi_artist_track = False
-    for p in flacs:
-        audio = FLAC(p)
+    for p in outputs:
+        audio = _open_audio(p)
         artists = list(audio.get("ARTISTS", []))
         mbids = list(audio.get("MUSICBRAINZ_ARTISTID", []))
         if artists and mbids:
