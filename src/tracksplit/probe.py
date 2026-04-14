@@ -66,9 +66,8 @@ def parse_chapters(ffprobe_data: dict) -> list[Chapter]:
 
         tags: dict[str, str] = {}
         for k, v in raw_tags.items():
-            if k.lower() == "title" and k != "TITLE":
-                # lowercase "title" is already on Chapter.title; skip.
-                # Keep an uppercase "TITLE" if the source distinguishes them.
+            if k == "title":
+                # Already extracted into Chapter.title above.
                 continue
             if isinstance(v, str):
                 tags[k.upper()] = _fix_text(v)
