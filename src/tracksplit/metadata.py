@@ -154,9 +154,20 @@ def build_album_meta(
     albumartists = list(tags.get("albumartists", []))
     albumartist_mbids = list(tags.get("albumartist_mbids", []))
     if albumartists:
-        while len(albumartist_mbids) < len(albumartists):
-            albumartist_mbids.append("")
-        albumartist_mbids = albumartist_mbids[: len(albumartists)]
+        # Prefer CrateDigger's aligned MBIDs when present, fill positional
+        # gaps from the MBID cache, and for a solo album artist fall back
+        # to the legacy single-value CRATEDIGGER_MBID if still unknown.
+        if cd_config is not None:
+            albumartist_mbids = cd_config.fill_mbids(
+                albumartists, albumartist_mbids
+            )
+        else:
+            while len(albumartist_mbids) < len(albumartists):
+                albumartist_mbids.append("")
+            albumartist_mbids = albumartist_mbids[: len(albumartists)]
+        legacy_mbid = tags.get("musicbrainz_artistid", "")
+        if len(albumartists) == 1 and not albumartist_mbids[0] and legacy_mbid:
+            albumartist_mbids[0] = legacy_mbid
 
     # Canonical-casing reference set for whole-name matches.
     canon_names: dict[str, str] = {n.casefold(): n for n in albumartists}

@@ -335,6 +335,22 @@ def test_single_artist_single_mbid_legacy_path():
     assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["m-arm"]
 
 
+def test_all_empty_track_mbids_omit_tag():
+    track = _track(artist="A & B", artists=["A", "B"], artist_mbids=["", ""])
+    tags = build_tag_dict(_album(), track)
+    assert tags["ARTISTS"] == ["A", "B"]
+    assert "MUSICBRAINZ_ARTISTID" not in tags
+
+
+def test_all_empty_albumartist_mbids_omit_tag():
+    # ALBUMARTISTS still emitted (individuals matter), but
+    # MUSICBRAINZ_ALBUMARTISTID is omitted rather than written as [""].
+    album = _album(albumartists=["AFROJACK"], albumartist_mbids=[""])
+    tags = build_tag_dict(album, _track(artist="x"))
+    assert tags["ALBUMARTISTS"] == ["AFROJACK"]
+    assert "MUSICBRAINZ_ALBUMARTISTID" not in tags
+
+
 def _make_silent_flac(path: Path, duration: float = 0.5) -> None:
     """Create a tiny silent FLAC at ``path`` via ffmpeg."""
     subprocess.run(

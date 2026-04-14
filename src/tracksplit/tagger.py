@@ -63,14 +63,18 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
     if album.comment:
         tags["COMMENT"] = [album.comment]
 
-    # Per-track individual artists + aligned MBIDs.
+    # Per-track individual artists + aligned MBIDs. When every MBID slot
+    # is empty, omit MUSICBRAINZ_ARTISTID entirely rather than writing a
+    # row of empty strings (nothing to link against).
     if track.artists:
         tags["ARTISTS"] = list(track.artists)
         if track.artist_mbids:
             mbids = list(track.artist_mbids)
             while len(mbids) < len(track.artists):
                 mbids.append("")
-            tags["MUSICBRAINZ_ARTISTID"] = mbids[: len(track.artists)]
+            mbids = mbids[: len(track.artists)]
+            if any(mbids):
+                tags["MUSICBRAINZ_ARTISTID"] = mbids
 
     # Album-level individuals + aligned MBIDs (new), with legacy fallback.
     if album.albumartists:
@@ -78,7 +82,9 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
         mbids = list(album.albumartist_mbids)
         while len(mbids) < len(album.albumartists):
             mbids.append("")
-        tags["MUSICBRAINZ_ALBUMARTISTID"] = mbids[: len(album.albumartists)]
+        mbids = mbids[: len(album.albumartists)]
+        if any(mbids):
+            tags["MUSICBRAINZ_ALBUMARTISTID"] = mbids
     elif album.musicbrainz_artistid and not _is_collab_artist(album.artist):
         tags["MUSICBRAINZ_ALBUMARTISTID"] = [album.musicbrainz_artistid]
 
