@@ -461,3 +461,34 @@ def test_parse_tags_enriched_at_missing_is_empty():
     from tracksplit.probe import parse_tags
     tags = parse_tags({"format": {"tags": {"ARTIST": "X"}}})
     assert tags["enriched_at"] == ""
+
+
+class TestParseTagsAlbumArtists:
+    def test_albumartist_display_and_mbids(self):
+        data = _make_ffprobe_data(tags={
+            "ARTIST": "Armin van Buuren",
+            "CRATEDIGGER_1001TL_ARTISTS": "Armin van Buuren|KI/KI",
+            "CRATEDIGGER_ALBUMARTIST_DISPLAY": "Armin van Buuren & KI/KI",
+            "CRATEDIGGER_ALBUMARTIST_MBIDS": "mbid-a|mbid-b",
+            "CRATEDIGGER_MBID": "mbid-a",
+        })
+        tags = parse_tags(data)
+        assert tags["albumartist_display"] == "Armin van Buuren & KI/KI"
+        assert tags["albumartists"] == ["Armin van Buuren", "KI/KI"]
+        assert tags["albumartist_mbids"] == ["mbid-a", "mbid-b"]
+
+    def test_albumartist_mbids_preserves_empty_slots(self):
+        data = _make_ffprobe_data(tags={
+            "CRATEDIGGER_1001TL_ARTISTS": "A|B|C",
+            "CRATEDIGGER_ALBUMARTIST_MBIDS": "mbid-a||mbid-c",
+        })
+        tags = parse_tags(data)
+        assert tags["albumartists"] == ["A", "B", "C"]
+        assert tags["albumartist_mbids"] == ["mbid-a", "", "mbid-c"]
+
+    def test_albumartist_fields_empty_when_absent(self):
+        data = _make_ffprobe_data(tags={"ARTIST": "X"})
+        tags = parse_tags(data)
+        assert tags["albumartist_display"] == ""
+        assert tags["albumartists"] == []
+        assert tags["albumartist_mbids"] == []

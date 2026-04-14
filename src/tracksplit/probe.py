@@ -85,6 +85,17 @@ def parse_chapters(ffprobe_data: dict) -> list[Chapter]:
     return chapters
 
 
+def _split_pipe_preserving_empty(value: str) -> list[str]:
+    """Split ``value`` on '|' without dropping empty slots.
+
+    Positional alignment matters for MBID lists, so "a||b" -> ["a", "", "b"].
+    Empty input returns [].
+    """
+    if not value:
+        return []
+    return value.split("|")
+
+
 def parse_tags(ffprobe_data: dict) -> dict:
     """Extract metadata tags from ffprobe JSON.
 
@@ -101,6 +112,12 @@ def parse_tags(ffprobe_data: dict) -> dict:
 
     cratedigger = any(k.startswith("CRATEDIGGER_") for k in ci)
 
+    albumartists_raw = ci.get("CRATEDIGGER_1001TL_ARTISTS", "")
+    albumartists = [n for n in albumartists_raw.split("|") if n] if albumartists_raw else []
+
+    albumartist_mbids_raw = ci.get("CRATEDIGGER_ALBUMARTIST_MBIDS", "")
+    albumartist_mbids = _split_pipe_preserving_empty(albumartist_mbids_raw)
+
     return {
         "artist": ci.get("ARTIST", ""),
         "festival": ci.get("CRATEDIGGER_1001TL_FESTIVAL", ""),
@@ -112,6 +129,9 @@ def parse_tags(ffprobe_data: dict) -> dict:
         "musicbrainz_artistid": ci.get("CRATEDIGGER_MBID", ""),
         "dj_artwork": ci.get("CRATEDIGGER_1001TL_DJ_ARTWORK", ""),
         "enriched_at": ci.get("CRATEDIGGER_ENRICHED_AT", ""),
+        "albumartist_display": ci.get("CRATEDIGGER_ALBUMARTIST_DISPLAY", ""),
+        "albumartists": albumartists,
+        "albumartist_mbids": albumartist_mbids,
         "cratedigger": cratedigger,
     }
 
