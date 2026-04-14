@@ -34,3 +34,8 @@ tracksplit = ["fonts/*.ttf"]
 
 [project.scripts]
 tracksplit = "tracksplit.cli:run"
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: opt-in tests that run the real pipeline against local MKVs",
+]
