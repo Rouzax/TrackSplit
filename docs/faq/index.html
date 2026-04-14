@@ -640,6 +640,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#how-do-lyrion-and-jellyfin-surface-multi-artist-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do Lyrion and Jellyfin surface multi-artist tracks?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-does-tracksplit-differ-from-cratedigger" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -773,6 +784,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#how-do-lyrion-and-jellyfin-surface-multi-artist-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do Lyrion and Jellyfin surface multi-artist tracks?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-does-tracksplit-differ-from-cratedigger" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -861,6 +883,8 @@
 <p>Re-run with <code>--verbose</code> to see which branch triggered.</p>
 <h2 id="can-i-delete-tracksplit_chaptersjson">Can I delete <code>.tracksplit_chapters.json</code>?</h2>
 <p>Yes. It is a re-run manifest, nothing more. Delete it to force TrackSplit to rebuild that one album the next time you run. It does not need to be backed up and it contains no information that is not already in the source file.</p>
+<h2 id="how-do-lyrion-and-jellyfin-surface-multi-artist-tracks">How do Lyrion and Jellyfin surface multi-artist tracks?</h2>
+<p>TrackSplit writes the Picard-standard <code>ARTISTS</code> multi-value tag alongside the display <code>ARTIST</code>, plus a positionally-aligned <code>MUSICBRAINZ_ARTISTID</code> multi-value tag. Both Lyrion and current Jellyfin read these and link each individual contributor to its own artist page. After upgrading TrackSplit and re-running it against previously-split albums, trigger a library rescan in your music server so it picks up the new multi-value fields.</p>
 <h2 id="how-does-tracksplit-differ-from-cratedigger">How does TrackSplit differ from CrateDigger?</h2>
 <p>They are complementary, not redundant. <strong>CrateDigger</strong> curates a video library: it identifies recordings, embeds chapters and metadata, generates posters, and syncs with Kodi. <strong>TrackSplit</strong> reads that video library and produces a parallel music library (FLAC/Opus albums, tagged and cover-embedded) for music servers like Jellyfin and Lyrion. The two share naming conventions and canonical IDs so the same set shows up consistently in both worlds.</p>
 <h2 id="does-tracksplit-modify-my-source-videos">Does TrackSplit modify my source videos?</h2>
