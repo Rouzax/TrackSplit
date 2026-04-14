@@ -1,6 +1,6 @@
 # Usage
 
-TrackSplit takes a video file or a directory of video files and writes one tagged album per input.
+TrackSplit is a single command. You point it at a video file or a folder of videos, and it produces a tagged music album (or a batch of albums) in your output directory.
 
 ## Synopsis
 
@@ -8,67 +8,223 @@ TrackSplit takes a video file or a directory of video files and writes one tagge
 tracksplit [OPTIONS] INPUT_PATH
 ```
 
-`INPUT_PATH` is either a video file or a directory. Recognised video extensions: `.mkv`, `.mp4`, `.webm`, `.avi`, `.mov`, `.m2ts`, `.ts`, `.flv`.
+`INPUT_PATH` can be one video file or a directory. Recognised video extensions: `.mkv`, `.mp4`, `.webm`, `.avi`, `.mov`, `.m2ts`, `.ts`, `.flv`.
 
-## Options
+## Single file or directory?
 
-| Flag | Description |
-|------|-------------|
-| `--output`, `-o PATH` | Output directory. Defaults to the current working directory. |
-| `--force` | Regenerate even if the per-album manifest matches. |
-| `--format`, `-f {auto,flac,opus}` | Output codec. `auto` picks FLAC for lossless sources and Opus for lossy. |
-| `--workers`, `-w N` | Parallel workers for directory mode. Default scales with CPU: `logical_cores // 4`, clamped to `[2, 12]` (so 2 on a dual-core laptop, 4 on a 16-thread workstation, 10 on a 40-thread server). Set `1` for sequential; raise for stream-copy batches (see [Troubleshooting](troubleshooting.md#parallel-mode-is-slow-or-hanging)). |
-| `--dry-run` | Probe and plan without writing anything. Pairs well with `--verbose`. |
-| `--verbose`, `-v` | INFO-level logging. Shows the current step and file. |
-| `--debug` | DEBUG-level logging. Includes full command lines and subprocess details. |
-| `--check` | Probe `ffmpeg`/`ffprobe`/`mkvextract` and exit. |
-| `--help`, `-h` | Show the auto-generated help. |
-
-## Examples
-
-**Single file, sensible defaults:**
+**Single file:** use this when you want to process one video and check the result before committing to a full batch.
 
 ```bash
-tracksplit video.mkv
+tracksplit video.mkv --output ~/music/library/
 ```
 
-**Batch a folder into a music library:**
+**Directory:** use this when you have a folder of videos and want them all turned into albums in one go. TrackSplit scans the folder for recognised video files and processes them in parallel.
 
 ```bash
 tracksplit ~/videos/ --output ~/music/library/
 ```
 
-**Force Opus output regardless of source:**
+Both modes write the same output structure. The difference is that directory mode shows a progress bar and processes multiple files at once.
+
+## Options explained
+
+### `--output` / `-o`
+
+Where to write the albums. TrackSplit creates an `Artist/Album/` folder structure inside this directory.
 
 ```bash
+tracksplit video.mkv --output ~/music/library/
+```
+
+If you leave this out, TrackSplit writes into your current working directory. On a first run you almost always want to set this explicitly so your music ends up where your server can find it.
+
+### `--format` / `-f`
+
+What audio format to use for the output files. Your choices are `auto`, `flac`, or `opus`.
+
+- **`auto` (default):** TrackSplit inspects the audio inside the video and picks the best format automatically. Lossless sources (FLAC, ALAC, uncompressed PCM) are extracted as `.flac` files. Opus audio is copied directly to `.opus`. Everything else (AAC, MP3, and other lossy formats) is converted to `.opus`. Use `auto` unless you have a specific reason to override it.
+- **`flac`:** always produce `.flac` files, regardless of the source. Use this if your music server or listening setup requires lossless files.
+- **`opus`:** always produce `.opus` files. Use this if you want smaller files and do not need lossless quality.
+
+```bash
+# Let TrackSplit decide (recommended)
+tracksplit video.mkv --format auto
+
+# Always lossless
+tracksplit video.mkv --format flac
+
+# Always Opus
 tracksplit video.mkv --format opus
 ```
 
-**Preview what would happen without writing anything:**
+### `--force`
+
+Normally TrackSplit skips an album if it already processed it and nothing changed. `--force` tells it to rebuild the album from scratch, no matter what.
+
+Use this when:
+- you changed a setting (like `--format`) and want to regenerate with the new choice,
+- you manually edited or deleted some output files and want a clean rebuild,
+- something went wrong mid-run and you want to start fresh.
+
+```bash
+tracksplit video.mkv --output ~/music/library/ --force
+```
+
+### `--dry-run`
+
+Probes the video and shows you what TrackSplit *would* do, without writing any files. No tracks, no artwork, and no manifest are created.
+
+Use this to preview the album name, track count, and output path before committing.
 
 ```bash
 tracksplit video.mkv --dry-run --verbose
 ```
 
-**Rebuild an album even if nothing changed:**
+Pair it with `--verbose` to see each step printed out.
+
+### `--workers` / `-w`
+
+How many videos to process at the same time in directory mode. Only relevant when you pass a directory.
+
+The default scales with your CPU: `logical_cores / 4`, with a minimum of 2 and a maximum of 12. On a typical 8-core laptop this is 2; on a 16-thread workstation it is 4.
+
+- **Raise it** if your source files use Opus audio (the output is a fast copy, not a re-encode, so CPU is nearly idle and you can run more at once).
+- **Lower it to 1** if your disk is slow, you are on a network share, or you see hangs and want to rule out contention.
 
 ```bash
-tracksplit video.mkv --force
-```
-
-**Serial processing on a slow disk:**
-
-```bash
+# Sequential, one file at a time
 tracksplit ~/videos/ --workers 1
+
+# More parallel for a fast SSD with Opus sources
+tracksplit ~/videos/ --workers 8
 ```
 
-## Progress display
+### `--verbose` / `-v` and `--debug`
 
-- **Single file:** a spinner shows the current pipeline step (probing, extracting, splitting, tagging, saving) and ends with a one-line summary naming the album directory and track count.
-- **Directory:** a live progress bar shows `completed/total`, with one spinner line per active worker. A summary panel at the end breaks down processed / skipped / failed / cancelled counts.
+- `--verbose`: prints each pipeline step as it happens (probing, splitting, tagging, saving). Good for following along or confirming a dry run.
+- `--debug`: prints the full command lines sent to FFmpeg and all subprocess output. Use this when something fails and you want to see exactly what went wrong.
 
-## Errors and cancellation
+### `--check`
 
-Failures that have a known cause (missing tool, disk full, FFmpeg subprocess error) are printed as a one-line reason. Full tracebacks are kept behind `--debug`.
+Probes `ffmpeg`, `ffprobe`, and `mkvextract` and prints their versions, then exits. It does not process any video files.
 
-Pressing `Ctrl+C` sets a cancellation flag, kills in-flight FFmpeg subprocesses, and reports any in-flight files as `cancelled` in the summary.
+Use this after installing TrackSplit to confirm your tools are set up correctly, or after changing a [config file](configuration.md) to verify the new paths work.
+
+```bash
+tracksplit --check
+```
+
+### `--help` / `-h`
+
+Prints the built-in help text and exits.
+
+## What you see while it runs
+
+### Single file
+
+A spinner shows the current step (probing, extracting, tagging, saving artwork). When it finishes, a single summary line appears:
+
+```
+  done  your-set.mkv: Artist/Festival Year (Stage), 14 tracks
+```
+
+If the file was skipped because nothing changed:
+
+```
+  skip  your-set.mkv (unchanged)
+```
+
+### Directory
+
+A progress bar shows how many files are done out of the total. Below it, one spinner line appears per active worker, each showing which file it is currently working on. When all files finish, a summary panel appears:
+
+```
+Processed  12
+Skipped     3
+Failed      0
+Cancelled   0
+```
+
+## What it means when a file is skipped
+
+TrackSplit keeps a small record file (`.tracksplit_manifest.json`) in each album folder. On subsequent runs it compares the source file and its settings against that record. If nothing meaningful has changed (same chapters, same metadata, same format), it skips the album without redoing any work.
+
+A skipped file is not an error. It means the output is already up to date.
+
+To force a rebuild for everything, pass `--force`. To rebuild a single album, delete its `.tracksplit_manifest.json` and re-run.
+
+## What Ctrl+C does
+
+Pressing `Ctrl+C` while TrackSplit is running:
+
+1. Sets a stop signal so no new files start processing.
+2. Kills any FFmpeg processes that are currently running.
+3. Prints `Interrupted, stopping...`
+4. Reports any in-progress files as `cancelled` in the final summary.
+
+Partially-written output files may be left behind. Re-running without `--force` will complete files that finished cleanly; cancelled files will be rebuilt from scratch.
+
+## Examples
+
+**Turn a single video into an album:**
+
+```bash
+tracksplit ~/videos/set.mkv --output ~/music/library/
+```
+
+TrackSplit reads the file, splits the audio at chapter boundaries, tags everything, generates cover art, and writes the album into `~/music/library/Artist/Album/`.
+
+**Process a whole folder of videos into a music library:**
+
+```bash
+tracksplit ~/videos/ --output ~/music/library/
+```
+
+Every recognised video in `~/videos/` becomes an album. Already-processed files are skipped automatically on repeat runs.
+
+**Preview without writing anything:**
+
+```bash
+tracksplit ~/videos/set.mkv --dry-run --verbose
+```
+
+Shows what album name, track count, and output path would be produced. Nothing is written to disk.
+
+**Rebuild after changing format or when something looks wrong:**
+
+```bash
+tracksplit ~/videos/set.mkv --output ~/music/library/ --force --format flac
+```
+
+Ignores the existing album and regenerates everything from scratch as FLAC files.
+
+## Advanced details
+
+### How `--format auto` picks the output codec
+
+TrackSplit reads the codec of the first audio stream inside the video:
+
+- **Opus input:** copied directly to `.opus` without re-encoding.
+- **Lossless input** (FLAC, ALAC, or uncompressed PCM): extracted to `.flac` without re-encoding.
+- **Any other lossy input** (AAC, MP3, etc.): encoded to `.opus` using libopus.
+
+The decision is based on the audio codec inside the video, not the video container. An MKV file with Opus audio produces `.opus`; an MKV file with FLAC audio produces `.flac`.
+
+### Tuning `--workers` by workload
+
+The default (`logical_cores / 4`, clamped to 2-12) is sized for re-encode workloads where FFmpeg is CPU-intensive. For stream-copy workloads (Opus source to Opus output), CPU usage per worker is near zero and you can safely run more in parallel:
+
+| Workload | CPU per worker | Suggested `--workers` |
+|---|---|---|
+| Opus source (copy, no re-encode) | Near zero | 2-3x the default; bottleneck becomes disk I/O |
+| FLAC output or forced Opus re-encode | High | Stick with the default |
+| Mixed batch | Varies | Default is a safe compromise |
+
+A quick way to check: watch CPU usage while a batch runs. If it sits near idle, you have headroom to raise `--workers`. If it sits near 100%, do not raise it further.
+
+## Related pages
+
+- [Getting Started](getting-started.md): install and first run.
+- [Configuration](configuration.md): set custom tool paths when TrackSplit cannot find them automatically.
+- [Output Structure](output.md): every file and tag TrackSplit creates.
+- [Troubleshooting](troubleshooting.md): what to do when something goes wrong.

@@ -12,7 +12,7 @@
 
 TrackSplit is a Python CLI that reads chapter markers from video files (MKV, MP4, WebM, and more), splits the audio into individual tracks at sample-accurate boundaries, and writes a fully tagged music album with embedded cover art and an artist folder picture. FLAC sources stay lossless; Opus and other lossy sources are stream-copied when possible. Re-runs are skipped automatically unless the chapters actually changed.
 
-It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), which embeds the chapter markers and metadata in the first place, but works on any chaptered video.
+It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), which embeds chapter markers, canonical metadata, and DJ artwork into your MKV library. Together the two tools keep artist names, festival spellings, and MusicBrainz IDs consistent across your video and music libraries. TrackSplit also works on any chaptered video without CrateDigger.
 
 ## Cover Gallery
 
@@ -57,7 +57,7 @@ It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), wh
 
 - [Python 3.11+](https://www.python.org/downloads/)
 - [FFmpeg](https://ffmpeg.org/download.html) (ships `ffmpeg` and `ffprobe`)
-- [MKVToolNix](https://mkvtoolnix.download/downloads.html) (optional, enables cover extraction from MKV attachments)
+- [MKVToolNix](https://mkvtoolnix.download/downloads.html) (optional, provides `mkvextract` and `mkvmerge` for cover extraction from MKV attachments; TrackSplit falls back to FFmpeg if not installed)
 
 ### Install
 
@@ -92,13 +92,13 @@ tracksplit video.mkv --dry-run --verbose
 
 ## Configuration
 
-TrackSplit works out of the box if `ffmpeg`, `ffprobe`, and (optionally) `mkvextract` are on your `PATH`. If they are installed elsewhere, point TrackSplit at them via a TOML config. Copy [`tracksplit.toml.example`](tracksplit.toml.example) and uncomment the keys you need.
+TrackSplit works out of the box if `ffmpeg`, `ffprobe`, and (optionally) the MKVToolNix tools are on your `PATH`. If they are installed elsewhere, point TrackSplit at them via a TOML config. Copy [`tracksplit.toml.example`](tracksplit.toml.example) and uncomment the keys you need.
 
 Search order (first hit wins):
 
 1. `./tracksplit.toml`
 2. `./config.toml`
-3. `~/.config/tracksplit/config.toml` (Linux/macOS) or `%APPDATA%/tracksplit/config.toml` (Windows)
+3. `~/.config/tracksplit/config.toml` (Linux/macOS) or `$env:APPDATA\tracksplit\config.toml` (Windows PowerShell)
 4. `~/tracksplit.toml`, `~/.tracksplit.toml`
 
 ```toml
@@ -106,6 +106,7 @@ Search order (first hit wins):
 ffmpeg     = "/usr/local/bin/ffmpeg"
 ffprobe    = "/usr/local/bin/ffprobe"
 mkvextract = "/usr/bin/mkvextract"
+mkvmerge   = "/usr/bin/mkvmerge"
 ```
 
 See [`docs/troubleshooting.md`](docs/troubleshooting.md) if something goes wrong on first run.
@@ -121,12 +122,12 @@ Artist/
     01 - Track Title.flac
     02 - Track Title.flac
     cover.jpg
-    .tracksplit_chapters.json
+    .tracksplit_manifest.json
 ```
 
 (Tier 2, CrateDigger-tagged source.) Tier 1 sources without festival metadata get `Artist/<filename-stem>/` instead.
 
-`.tracksplit_chapters.json` is a manifest TrackSplit uses to detect whether a source file has changed since the last run. Safe to delete if you want to force one album to rebuild; safe to ignore in version control.
+`.tracksplit_manifest.json` is a record TrackSplit uses to detect whether a source file has changed since the last run. Safe to delete if you want to force one album to rebuild; safe to ignore in version control.
 
 ## Related projects
 

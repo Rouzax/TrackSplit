@@ -1,68 +1,161 @@
 # Troubleshooting
 
-First step for any issue: run `tracksplit --check`. It probes `ffmpeg`, `ffprobe`, and `mkvextract` and prints their versions or an install hint.
+**First step for any issue:** run `tracksplit --check`. It tests whether `ffmpeg`, `ffprobe`, and `mkvextract` are reachable and prints their versions or an install hint. Most setup problems show up here.
 
-## `ffmpeg` / `ffprobe` not found
+If the check passes but something still goes wrong, re-run your command with `--debug`. This prints the exact FFmpeg commands TrackSplit runs and all subprocess output, which usually points straight at the cause.
 
-TrackSplit needs both on your `PATH`, or at a path you configure.
+---
 
-- **Linux:** `sudo apt install ffmpeg` (Debian/Ubuntu), `sudo dnf install ffmpeg` (Fedora), or your distro's package.
-- **macOS:** `brew install ffmpeg`.
-- **Windows:** `choco install ffmpeg`, `scoop install ffmpeg`, or download from ffmpeg.org and add the `bin/` folder to `PATH`.
+## TrackSplit says ffmpeg or ffprobe is missing
 
-If you must use a non-standard install path, copy `tracksplit.toml.example` to one of the config locations (see README "Configuration") and set the absolute paths under `[tools]`.
+**What you see:** `tracksplit --check` prints a red `✗` next to `ffmpeg` or `ffprobe`, with an install hint.
 
-## `mkvextract` not found (warning only)
+**What is happening:** TrackSplit cannot find one or both tools on your `PATH`. Both are required and come together in a single FFmpeg install.
 
-Optional. Only used to extract embedded cover art from MKV attachments. Install with `mkvtoolnix` from your package manager if you want cover extraction from MKV attachments rather than video streams.
+**Fix:**
 
-## Video is skipped with "No chapters and no duration"
+- **Linux (Debian/Ubuntu):** `sudo apt install ffmpeg`
+- **Linux (Fedora):** `sudo dnf install ffmpeg`
+- **macOS:** `brew install ffmpeg`
+- **Windows:** `choco install ffmpeg` or `scoop install ffmpeg`. If you installed manually, make sure the `bin/` folder is added to your `PATH`.
 
-TrackSplit splits at chapter boundaries. If a file has no chapters and `ffprobe` can't read its duration, there's nothing to split. Options:
+After installing, run `tracksplit --check` again to confirm the green `✓` appears for both tools.
 
-- Re-author the source with chapter markers (for example, via MKVToolNix).
-- If you want one big track anyway, make sure the video at least has a readable duration. TrackSplit will then emit a single-track album.
+If FFmpeg is installed but in a non-standard location, see [Configuration](configuration.md) to point TrackSplit at the exact path.
 
-## Run failed mid-file with a stack trace
+---
 
-- **`CalledProcessError` from `ffmpeg`:** the underlying `ffmpeg` run failed. Re-run with `--debug` to see the exact command and `ffmpeg`'s stderr. Common causes: corrupt input, unusual codec, or disk full.
-- **`FileNotFoundError`** naming a tool: the tool moved or was uninstalled since you last ran. Re-check with `tracksplit --check`.
-- **`OSError: [Errno 28] No space left on device`** or similar: free space on the output volume.
+## TrackSplit says mkvextract is missing
 
-## Output went to the wrong directory
+**What you see:** `tracksplit --check` prints a yellow `!` next to `mkvextract`.
 
-TrackSplit writes under the current working directory unless you pass `--output`. If batch-processing, double-check: output is `<output_dir>/<Artist>/<Artist @ Festival Year (Stage)>/`.
+**What is happening:** MKVToolNix is not installed. This is optional. TrackSplit will still run and still generate cover art, but it uses a fallback method (reading from the video stream) rather than extracting MKV attachment covers directly.
 
-## Files are re-generated every run (or never)
+**Fix:** Install MKVToolNix from your package manager (`mkvtoolnix`) if you want the best cover extraction for MKV files. Otherwise you can ignore this warning.
 
-TrackSplit tracks re-run state via `.tracksplit_chapters.json` (a manifest) inside each album directory. Delete that file to force a full regeneration for that album; pass `--force` to regenerate everything. The manifest is safe to commit, ignore, or delete at will: it's metadata only, not part of your music library.
+---
 
-## Parallel mode is slow or hanging
+## The video was skipped with no output
 
-- Set `--workers 1` to rule out contention.
-- On spinning disks or network shares, sequential (`--workers 1`) is usually faster.
+**What you see:** A `skip` line in the terminal but no album folder appeared.
 
-### Tuning `--workers` by workload
+**Two common causes:**
 
-The default (`logical_cores // 4`, clamped to `[2, 12]`) is sized for FLAC / forced-Opus **re-encode** batches, where each ffmpeg process is CPU-heavy and multi-threaded. For other workloads you can go higher:
+1. **The album already exists and nothing changed.** TrackSplit detected that it already processed this file and the output is up to date. This is normal behaviour on repeat runs. To force a rebuild, add `--force` to your command.
 
-| Workload | What ffmpeg does | CPU per worker | Good `--workers` |
-|---|---|---|---|
-| **Stream-copy** (Opus source → Opus output, common with CrateDigger MKVs) | Mux only, no decode/encode | Near zero | 2-3x the default; a 40-thread box happily runs `-w 20` to `-w 30`. Bottleneck becomes disk I/O or ffmpeg spawn overhead, not CPU. |
-| **Re-encode** (FLAC output, or `--format opus` on a lossy source that fails stream-copy safety checks) | Full decode + encode | High (libopus / FLAC are multi-threaded) | Stick with the default; raising further risks oversubscription. |
-| **Mixed batch** | Varies per file | Varies | Default is the right compromise. |
+2. **The file has no chapters and no readable duration.** TrackSplit splits audio at chapter boundaries. If a file has no chapters and FFprobe cannot determine its duration, there is nothing to work with and the file is skipped with a warning.
 
-Quick check for which regime you're in: watch CPU while a batch runs. Sitting at ~10% with headroom means stream-copy and you can raise `--workers`. Sitting near 100% means re-encode and you should not.
+   - If you expected chapters but there are none, the source may have had them stripped. Tools like MKVToolNix can add chapter markers, or [CrateDigger](https://github.com/Rouzax/CrateDigger) can embed them automatically.
+   - If you want a single-track album from a file with no chapters, make sure the file has a readable duration. TrackSplit will then produce one track covering the whole file.
+
+**To see exactly which reason triggered**, re-run with `--verbose`.
+
+---
+
+## A run failed partway through
+
+**What you see:** An error message mid-run, possibly with a traceback.
+
+**FFmpeg returned an error:**
+
+The underlying FFmpeg command failed. Common causes: corrupt input file, an unusual codec, or the disk filling up mid-write.
+
+Fix: re-run with `--debug` to see the exact FFmpeg command and its error output. That usually identifies the cause immediately.
+
+**A tool is no longer found:**
+
+A tool was found during `--check` but is now missing or was moved. Re-run `tracksplit --check` to see which tool is affected, then reinstall or update your [config file](configuration.md).
+
+**`No space left on device` or similar disk error:**
+
+Free up space on your output volume and re-run. TrackSplit will skip albums that completed cleanly and only redo the ones that did not finish.
+
+---
+
+## Output appeared in the wrong place
+
+**What you see:** An album folder appeared somewhere unexpected, not where you intended.
+
+**What is happening:** If you did not pass `--output`, TrackSplit writes into your current working directory, whatever that is when you run the command.
+
+**Fix:** Always pass `--output` explicitly:
+
+```bash
+tracksplit ~/videos/set.mkv --output ~/music/library/
+```
+
+The full output path for an album is: `<output>/<Artist>/<Festival Year (Stage)>/` for CrateDigger-tagged sources, or `<output>/<Artist>/<filename-stem>/` for plain chaptered videos.
+
+---
+
+## Files are rebuilt every run even though nothing changed
+
+**What you see:** TrackSplit processes the same files repeatedly instead of skipping them.
+
+**What is happening:** TrackSplit uses a `.tracksplit_manifest.json` file in each album folder to detect whether a rebuild is needed. If that file is missing, unreadable, or was written by an older version with a different format, TrackSplit rebuilds the album.
+
+**Fix:**
+
+- Check that the album folder contains a `.tracksplit_manifest.json` file after a run. If it does not appear, TrackSplit may be writing to a different output directory than you expect.
+- If the manifest exists but rebuilds keep happening, re-run with `--verbose` to see what changed.
+- If you changed `--format` or `--output` since the last run, a rebuild is expected and correct.
+
+---
+
+## Files are never rebuilt even after I changed something
+
+**What you see:** TrackSplit skips an album you know needs updating.
+
+**Fix:** Pass `--force` to rebuild everything, or delete the `.tracksplit_manifest.json` in the specific album folder to rebuild just that one album.
+
+```bash
+# Rebuild one album
+tracksplit ~/videos/set.mkv --output ~/music/library/ --force
+```
+
+---
+
+## Batch processing is slow or hanging
+
+**What you see:** Directory mode is making slow progress, or individual workers appear stuck.
+
+**Start here:** set `--workers 1` to process files sequentially. If that fixes the hang, the problem is contention between workers (common on spinning disks and network shares).
+
+**If it is just slow:**
+
+The default worker count is tuned for re-encode workloads (FLAC output or Opus-from-AAC). If your sources are Opus audio (common with CrateDigger MKVs), the output is a fast copy and CPU usage per worker is near zero. You can run many more workers safely:
+
+| Workload | CPU per worker | Suggested `--workers` |
+|---|---|---|
+| Opus source to Opus output (copy) | Near zero | 2-3x the default; bottleneck becomes disk I/O |
+| FLAC output or Opus re-encode | High | Stick with the default |
+| Mixed batch | Varies | Default is a safe compromise |
+
+Quick check: watch CPU while a batch runs. Near idle means you can raise `--workers`. Near 100% means you should not.
+
+On spinning disks or network shares, `--workers 1` is usually faster than the default regardless of codec, because disk seeks between parallel writes cost more than any CPU saving.
+
+---
 
 ## Cover art looks wrong or fonts are missing
 
-Fonts are bundled with the package. If you see a `FileNotFoundError` about a weight, reinstall the package: `pip install -e . --force-reinstall`.
+**What you see:** An error mentioning a missing font file, or generated artwork looks broken.
+
+**What is happening:** A font file bundled with TrackSplit is missing or corrupt.
+
+**Fix:** Reinstall the package:
+
+```bash
+pip install -e . --force-reinstall
+```
+
+---
 
 ## Still stuck?
 
-Re-run with `--debug` and capture the full output. Open an issue with:
+Re-run with `--debug` and save the full output. Then open an issue and include:
 
-- The failing command line.
-- The `--debug` log.
-- `ffmpeg -version` and `ffprobe -version` output.
-- The OS and how you installed TrackSplit.
+- The exact command you ran.
+- The full `--debug` output.
+- The output of `ffmpeg -version` and `ffprobe -version`.
+- Your OS and how you installed TrackSplit.
