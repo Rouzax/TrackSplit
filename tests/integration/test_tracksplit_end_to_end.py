@@ -55,7 +55,11 @@ def _env_file(name: str) -> Path | None:
 
 MKV_DIR = _env_dir("TRACKSPLIT_TEST_MKV_DIR")
 CD_CONFIG = _env_file("CRATEDIGGER_TEST_CONFIG")
-CD_COOKIES = _env_file("CRATEDIGGER_TEST_COOKIES")  # may be unused
+
+# Timeouts match CrateDigger's own integration suite (1001TL + MB lookups are slow).
+_IDENTIFY_TIMEOUT = 900
+_ENRICH_TIMEOUT = 900
+_TRACKSPLIT_TIMEOUT = 1800
 
 
 # Filenames match CrateDigger's fixture dict so a single shared directory
@@ -117,6 +121,7 @@ def _cratedigger_identify(mkv: Path, tracklist_id: str) -> None:
         check=True,
         capture_output=True,
         text=True,
+        timeout=_IDENTIFY_TIMEOUT,
     )
 
 
@@ -131,6 +136,7 @@ def _cratedigger_enrich(mkv: Path) -> None:
         check=True,
         capture_output=True,
         text=True,
+        timeout=_ENRICH_TIMEOUT,
     )
 
 
@@ -140,6 +146,7 @@ def _tracksplit_run(mkv: Path, out_dir: Path) -> None:
         check=True,
         capture_output=True,
         text=True,
+        timeout=_TRACKSPLIT_TIMEOUT,
     )
 
 
