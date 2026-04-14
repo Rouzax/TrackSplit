@@ -66,7 +66,7 @@ class TestShouldRegenerate:
             "tags": overrides.get("tags",
                 {"artist": "A", "album": "", "festival": "", "date": "",
                  "stage": "", "venue": "", "mbid": "",
-                 "musicbrainz_artistid": "", "enriched_at": ""}),
+                 "enriched_at": ""}),
             "track_filenames": overrides.get("track_filenames", ["01 - T.flac"]),
             "cover_sha256": overrides.get("cover_sha256", "a" * 64),
         }
@@ -108,7 +108,7 @@ class TestShouldRegenerate:
         self._write_manifest(album, **fp)
         tags = {"artist": "A", "album": "", "festival": "", "date": "",
                 "stage": "", "venue": "", "mbid": "",
-                "musicbrainz_artistid": "", "enriched_at": ""}
+                "enriched_at": ""}
         assert should_regenerate(
             album, src, tags,
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
@@ -136,7 +136,7 @@ class TestShouldRegenerate:
         self._write_manifest(album, **fp)
         tags = {"artist": "A", "album": "", "festival": "NEW-FESTIVAL",
                 "date": "", "stage": "", "venue": "", "mbid": "",
-                "musicbrainz_artistid": "", "enriched_at": ""}
+                "enriched_at": ""}
         assert should_regenerate(
             album, src, tags,
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],

@@ -23,7 +23,7 @@ MANIFEST_SCHEMA = 1
 
 TAG_KEYS = (
     "artist", "album", "festival", "date", "stage", "venue",
-    "mbid", "musicbrainz_artistid", "enriched_at",
+    "mbid", "enriched_at",
 )
 
 

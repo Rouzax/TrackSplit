@@ -179,7 +179,6 @@ class TestParseTags:
             "CRATEDIGGER_1001TL_STAGE": "Main Stage",
             "CRATEDIGGER_1001TL_VENUE": "Boom, Belgium",
             "CRATEDIGGER_1001TL_DATE": "2024-07-21",
-            "CRATEDIGGER_MBID": "some-uuid",
             "CRATEDIGGER_1001TL_DJ_ARTWORK": "/path/to/art.jpg",
         })
         tags = parse_tags(data)
@@ -190,7 +189,6 @@ class TestParseTags:
         assert tags["stage"] == "Main Stage"
         assert tags["venue"] == "Boom, Belgium"
         assert tags["comment"] == "https://www.1001tracklists.com/tracklist/abc"
-        assert tags["musicbrainz_artistid"] == "some-uuid"
         assert tags["dj_artwork"] == "/path/to/art.jpg"
         assert tags["cratedigger"] is True
 
@@ -206,7 +204,6 @@ class TestParseTags:
         assert tags["stage"] == ""
         assert tags["venue"] == ""
         assert tags["comment"] == ""
-        assert tags["musicbrainz_artistid"] == ""
         assert tags["dj_artwork"] == ""
         assert tags["cratedigger"] is False
 

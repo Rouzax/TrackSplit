@@ -300,11 +300,6 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
     if raw_artist:
         tags["artist"] = cfg.resolve_artist(raw_artist)
 
-    if not tags.get("musicbrainz_artistid") and tags.get("artist"):
-        mbid = cfg.lookup_mbid(tags["artist"])
-        if mbid:
-            tags["musicbrainz_artistid"] = mbid
-
     return tags
 
 

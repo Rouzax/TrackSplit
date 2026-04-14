@@ -37,7 +37,8 @@ def _full_album():
         stage="Mainstage",
         venue="Bayfront Park",
         comment="Full set recording",
-        musicbrainz_artistid="test-mbid-1234",
+        albumartists=["Armin van Buuren"],
+        albumartist_mbids=["test-mbid-1234"],
         tracks=tracks,
     )
 
@@ -180,51 +181,32 @@ def test_albumartist_mbid_written_for_solo_artist():
     assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["test-mbid-1234"]
 
 
-def test_albumartist_mbid_suppressed_for_ampersand_collab():
-    """'X & Y' album artists have no single-person MBID; don't write one."""
+def test_albumartist_mbid_omitted_for_synth_collab_with_empty_mbids():
+    """Collab display with no cache hit lands a single-element albumartists
+    list whose only MBID slot is empty; tagger omits the tag rather than
+    writing a row of empty strings (old _is_collab_artist behavior)."""
     album = AlbumMeta(
         artist="Armin van Buuren & KI/KI",
         album="AMF 2025 (Two Is One)",
-        musicbrainz_artistid="477b8c0c-c5fc-4ad2-b5b2-191f0bf2a9df",
+        albumartists=["Armin van Buuren & KI/KI"],
+        albumartist_mbids=[""],
         tracks=[TrackMeta(number=1, title="Track", start=0.0, end=60.0)],
     )
     tags = build_tag_dict(album, album.tracks[0])
     assert "MUSICBRAINZ_ALBUMARTISTID" not in tags
 
 
-def test_albumartist_mbid_suppressed_for_vs_collab():
+def test_solo_artist_mbid_written_via_albumartists_list():
+    """Single-element albumartists list with an MBID writes the tag."""
     album = AlbumMeta(
-        artist="Armin van Buuren vs. Hardwell",
-        album="Collab Set",
-        musicbrainz_artistid="some-mbid",
-        tracks=[TrackMeta(number=1, title="Track", start=0.0, end=60.0)],
+        artist="deadmau5",
+        album="Set",
+        albumartists=["deadmau5"],
+        albumartist_mbids=["mbid-abc"],
+        tracks=[TrackMeta(number=1, title="T", start=0.0, end=60.0)],
     )
     tags = build_tag_dict(album, album.tracks[0])
-    assert "MUSICBRAINZ_ALBUMARTISTID" not in tags
-
-
-def test_albumartist_mbid_suppressed_for_x_collab():
-    album = AlbumMeta(
-        artist="Martin Garrix x Alesso",
-        album="Collab Set",
-        musicbrainz_artistid="some-mbid",
-        tracks=[TrackMeta(number=1, title="Track", start=0.0, end=60.0)],
-    )
-    tags = build_tag_dict(album, album.tracks[0])
-    assert "MUSICBRAINZ_ALBUMARTISTID" not in tags
-
-
-def test_collab_guard_does_not_false_positive_on_embedded_letters():
-    """Names like 'Axwell', 'deadmau5', 'Eric Prydz' must not trip the guard."""
-    for name in ("Axwell", "deadmau5", "Eric Prydz", "Tiësto", "R3HAB"):
-        album = AlbumMeta(
-            artist=name,
-            album="Set",
-            musicbrainz_artistid="mbid-abc",
-            tracks=[TrackMeta(number=1, title="T", start=0.0, end=60.0)],
-        )
-        tags = build_tag_dict(album, album.tracks[0])
-        assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["mbid-abc"], f"false positive on {name!r}"
+    assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["mbid-abc"]
 
 
 def test_opus_round_trip_preserves_unicode_tags(tmp_path):
@@ -248,7 +230,8 @@ def test_opus_round_trip_preserves_unicode_tags(tmp_path):
     album = AlbumMeta(
         artist="Tiësto",
         album="EDC",
-        musicbrainz_artistid="mbid-ti",
+        albumartists=["Tiësto"],
+        albumartist_mbids=["mbid-ti"],
         tracks=[TrackMeta(number=1, title="Strobe", start=0.0, end=30.0,
                           artist="RÜFÜS DU SOL")],
     )
@@ -313,26 +296,6 @@ def test_albumartists_empty_mbid_slots_preserved():
     )
     tags = build_tag_dict(album, _track(artist="x"))
     assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["m-a", ""]
-
-
-def test_legacy_collab_suppression_only_when_no_mbid_list():
-    album = AlbumMeta(
-        artist="A & B",
-        album="x",
-        musicbrainz_artistid="m-single",
-    )
-    tags = build_tag_dict(album, _track(artist="x"))
-    assert "MUSICBRAINZ_ALBUMARTISTID" not in tags
-
-
-def test_single_artist_single_mbid_legacy_path():
-    album = AlbumMeta(
-        artist="Armin van Buuren",
-        album="x",
-        musicbrainz_artistid="m-arm",
-    )
-    tags = build_tag_dict(album, _track(artist="x"))
-    assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["m-arm"]
 
 
 def test_all_empty_track_mbids_omit_tag():

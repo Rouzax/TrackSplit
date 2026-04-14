@@ -263,7 +263,7 @@ def test_build_album_meta_splits_track_artists():
 
 
 def test_build_album_meta_propagates_fields():
-    """Verify festival, stage, venue, comment, mbid are passed through."""
+    """Verify festival, stage, venue, comment are passed through."""
     tags = {
         "artist": "DJ Test",
         "festival": "Tomorrowland",
@@ -272,7 +272,6 @@ def test_build_album_meta_propagates_fields():
         "stage": "Mainstage",
         "venue": "Boom",
         "comment": "https://1001tl.com/abc",
-        "musicbrainz_artistid": "uuid-123",
     }
     chapters = _make_chapters(["Track A"])
     meta = build_album_meta(tags, chapters, "", tier=2)
@@ -280,7 +279,6 @@ def test_build_album_meta_propagates_fields():
     assert meta.stage == "Mainstage"
     assert meta.venue == "Boom"
     assert meta.comment == "https://1001tl.com/abc"
-    assert meta.musicbrainz_artistid == "uuid-123"
 
 
 def test_build_album_meta_tier2_no_festival():
@@ -293,7 +291,6 @@ def test_build_album_meta_tier2_no_festival():
         "venue": "",
         "genres": [],
         "comment": "",
-        "musicbrainz_artistid": "",
         "cratedigger": True,
     }
     chapters = [Chapter(index=1, title="Track 1", start=0.0, end=60.0)]
@@ -317,7 +314,8 @@ def test_probe_to_metadata_to_tagger_contract():
                 "CRATEDIGGER_1001TL_STAGE": "Mainstage",
                 "CRATEDIGGER_1001TL_VENUE": "Boom",
                 "CRATEDIGGER_1001TL_URL": "https://1001tl.com/abc",
-                "CRATEDIGGER_MBID": "uuid-456",
+                "CRATEDIGGER_1001TL_ARTISTS": "Martin Garrix",
+                "CRATEDIGGER_ALBUMARTIST_MBIDS": "uuid-456",
             }
         }
     }
@@ -333,9 +331,24 @@ def test_probe_to_metadata_to_tagger_contract():
     assert tag_dict["STAGE"] == ["Mainstage"]
     assert tag_dict["VENUE"] == ["Boom"]
     assert tag_dict["COMMENT"] == ["https://1001tl.com/abc"]
+    assert tag_dict["ALBUMARTISTS"] == ["Martin Garrix"]
     assert tag_dict["MUSICBRAINZ_ALBUMARTISTID"] == ["uuid-456"]
     assert tag_dict["PUBLISHER"] == ["Spinnin"]
     assert tag_dict["TITLE"] == ["Animals"]
+
+
+def test_tier1_solo_synthesizes_albumartists_and_fills_mbid_from_cache():
+    """Tier-1 MKV (no CrateDigger file tags) synthesizes a single-element
+    ``albumartists`` from ``artist`` and fills the MBID from mbid_cache."""
+    from tracksplit.cratedigger import CrateDiggerConfig
+
+    cfg = CrateDiggerConfig(mbid_cache={"deadmau5": "cached-uuid"})
+    # Tier-1 derives artist from the filename stem.
+    chapters = [Chapter(index=1, title="Strobe", start=0.0, end=60.0)]
+    meta = build_album_meta({}, chapters, "2024 - deadmau5 - EDC", tier=1, cd_config=cfg)
+    assert meta.artist == "deadmau5"
+    assert meta.albumartists == ["deadmau5"]
+    assert meta.albumartist_mbids == ["cached-uuid"]
 
 
 # --- Per-track artist case normalization (defense-in-depth) ---

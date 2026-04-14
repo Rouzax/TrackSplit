@@ -41,7 +41,6 @@ class AlbumMeta:
     stage: str = ""
     venue: str = ""
     comment: str = ""
-    musicbrainz_artistid: str = ""
     tracks: list[TrackMeta] = field(default_factory=list)
     cover_data: bytes | None = None
     albumartists: list[str] = field(default_factory=list)

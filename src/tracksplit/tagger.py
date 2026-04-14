@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import base64
 import logging
-import re
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -11,17 +10,6 @@ from mutagen.flac import FLAC, Picture
 from mutagen.oggopus import OggOpus
 
 from tracksplit.models import AlbumMeta, TrackMeta
-
-# Matches collab separators in an album-artist string. A single MBID cannot
-# identify two performers, so we suppress MUSICBRAINZ_ALBUMARTISTID when any
-# of these appear as whitespace-delimited tokens: "X & Y", "X | Y", "X vs Y"
-# (with or without trailing dot), "X x Y". Whitespace-delimited so names like
-# "Axwell", "deadmau5", or "Eric Prydz" do not false-positive.
-_COLLAB_SEPARATOR_RE = re.compile(r"\s(?:&|\||vs\.?|x)\s", re.IGNORECASE)
-
-
-def _is_collab_artist(artist: str) -> bool:
-    return bool(_COLLAB_SEPARATOR_RE.search(artist))
 
 
 def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
@@ -32,11 +20,11 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
     - ``ARTIST`` / ``ALBUMARTIST``: single-value display strings.
     - ``ARTISTS`` / ``ALBUMARTISTS``: multi-value individual artist names.
       Emitted only when non-empty.
-    - ``MUSICBRAINZ_ARTISTID`` / ``MUSICBRAINZ_ALBUMARTISTID``: multi-value
-      when the corresponding ``*ARTISTS`` list is populated, positionally
-      aligned with empty-string slots preserved. Single-value legacy path
-      kept for old enrichments, with collab-suppression safeguard for the
-      album artist (a single MBID can't identify two performers).
+    - ``MUSICBRAINZ_ARTISTID`` / ``MUSICBRAINZ_ALBUMARTISTID``: multi-value,
+      positionally aligned with ``ARTISTS`` / ``ALBUMARTISTS``. Empty-string
+      slots preserved so positional consumers stay aligned; the tag is
+      omitted entirely when every slot is empty (a single MBID cannot
+      identify a collab, and nothing non-empty is worth writing).
     """
     tags: dict[str, list[str]] = {
         "TITLE": [track.title],
@@ -76,7 +64,7 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
             if any(mbids):
                 tags["MUSICBRAINZ_ARTISTID"] = mbids
 
-    # Album-level individuals + aligned MBIDs (new), with legacy fallback.
+    # Album-level individuals + aligned MBIDs.
     if album.albumartists:
         tags["ALBUMARTISTS"] = list(album.albumartists)
         mbids = list(album.albumartist_mbids)
@@ -85,8 +73,6 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
         mbids = mbids[: len(album.albumartists)]
         if any(mbids):
             tags["MUSICBRAINZ_ALBUMARTISTID"] = mbids
-    elif album.musicbrainz_artistid and not _is_collab_artist(album.artist):
-        tags["MUSICBRAINZ_ALBUMARTISTID"] = [album.musicbrainz_artistid]
 
     if album.festival:
         tags["FESTIVAL"] = [album.festival]

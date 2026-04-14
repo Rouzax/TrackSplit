@@ -245,13 +245,11 @@ class TestApplyCratediggerCanon:
         tags = {
             "artist": "deadmau5",
             "festival": "TML",
-            "musicbrainz_artistid": "",
         }
         apply_cratedigger_canon(tags, cd_home / "video.mkv")
         assert tags["artist"] == "Deadmau5"
         assert tags["festival"] == "Tomorrowland"
         assert tags["edition"] == ""
-        assert tags["musicbrainz_artistid"] == "2f9ecbed-27be-40e6-abca-6de49d50299e"
 
     def test_edition_included_in_display(self, cd_home: Path, monkeypatch):
         monkeypatch.setattr(Path, "home", lambda: cd_home)
@@ -259,12 +257,6 @@ class TestApplyCratediggerCanon:
         apply_cratedigger_canon(tags, cd_home / "video.mkv")
         assert tags["festival"] == "Tomorrowland Winter"
         assert tags["edition"] == "Winter"
-
-    def test_existing_mbid_not_overwritten(self, cd_home: Path, monkeypatch):
-        monkeypatch.setattr(Path, "home", lambda: cd_home)
-        tags = {"artist": "deadmau5", "musicbrainz_artistid": "preexisting"}
-        apply_cratedigger_canon(tags, cd_home / "video.mkv")
-        assert tags["musicbrainz_artistid"] == "preexisting"
 
     def test_no_config_noop(self, tmp_path: Path, monkeypatch):
         monkeypatch.setattr(Path, "home", lambda: tmp_path)

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.1] - 2026-04-14
+
+### Removed
+
+- Internal `CRATEDIGGER_MBID` single-value fallback path. `ALBUMARTISTS` and `MUSICBRAINZ_ALBUMARTISTID` are now always sourced through the unified multi-value pipeline: CrateDigger's `CRATEDIGGER_ALBUMARTIST_MBIDS` for enriched files, or a single-element list synthesized from `ARTIST` and filled from `mbid_cache.json` for tier-1 sources and older enrichments. The `AlbumMeta.musicbrainz_artistid` field and the regex-based collab suppression guard are gone; equivalence is preserved because a collab display string like "X & Y" misses the MBID cache, lands an empty slot, and the "omit all-empty" rule in the tagger drops the tag. Re-run `cratedigger enrich` on any stale pre-`CRATEDIGGER_ALBUMARTIST_MBIDS` enrichments whose artist is not in `mbid_cache.json`.
+
+### Changed
+
+- Tier-1 MKVs (no CrateDigger tags) now emit `ALBUMARTISTS` in addition to `ALBUMARTIST`. Value is a single-element list containing the resolved album artist. Picard-compatible, no behavior change for solo sets in Jellyfin / Lyrion.
+
 ## [0.6.0] - 2026-04-14
 
 ### Added
@@ -19,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - `ARTIST` display string now prefers CrateDigger's per-chapter `PERFORMER` tag, preserving "Artist ft. Remixer" forms verbatim.
 - `ALBUMARTIST` display prefers CrateDigger's `CRATEDIGGER_ALBUMARTIST_DISPLAY` when present (e.g. "Armin van Buuren & KI/KI" for B2B sets).
-- `MUSICBRAINZ_ALBUMARTISTID` is now multi-value when CrateDigger supplies the album-level artist list. Single-value legacy path (with collab suppression) kept for older enrichments.
+- `MUSICBRAINZ_ALBUMARTISTID` is now multi-value when CrateDigger supplies the album-level artist list. Single-value legacy path (with collab suppression) kept for older enrichments (removed in 0.6.1).
 
 ## [0.5.1] - 2026-04-12
 

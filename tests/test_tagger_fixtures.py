@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from pathlib import Path
 
 import pytest
@@ -33,11 +32,6 @@ pytestmark = pytest.mark.skipif(
     reason=f"MKV dump corpus not present at {DUMP_DIR}",
 )
 
-# Same regex as tagger._COLLAB_SEPARATOR_RE, duplicated here so the test
-# breaks loudly if the two drift.
-_COLLAB_RE = re.compile(r"\s(?:&|\||vs\.?|x)\s", re.IGNORECASE)
-
-
 def _fixture_ids() -> list[str]:
     if not DUMP_DIR.is_dir():
         return []
@@ -55,7 +49,6 @@ def _tags_from_extra(extra: dict) -> dict:
         "venue": extra.get("CRATEDIGGER_1001TL_VENUE", ""),
         "genres": [g for g in genres_raw.split("|") if g],
         "comment": extra.get("CRATEDIGGER_1001TL_URL", ""),
-        "musicbrainz_artistid": extra.get("CRATEDIGGER_MBID", ""),
     }
 
 
@@ -131,13 +124,12 @@ def test_corpus_invariants(fixture_name):
             f"{fixture_name} t{track.number}: MUSICBRAINZ_ARTISTID leaked back"
         )
 
-        # Collab guard: when album-artist MBID is written, ALBUMARTIST must
-        # unambiguously identify a single performer.
+        # When MUSICBRAINZ_ALBUMARTISTID is written, at least one slot must
+        # be non-empty (the tagger omits the tag when every slot is empty).
         if "MUSICBRAINZ_ALBUMARTISTID" in td:
-            aa = td["ALBUMARTIST"][0]
-            assert not _COLLAB_RE.search(aa), (
-                f"{fixture_name} t{track.number}: album MBID written for "
-                f"collab ALBUMARTIST {aa!r}"
+            assert any(td["MUSICBRAINZ_ALBUMARTISTID"]), (
+                f"{fixture_name} t{track.number}: MUSICBRAINZ_ALBUMARTISTID "
+                f"written with all-empty slots"
             )
 
 

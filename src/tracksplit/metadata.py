@@ -153,10 +153,14 @@ def build_album_meta(
 
     albumartists = list(tags.get("albumartists", []))
     albumartist_mbids = list(tags.get("albumartist_mbids", []))
+    # Tier-1 (and tier-2 files without CRATEDIGGER_1001TL_ARTISTS) reach the
+    # multi-value pipeline by synthesizing a single-element list from the
+    # resolved album artist. fill_mbids then handles MBID-cache lookup
+    # uniformly across tier-1 and tier-2.
+    if not albumartists and artist:
+        albumartists = [artist]
+        albumartist_mbids = []
     if albumartists:
-        # Prefer CrateDigger's aligned MBIDs when present, fill positional
-        # gaps from the MBID cache, and for a solo album artist fall back
-        # to the legacy single-value CRATEDIGGER_MBID if still unknown.
         if cd_config is not None:
             albumartist_mbids = cd_config.fill_mbids(
                 albumartists, albumartist_mbids
@@ -165,9 +169,6 @@ def build_album_meta(
             while len(albumartist_mbids) < len(albumartists):
                 albumartist_mbids.append("")
             albumartist_mbids = albumartist_mbids[: len(albumartists)]
-        legacy_mbid = tags.get("musicbrainz_artistid", "")
-        if len(albumartists) == 1 and not albumartist_mbids[0] and legacy_mbid:
-            albumartist_mbids[0] = legacy_mbid
 
     # Canonical-casing reference set for whole-name matches.
     canon_names: dict[str, str] = {n.casefold(): n for n in albumartists}
@@ -259,7 +260,6 @@ def build_album_meta(
         stage=tags.get("stage", ""),
         venue=tags.get("venue", ""),
         comment=tags.get("comment", ""),
-        musicbrainz_artistid=tags.get("musicbrainz_artistid", ""),
         tracks=tracks,
         albumartists=albumartists,
         albumartist_mbids=albumartist_mbids,
