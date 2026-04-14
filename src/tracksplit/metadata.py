@@ -5,6 +5,7 @@ import re
 from typing import TYPE_CHECKING
 
 from tracksplit.models import AlbumMeta, Chapter, TrackMeta
+from tracksplit.probe import _split_pipe_preserving_empty
 
 if TYPE_CHECKING:
     from tracksplit.cratedigger import CrateDiggerConfig
@@ -173,9 +174,10 @@ def build_album_meta(
 
     for ch in chapters:
         ctags = ch.tags or {}
-        has_structured = any(
-            k in ctags for k in ("PERFORMER", "PERFORMER_NAMES", "TITLE")
-        )
+        # A bare TITLE tag (without PERFORMER data) doesn't give us anything
+        # the legacy string parser can't recover, so require actual performer
+        # info before taking the structured path.
+        has_structured = "PERFORMER" in ctags or "PERFORMER_NAMES" in ctags
 
         if has_structured:
             title = ctags.get("TITLE") or ch.title
@@ -184,7 +186,7 @@ def build_album_meta(
             names_raw = ctags.get("PERFORMER_NAMES", "")
             names = [n for n in names_raw.split("|") if n] if names_raw else []
             mbids_raw = ctags.get("MUSICBRAINZ_ARTISTIDS", "")
-            mbids = mbids_raw.split("|") if mbids_raw else []
+            mbids = _split_pipe_preserving_empty(mbids_raw)
             label = ctags.get("LABEL", "")
             genre_raw = ctags.get("GENRE", "")
             genres = [genre_raw] if genre_raw else list(album_genres)

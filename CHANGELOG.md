@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Per-track `ARTISTS` multi-value Vorbis tag for individual artist linking in Lyrion and Jellyfin. Remixers are included even when they are not in the display `ARTIST` string.
 - Per-track `MUSICBRAINZ_ARTISTID` multi-value tag, positionally aligned with `ARTISTS`. Empty slots preserved when an individual's MBID is unknown, so indexed consumers stay aligned.
-- Per-track `GENRE` sourced from CrateDigger's chapter-level `GENRE` tag when present. Falls back to the album's 1001Tracklists genres.
+- Per-track `GENRE` sourced from CrateDigger's chapter-level `GENRE` tag when present. On enriched tracks this replaces the old behavior of stamping every track with the album's full 1001Tracklists genre list, so Lyrion and Jellyfin genre browsers now show the track's own genre rather than a superset. Tracks without a chapter-level genre still fall back to the album's list.
 - Album-level `ALBUMARTISTS` multi-value tag for B2B sets (`"Armin van Buuren"`, `"KI/KI"`), plus aligned multi-value `MUSICBRAINZ_ALBUMARTISTID`.
 - Opt-in end-to-end integration test (`tests/integration/`) that runs `cratedigger identify` + `enrich` + `tracksplit` against fresh MKVs. Env-gated, skips by default.
 
