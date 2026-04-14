@@ -256,3 +256,74 @@ def test_opus_round_trip_preserves_unicode_tags(tmp_path):
     assert reread["ALBUMARTIST"] == ["Tiësto"]
     assert reread["MUSICBRAINZ_ALBUMARTISTID"] == ["mbid-ti"]
     assert "MUSICBRAINZ_ARTISTID" not in reread
+
+
+# --- Multi-value ARTISTS / ALBUMARTISTS (Picard convention) ---
+
+
+def _track(**kw):
+    return TrackMeta(number=1, title="t", start=0.0, end=1.0, **kw)
+
+
+def _album(**kw):
+    return AlbumMeta(artist="Armin van Buuren", album="AMF 2025", **kw)
+
+
+def test_artists_tag_emitted_when_track_has_individuals():
+    track = _track(
+        artist="Armin van Buuren & JOA",
+        artists=["Armin van Buuren", "JOA", "DJ KUBA & NEITAN"],
+        artist_mbids=["m-arm", "m-joa", ""],
+    )
+    tags = build_tag_dict(_album(), track)
+    assert tags["ARTIST"] == ["Armin van Buuren & JOA"]
+    assert tags["ARTISTS"] == ["Armin van Buuren", "JOA", "DJ KUBA & NEITAN"]
+    assert tags["MUSICBRAINZ_ARTISTID"] == ["m-arm", "m-joa", ""]
+
+
+def test_artists_tag_absent_when_no_individuals():
+    track = _track(artist="Armin van Buuren")
+    tags = build_tag_dict(_album(), track)
+    assert "ARTISTS" not in tags
+    assert "MUSICBRAINZ_ARTISTID" not in tags
+
+
+def test_albumartists_and_multi_albumartistid():
+    album = _album(
+        albumartists=["Armin van Buuren", "KI/KI"],
+        albumartist_mbids=["m-arm", "m-ki"],
+    )
+    track = _track(artist="x")
+    tags = build_tag_dict(album, track)
+    assert tags["ALBUMARTIST"] == ["Armin van Buuren"]  # display unchanged from album.artist
+    assert tags["ALBUMARTISTS"] == ["Armin van Buuren", "KI/KI"]
+    assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["m-arm", "m-ki"]
+
+
+def test_albumartists_empty_mbid_slots_preserved():
+    album = _album(
+        albumartists=["A", "B"],
+        albumartist_mbids=["m-a", ""],
+    )
+    tags = build_tag_dict(album, _track(artist="x"))
+    assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["m-a", ""]
+
+
+def test_legacy_collab_suppression_only_when_no_mbid_list():
+    album = AlbumMeta(
+        artist="A & B",
+        album="x",
+        musicbrainz_artistid="m-single",
+    )
+    tags = build_tag_dict(album, _track(artist="x"))
+    assert "MUSICBRAINZ_ALBUMARTISTID" not in tags
+
+
+def test_single_artist_single_mbid_legacy_path():
+    album = AlbumMeta(
+        artist="Armin van Buuren",
+        album="x",
+        musicbrainz_artistid="m-arm",
+    )
+    tags = build_tag_dict(album, _track(artist="x"))
+    assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["m-arm"]

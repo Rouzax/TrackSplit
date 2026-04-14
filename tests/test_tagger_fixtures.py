@@ -13,13 +13,16 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
+from mutagen.flac import FLAC
 
 from tracksplit.metadata import build_album_meta
-from tracksplit.models import Chapter
-from tracksplit.tagger import build_tag_dict
+from tracksplit.models import AlbumMeta, Chapter, TrackMeta
+from tracksplit.tagger import build_tag_dict, tag_flac
 
 DUMP_DIR = Path(
     os.environ.get(
@@ -139,3 +142,43 @@ def test_corpus_invariants(fixture_name):
                 f"{fixture_name} t{track.number}: album MBID written for "
                 f"collab ALBUMARTIST {aa!r}"
             )
+
+
+def _make_silent_flac(path: Path, duration: float = 0.5) -> None:
+    """Create a tiny silent FLAC at ``path`` via ffmpeg."""
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-f", "lavfi",
+            "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+            "-t", str(duration), "-c:a", "flac",
+            str(path),
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg required")
+def test_multi_artist_tags_survive_flac_roundtrip(tmp_path):
+    flac_path = tmp_path / "test.flac"
+    _make_silent_flac(flac_path)
+
+    album = AlbumMeta(
+        artist="Armin van Buuren & KI/KI",
+        album="AMF 2025",
+        albumartists=["Armin van Buuren", "KI/KI"],
+        albumartist_mbids=["m-arm", "m-ki"],
+    )
+    track = TrackMeta(
+        number=1, title="t", start=0.0, end=1.0,
+        artist="A & B",
+        artists=["A", "B", "C"],
+        artist_mbids=["m-a", "", "m-c"],
+    )
+    tag_flac(flac_path, album, track)
+
+    audio = FLAC(flac_path)
+    assert list(audio["ARTISTS"]) == ["A", "B", "C"]
+    assert list(audio["MUSICBRAINZ_ARTISTID"]) == ["m-a", "", "m-c"]
+    assert list(audio["ALBUMARTISTS"]) == ["Armin van Buuren", "KI/KI"]
+    assert list(audio["MUSICBRAINZ_ALBUMARTISTID"]) == ["m-arm", "m-ki"]
