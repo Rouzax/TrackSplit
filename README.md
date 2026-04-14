@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0">
-  <img src="https://img.shields.io/badge/version-v0.5.0-orange" alt="v0.5.0">
+  <img src="https://img.shields.io/badge/version-v0.6.0-orange" alt="v0.6.0">
 </p>
 
 <p align="center"><em>Chapter-based audio extractor for music servers. Turn your chaptered video library into gapless, tagged FLAC or Opus albums ready for Jellyfin and Lyrion.</em></p>
