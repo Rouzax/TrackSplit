@@ -84,7 +84,7 @@ Free up space on your output volume and re-run. TrackSplit will skip albums that
 tracksplit ~/videos/set.mkv --output ~/music/library/
 ```
 
-The full output path for an album is: `<output>/<Artist>/<Festival Year (Stage)>/` for CrateDigger-tagged sources, or `<output>/<Artist>/<filename-stem>/` for plain chaptered videos.
+The full output path for an album is: `<output>/<Artist>/<Festival Year (Stage)>/` for CrateDigger-tagged festival sets, `<output>/<Artist>/<Venue Year>/` for CrateDigger-tagged venue recordings without a festival tag, or `<output>/<Artist>/<filename-stem>/` for plain chaptered videos.
 
 ---
 

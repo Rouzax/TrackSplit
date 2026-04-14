@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.2] - 2026-04-14
+
+### Fixed
+
+- Album name for venue-based Tier-2 events (no `CRATEDIGGER_1001TL_FESTIVAL` tag, e.g. Red Rocks, single-artist venue recordings). Previously the album fell back to the full filename stem, producing names like `"2025 - Martin Garrix & Alesso - Red Rocks"`. Now falls back to `CRATEDIGGER_1001TL_VENUE` first, then `CRATEDIGGER_1001TL_STAGE`, producing clean names like `"Red Rocks Amphitheatre 2025"`. Year comes from `CRATEDIGGER_1001TL_DATE` when present, otherwise from the filename stem. The year is not appended when it is already present in the location string, so stages that embed their own date (`"Bay Oval Park, New Zealand 2026-01-31"`) stay unchanged. Named festivals (Tomorrowland, AMF, etc.) are unaffected.
+
+### Docs
+
+- Added "CrateDigger cache reuse" section to `docs/output.md` documenting which CrateDigger cache files TrackSplit reads and the lookup chain (global `~/.cratedigger` plus walk-up to 10 parents).
+
 ## [0.6.1] - 2026-04-14
 
 ### Removed
