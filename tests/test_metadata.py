@@ -299,7 +299,12 @@ def test_build_album_meta_tier2_no_festival():
 
 
 def test_build_album_meta_tier2_venue_no_date_year_from_filename():
-    """Tier 2 with venue but no CRATEDIGGER date: year extracted from filename."""
+    """Tier 2 with venue but no CRATEDIGGER date: year extracted from filename.
+
+    Also verifies B2B disambiguation: when ALBUMARTIST_DISPLAY is missing but
+    albumartists has 2+ entries, the artist folder uses the joined names so
+    a B2B set does not collide with a solo set at the same venue + year.
+    """
     tags = {
         "artist": "Martin Garrix",
         "festival": "",
@@ -315,6 +320,7 @@ def test_build_album_meta_tier2_venue_no_date_year_from_filename():
         tags, chapters, "2025 - Martin Garrix & Alesso - Red Rocks", tier=2
     )
     assert meta.album == "Red Rocks Amphitheatre 2025"
+    assert meta.artist == "Martin Garrix & Alesso"
 
 
 def test_build_album_meta_tier2_stage_contains_date_no_year_appended():
@@ -581,3 +587,100 @@ def test_per_artist_case_normalization_against_albumartists():
     album = build_album_meta(tags, chapters, "stem", tier=2)
     assert album.tracks[0].artists == ["Afrojack"]
     assert album.tracks[0].artist == "Afrojack"
+
+
+# --- CrateDigger 0.12.5 per-chapter tag rename (CRATEDIGGER_TRACK_*) ---
+
+def test_structured_chapter_tags_drive_track_fields_new_names():
+    """Same as the legacy test but with CRATEDIGGER_TRACK_* prefixed names.
+
+    Verifies the rename compat path: a file enriched by CrateDigger 0.12.5+
+    carries the prefixed names only, and TrackSplit must pick them up.
+    """
+    tags = {
+        "artist": "Armin van Buuren",
+        "festival": "AMF",
+        "date": "2025-10-25",
+        "genres": ["Trance"],
+    }
+    chapters = [
+        _structured_chapter(
+            0.0, 60.0,
+            "Armin van Buuren & Alle Farben ft. ROSY - Lost In Time [ARMADA]",
+            {
+                "TITLE": "Lost In Time",
+                "CRATEDIGGER_TRACK_PERFORMER": "Armin van Buuren & Alle Farben ft. ROSY",
+                "CRATEDIGGER_TRACK_PERFORMER_NAMES": "Armin van Buuren|Alle Farben",
+                "MUSICBRAINZ_ARTISTIDS": "mbid-arm|mbid-af",
+                "CRATEDIGGER_TRACK_LABEL": "ARMADA",
+                "CRATEDIGGER_TRACK_GENRE": "Trance",
+            },
+        ),
+    ]
+    album = build_album_meta(tags, chapters, "stem", tier=2)
+    t = album.tracks[0]
+    assert t.title == "Lost In Time"
+    assert t.artist == "Armin van Buuren & Alle Farben ft. ROSY"
+    assert t.artists == ["Armin van Buuren", "Alle Farben"]
+    assert t.artist_mbids == ["mbid-arm", "mbid-af"]
+    assert t.publisher == "ARMADA"
+    assert t.genre == ["Trance"]
+
+
+# --- B2B album-artist display synthesis (Red Rocks venue collision fix) ---
+
+def test_tier2_synthesizes_b2b_display_when_explicit_missing():
+    """No ALBUMARTIST_DISPLAY but multi-entry albumartists -> joined display.
+
+    Prevents Red Rocks B2B sets (where CrateDigger does not populate
+    CRATEDIGGER_ALBUMARTIST_DISPLAY) from collapsing into the uploader's
+    artist folder and colliding with the same uploader's solo set at the
+    same venue + year.
+    """
+    tags = {
+        "artist": "Martin Garrix",
+        "albumartist_display": "",
+        "albumartists": ["Martin Garrix", "Alesso"],
+        "festival": "",
+        "venue": "Red Rocks Amphitheatre",
+    }
+    chapters = _make_chapters(["Track 1"])
+    meta = build_album_meta(
+        tags, chapters, "2025 - Martin Garrix & Alesso - Red Rocks", tier=2
+    )
+    assert meta.artist == "Martin Garrix & Alesso"
+
+
+def test_tier2_explicit_display_wins_over_synthesized_join():
+    """When CrateDigger sets ALBUMARTIST_DISPLAY, it is used verbatim.
+
+    Festivals already populate this field (e.g. for B2B sets at Tomorrowland)
+    and may use different separators than ' & '. The synthesis must not
+    override an explicit value.
+    """
+    tags = {
+        "artist": "Armin van Buuren",
+        "albumartist_display": "Armin van Buuren b2b KI/KI",
+        "albumartists": ["Armin van Buuren", "KI/KI"],
+        "festival": "Tomorrowland",
+        "date": "2025-07-21",
+    }
+    chapters = _make_chapters(["Track 1"])
+    meta = build_album_meta(tags, chapters, "stem", tier=2)
+    assert meta.artist == "Armin van Buuren b2b KI/KI"
+
+
+def test_tier2_solo_uses_file_artist_when_no_display():
+    """Single-entry albumartists falls through to file ARTIST tag (unchanged)."""
+    tags = {
+        "artist": "Martin Garrix",
+        "albumartist_display": "",
+        "albumartists": ["Martin Garrix"],
+        "festival": "",
+        "venue": "Red Rocks Amphitheatre",
+    }
+    chapters = _make_chapters(["Track 1"])
+    meta = build_album_meta(
+        tags, chapters, "2025 - Martin Garrix - Red Rocks", tier=2
+    )
+    assert meta.artist == "Martin Garrix"

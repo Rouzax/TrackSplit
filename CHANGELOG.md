@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Album name for venue-based Tier-2 events (no `CRATEDIGGER_1001TL_FESTIVAL` tag, e.g. Red Rocks, single-artist venue recordings). Previously the album fell back to the full filename stem, producing names like `"2025 - Martin Garrix & Alesso - Red Rocks"`. Now falls back to `CRATEDIGGER_1001TL_VENUE` first, then `CRATEDIGGER_1001TL_STAGE`, producing clean names like `"Red Rocks Amphitheatre 2025"`. Year comes from `CRATEDIGGER_1001TL_DATE` when present, otherwise from the filename stem. The year is not appended when it is already present in the location string, so stages that embed their own date (`"Bay Oval Park, New Zealand 2026-01-31"`) stay unchanged. Named festivals (Tomorrowland, AMF, etc.) are unaffected.
+- B2B venue sets no longer collide with solo sets at the same venue + year. When `CRATEDIGGER_ALBUMARTIST_DISPLAY` is empty but `CRATEDIGGER_1001TL_ARTISTS` lists 2+ performers, TrackSplit now synthesizes the album-artist display by joining names with `" & "`. This produces a distinct artist folder (`Martin Garrix & Alesso/Red Rocks Amphitheatre 2025/`) instead of folding the B2B into the uploader's solo folder. Files where CrateDigger has set `CRATEDIGGER_ALBUMARTIST_DISPLAY` (festival B2B sets) are unaffected: the explicit value still wins. Existing B2B venue outputs will rebuild into a new artist folder on the next run; the old folder remains as an orphan until deleted.
+
+### Changed
+
+- Per-chapter CrateDigger tags renamed in CrateDigger 0.12.5 are now read under their new prefixed names: `CRATEDIGGER_TRACK_PERFORMER`, `CRATEDIGGER_TRACK_PERFORMER_NAMES`, `CRATEDIGGER_TRACK_LABEL`, `CRATEDIGGER_TRACK_GENRE`. The legacy unprefixed names (`PERFORMER`, `PERFORMER_NAMES`, `LABEL`, `GENRE`) remain supported for files enriched by older CrateDigger versions, so a mixed library keeps working through the compat window. `MUSICBRAINZ_ARTISTIDS` and the per-chapter `TITLE` were not renamed and continue to be read under their existing names.
 
 ### Docs
 

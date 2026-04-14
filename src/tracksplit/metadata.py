@@ -94,6 +94,18 @@ def split_track_artist(title: str) -> tuple[str, str]:
     return "", title
 
 
+def _ctag(ctags: dict, new_name: str, old_name: str) -> str:
+    """Read a per-chapter CrateDigger tag, preferring the new prefixed name.
+
+    CrateDigger 0.12.5 renamed PERFORMER, PERFORMER_NAMES, LABEL, and GENRE
+    to CRATEDIGGER_TRACK_* to stop mediainfo from flattening the last
+    chapter's value into the file-level General section. Older enriched
+    files still carry the unprefixed names. The compat window ends when
+    every file has been re-identified by 0.12.5 or later.
+    """
+    return ctags.get(new_name, "") or ctags.get(old_name, "")
+
+
 def deduplicate_titles(titles: list[str]) -> list[str]:
     """Append track number in parens to duplicate titles.
 
@@ -124,16 +136,26 @@ def build_album_meta(
 ) -> AlbumMeta:
     """Build album metadata from parsed tags and chapters.
 
-    Prefers structured per-chapter tags (TITLE, PERFORMER, PERFORMER_NAMES,
-    MUSICBRAINZ_ARTISTIDS, LABEL, GENRE) when present; falls back to the
-    legacy string-parser on Chapter.title otherwise.
+    Prefers structured per-chapter tags (TITLE, CRATEDIGGER_TRACK_PERFORMER,
+    CRATEDIGGER_TRACK_PERFORMER_NAMES, MUSICBRAINZ_ARTISTIDS,
+    CRATEDIGGER_TRACK_LABEL, CRATEDIGGER_TRACK_GENRE) when present; falls
+    back to the legacy unprefixed names (PERFORMER, PERFORMER_NAMES, LABEL,
+    GENRE) for files enriched before CrateDigger 0.12.5; falls back to the
+    legacy string-parser on Chapter.title when neither set is present.
 
     ``cd_config`` is used to fill empty per-artist MBID slots from
     mbid_cache.json. When omitted, missing slots stay as empty strings.
     """
     # --- Album-level resolution --------------------------------------------
     if tier == 2:
-        display_artist = tags.get("albumartist_display") or tags.get("artist", "")
+        explicit_display = tags.get("albumartist_display", "")
+        raw_albumartists = tags.get("albumartists", [])
+        if explicit_display:
+            display_artist = explicit_display
+        elif len(raw_albumartists) > 1:
+            display_artist = " & ".join(raw_albumartists)
+        else:
+            display_artist = tags.get("artist", "")
         artist = display_artist
         festival = tags.get("festival", "")
         date = tags.get("date", "")
@@ -198,19 +220,28 @@ def build_album_meta(
         ctags = ch.tags or {}
         # A bare TITLE tag (without PERFORMER data) doesn't give us anything
         # the legacy string parser can't recover, so require actual performer
-        # info before taking the structured path.
-        has_structured = "PERFORMER" in ctags or "PERFORMER_NAMES" in ctags
+        # info before taking the structured path. CrateDigger 0.12.5 renamed
+        # the per-chapter tags to CRATEDIGGER_TRACK_*; older enriched files
+        # still carry the unprefixed legacy names.
+        has_structured = (
+            "CRATEDIGGER_TRACK_PERFORMER" in ctags
+            or "CRATEDIGGER_TRACK_PERFORMER_NAMES" in ctags
+            or "PERFORMER" in ctags
+            or "PERFORMER_NAMES" in ctags
+        )
 
         if has_structured:
             title = ctags.get("TITLE") or ch.title
             title, _ = strip_label(title)
-            display = ctags.get("PERFORMER", "")
-            names_raw = ctags.get("PERFORMER_NAMES", "")
+            display = _ctag(ctags, "CRATEDIGGER_TRACK_PERFORMER", "PERFORMER")
+            names_raw = _ctag(
+                ctags, "CRATEDIGGER_TRACK_PERFORMER_NAMES", "PERFORMER_NAMES"
+            )
             names = [n for n in names_raw.split("|") if n] if names_raw else []
             mbids_raw = ctags.get("MUSICBRAINZ_ARTISTIDS", "")
             mbids = _split_pipe_preserving_empty(mbids_raw)
-            label = ctags.get("LABEL", "")
-            genre_raw = ctags.get("GENRE", "")
+            label = _ctag(ctags, "CRATEDIGGER_TRACK_LABEL", "LABEL")
+            genre_raw = _ctag(ctags, "CRATEDIGGER_TRACK_GENRE", "GENRE")
             genres = [genre_raw] if genre_raw else list(album_genres)
 
             names = [canon_names.get(n.casefold(), n) for n in names]
