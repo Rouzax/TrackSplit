@@ -1,7 +1,13 @@
 """Metadata extraction, sanitization, and album building for TrackSplit."""
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 
 from tracksplit.models import AlbumMeta, Chapter, TrackMeta
+
+if TYPE_CHECKING:
+    from tracksplit.cratedigger import CrateDiggerConfig
 
 # Characters illegal in Windows filenames
 _ILLEGAL_CHARS = re.compile(r'[<>:"/\\|?*]')
@@ -113,16 +119,21 @@ def build_album_meta(
     chapters: list[Chapter],
     filename_stem: str,
     tier: int,
+    cd_config: "CrateDiggerConfig | None" = None,
 ) -> AlbumMeta:
     """Build album metadata from parsed tags and chapters.
 
-    Tier 2: album = "Festival Year (Stage)" with full tag data.
-    Tier 1: album = filename_stem, artist/date parsed from filename.
+    Prefers structured per-chapter tags (TITLE, PERFORMER, PERFORMER_NAMES,
+    MUSICBRAINZ_ARTISTIDS, LABEL, GENRE) when present; falls back to the
+    legacy string-parser on Chapter.title otherwise.
+
+    ``cd_config`` is used to fill empty per-artist MBID slots from
+    mbid_cache.json. When omitted, missing slots stay as empty strings.
     """
-    # Resolve album-level fields up front so we can case-normalize per-track
-    # artists against the album artist below (see loop).
+    # --- Album-level resolution --------------------------------------------
     if tier == 2:
-        artist = tags.get("artist", "")
+        display_artist = tags.get("albumartist_display") or tags.get("artist", "")
+        artist = display_artist
         festival = tags.get("festival", "")
         date = tags.get("date", "")
         stage = tags.get("stage", "")
@@ -133,50 +144,84 @@ def build_album_meta(
             if stage:
                 album = f"{album} ({stage})"
         else:
-            # No festival metadata: fall back to filename
             album = filename_stem
     else:
-        # Tier 1: fallback to filename parsing
         artist, year = parse_filename(filename_stem)
         date = year
         album = filename_stem
 
-    # Strip labels, then split artist from title.
-    #
-    # Defense-in-depth: if a chapter's per-track artist matches the album
-    # artist case-insensitively (e.g. chapter "AFROJACK - ID" with album
-    # ARTIST "Afrojack"), normalize to the album artist's canonical casing.
-    # Without this, Lyrion treats "AFROJACK" and "Afrojack" as two separate
-    # contributors, and Jellyfin collapses them but keeps the first-scanned
-    # casing as the display name. CrateDigger ideally normalizes upstream,
-    # but 40% of DJs are missing from its cache and tier-1 (non-CrateDigger)
-    # sources make no such guarantee, so we apply the cheap local fix here.
-    # Whole-string match only: "AFROJACK & Steve Aoki" stays as-is because
-    # that's a genuinely different contributor string.
-    clean_titles = []
-    track_artists = []
-    publishers = []
-    for ch in chapters:
-        title, label = strip_label(ch.title)
-        track_artist, track_title = split_track_artist(title)
-        if (
-            track_artist
-            and artist
-            and track_artist.casefold() == artist.casefold()
-        ):
-            track_artist = artist
-        clean_titles.append(track_title)
-        track_artists.append(track_artist)
-        publishers.append(label)
+    albumartists = list(tags.get("albumartists", []))
+    albumartist_mbids = list(tags.get("albumartist_mbids", []))
+    if albumartists:
+        while len(albumartist_mbids) < len(albumartists):
+            albumartist_mbids.append("")
+        albumartist_mbids = albumartist_mbids[: len(albumartists)]
 
-    # Deduplicate titles
+    # Canonical-casing reference set for whole-name matches.
+    canon_names: dict[str, str] = {n.casefold(): n for n in albumartists}
+    if not canon_names and artist:
+        canon_names[artist.casefold()] = artist
+
+    # --- Per-chapter mapping -----------------------------------------------
+    album_genres = tags.get("genres", [])
+    clean_titles: list[str] = []
+    track_artists: list[str] = []
+    track_artists_lists: list[list[str]] = []
+    track_artist_mbids: list[list[str]] = []
+    publishers: list[str] = []
+    track_genres: list[list[str]] = []
+
+    for ch in chapters:
+        ctags = ch.tags or {}
+        has_structured = any(
+            k in ctags for k in ("PERFORMER", "PERFORMER_NAMES", "TITLE")
+        )
+
+        if has_structured:
+            title = ctags.get("TITLE") or ch.title
+            title, _ = strip_label(title)
+            display = ctags.get("PERFORMER", "")
+            names_raw = ctags.get("PERFORMER_NAMES", "")
+            names = [n for n in names_raw.split("|") if n] if names_raw else []
+            mbids_raw = ctags.get("MUSICBRAINZ_ARTISTIDS", "")
+            mbids = mbids_raw.split("|") if mbids_raw else []
+            label = ctags.get("LABEL", "")
+            genre_raw = ctags.get("GENRE", "")
+            genres = [genre_raw] if genre_raw else list(album_genres)
+
+            names = [canon_names.get(n.casefold(), n) for n in names]
+            display = canon_names.get(display.casefold(), display)
+
+            if cd_config is not None and names:
+                mbids = cd_config.fill_mbids(names, mbids)
+            else:
+                while len(mbids) < len(names):
+                    mbids.append("")
+                mbids = mbids[: len(names)]
+        else:
+            title_full, label = strip_label(ch.title)
+            track_artist, title = split_track_artist(title_full)
+            if (
+                track_artist
+                and artist
+                and track_artist.casefold() == artist.casefold()
+            ):
+                track_artist = artist
+            display = track_artist
+            names = []
+            mbids = []
+            genres = list(album_genres)
+
+        clean_titles.append(title)
+        track_artists.append(display)
+        track_artists_lists.append(names)
+        track_artist_mbids.append(mbids)
+        publishers.append(label)
+        track_genres.append(genres)
+
     clean_titles = deduplicate_titles(clean_titles)
 
-    # Get genres from tags
-    genres = tags.get("genres", [])
-
-    # Build tracks
-    tracks = []
+    tracks: list[TrackMeta] = []
     for i, ch in enumerate(chapters):
         tracks.append(
             TrackMeta(
@@ -186,7 +231,9 @@ def build_album_meta(
                 end=ch.end,
                 artist=track_artists[i],
                 publisher=publishers[i],
-                genre=list(genres),
+                genre=list(track_genres[i]),
+                artists=list(track_artists_lists[i]),
+                artist_mbids=list(track_artist_mbids[i]),
             )
         )
 
@@ -194,11 +241,13 @@ def build_album_meta(
         artist=artist,
         album=album,
         date=date,
-        genre=list(genres),
+        genre=list(album_genres),
         festival=tags.get("festival", ""),
         stage=tags.get("stage", ""),
         venue=tags.get("venue", ""),
         comment=tags.get("comment", ""),
         musicbrainz_artistid=tags.get("musicbrainz_artistid", ""),
         tracks=tracks,
+        albumartists=albumartists,
+        albumartist_mbids=albumartist_mbids,
     )

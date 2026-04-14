@@ -392,3 +392,128 @@ def test_unicode_artist_preserved_through_build_album_meta():
     assert meta.tracks[1].artist == "Kölsch"
     assert meta.tracks[2].artist == "Amél"
     assert meta.tracks[2].title == "Birds Of A Feather"
+
+
+# --- Structured chapter tags (multi-artist) ---
+
+from tracksplit.cratedigger import CrateDiggerConfig
+
+
+def _structured_chapter(start, end, title_full, structured):
+    """Build a Chapter with both a legacy title and a structured tag dict."""
+    return Chapter(index=1, title=title_full, start=start, end=end, tags=structured)
+
+
+def test_structured_chapter_tags_drive_track_fields():
+    tags = {
+        "artist": "Armin van Buuren",
+        "festival": "AMF",
+        "date": "2025-10-25",
+        "genres": ["Trance"],
+    }
+    chapters = [
+        _structured_chapter(
+            0.0, 60.0,
+            "Armin van Buuren & Alle Farben ft. ROSY - Lost In Time [ARMADA]",
+            {
+                "TITLE": "Lost In Time",
+                "PERFORMER": "Armin van Buuren & Alle Farben ft. ROSY",
+                "PERFORMER_NAMES": "Armin van Buuren|Alle Farben",
+                "MUSICBRAINZ_ARTISTIDS": "mbid-arm|mbid-af",
+                "LABEL": "ARMADA",
+                "GENRE": "Trance",
+            },
+        ),
+    ]
+    album = build_album_meta(tags, chapters, "stem", tier=2)
+    t = album.tracks[0]
+    assert t.title == "Lost In Time"
+    assert t.artist == "Armin van Buuren & Alle Farben ft. ROSY"
+    assert t.artists == ["Armin van Buuren", "Alle Farben"]
+    assert t.artist_mbids == ["mbid-arm", "mbid-af"]
+    assert t.publisher == "ARMADA"
+    assert t.genre == ["Trance"]
+
+
+def test_missing_per_artist_mbids_filled_from_cache():
+    cfg = CrateDiggerConfig(mbid_cache={"JOA": "mbid-joa"})
+    tags = {"artist": "Armin van Buuren"}
+    chapters = [
+        _structured_chapter(
+            0.0, 60.0, "Armin van Buuren & JOA - Heavy",
+            {
+                "TITLE": "Heavy",
+                "PERFORMER": "Armin van Buuren & JOA",
+                "PERFORMER_NAMES": "Armin van Buuren|JOA",
+                "MUSICBRAINZ_ARTISTIDS": "mbid-arm|",
+            },
+        ),
+    ]
+    album = build_album_meta(tags, chapters, "stem", tier=2, cd_config=cfg)
+    assert album.tracks[0].artist_mbids == ["mbid-arm", "mbid-joa"]
+
+
+def test_remixer_included_in_artists_but_not_display():
+    tags = {"artist": "X"}
+    chapters = [
+        _structured_chapter(
+            0.0, 60.0, "A & B - Song (C Remix)",
+            {
+                "TITLE": "Song (C Remix)",
+                "PERFORMER": "A & B",
+                "PERFORMER_NAMES": "A|B|C",
+                "MUSICBRAINZ_ARTISTIDS": "m-a|m-b|m-c",
+            },
+        ),
+    ]
+    album = build_album_meta(tags, chapters, "stem", tier=2)
+    assert album.tracks[0].artist == "A & B"
+    assert album.tracks[0].artists == ["A", "B", "C"]
+
+
+def test_falls_back_to_string_parse_when_no_structured_tags():
+    tags = {"artist": "Afrojack"}
+    chapters = [
+        Chapter(index=1, title="AFROJACK - ID [Wall]", start=0.0, end=60.0),
+    ]
+    album = build_album_meta(tags, chapters, "stem", tier=2)
+    t = album.tracks[0]
+    assert t.artist == "Afrojack"
+    assert t.title == "ID"
+    assert t.publisher == "Wall"
+    assert t.artists == []
+    assert t.artist_mbids == []
+
+
+def test_albumartists_populated_from_file_tags():
+    tags = {
+        "artist": "Armin van Buuren",
+        "albumartist_display": "Armin van Buuren & KI/KI",
+        "albumartists": ["Armin van Buuren", "KI/KI"],
+        "albumartist_mbids": ["mbid-arm", "mbid-ki"],
+    }
+    chapters = [Chapter(index=1, title="x", start=0.0, end=60.0)]
+    album = build_album_meta(tags, chapters, "stem", tier=2)
+    assert album.artist == "Armin van Buuren & KI/KI"
+    assert album.albumartists == ["Armin van Buuren", "KI/KI"]
+    assert album.albumartist_mbids == ["mbid-arm", "mbid-ki"]
+
+
+def test_per_artist_case_normalization_against_albumartists():
+    tags = {
+        "artist": "Afrojack",
+        "albumartists": ["Afrojack"],
+    }
+    chapters = [
+        _structured_chapter(
+            0.0, 60.0, "AFROJACK - ID",
+            {
+                "TITLE": "ID",
+                "PERFORMER": "AFROJACK",
+                "PERFORMER_NAMES": "AFROJACK",
+            },
+        ),
+    ]
+    album = build_album_meta(tags, chapters, "stem", tier=2)
+    assert album.tracks[0].artists == ["Afrojack"]
+    assert album.tracks[0].artist == "Afrojack"

@@ -19,7 +19,7 @@ from tracksplit.cover import (
     extract_cover_from_mkv,
     find_dj_artwork,
 )
-from tracksplit.cratedigger import apply_cratedigger_canon
+from tracksplit.cratedigger import apply_cratedigger_canon_with, load_config
 from tracksplit.extract import decide_codec, prepare_audio
 from tracksplit.manifest import (
     ArtistManifest,
@@ -317,11 +317,12 @@ def process_file(
 
     chapters = parse_chapters(ffprobe_data)
     tags = parse_tags(ffprobe_data)
-    apply_cratedigger_canon(tags, input_path)
+    cd_cfg = load_config(input_path)
+    apply_cratedigger_canon_with(tags, cd_cfg)
     tier = detect_tier(tags)
 
     # Build album metadata
-    album = build_album_meta(tags, chapters, input_path.stem, tier)
+    album = build_album_meta(tags, chapters, input_path.stem, tier, cd_config=cd_cfg)
 
     # Handle intro track
     intro = build_intro_track(chapters)

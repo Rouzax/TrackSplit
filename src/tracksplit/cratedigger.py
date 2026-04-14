@@ -286,14 +286,8 @@ def load_config(
     return cfg
 
 
-def apply_cratedigger_canon(tags: dict, input_path: Path) -> dict:
-    """Rewrite ``tags`` in place with canonical festival/artist + MBID fallback.
-
-    Adds ``edition`` key. Safe to call with or without a CrateDigger config
-    available: when no config exists the tags are returned unchanged.
-    """
-    cfg = load_config(input_path)
-
+def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
+    """Variant of apply_cratedigger_canon that uses an already-loaded config."""
     raw_festival = tags.get("festival", "")
     if raw_festival:
         canon, edition = cfg.resolve_festival(raw_festival)
@@ -312,3 +306,12 @@ def apply_cratedigger_canon(tags: dict, input_path: Path) -> dict:
             tags["musicbrainz_artistid"] = mbid
 
     return tags
+
+
+def apply_cratedigger_canon(tags: dict, input_path: Path) -> dict:
+    """Rewrite ``tags`` in place with canonical festival/artist + MBID fallback.
+
+    Adds ``edition`` key. Safe to call with or without a CrateDigger config
+    available: when no config exists the tags are returned unchanged.
+    """
+    return apply_cratedigger_canon_with(tags, load_config(input_path))

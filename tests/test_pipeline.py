@@ -411,7 +411,7 @@ class TestProcessFileManifest:
     @patch("tracksplit.pipeline.find_dj_artwork")
     @patch("tracksplit.pipeline.extract_cover_from_mkv")
     @patch("tracksplit.pipeline.run_ffprobe")
-    @patch("tracksplit.pipeline.apply_cratedigger_canon")
+    @patch("tracksplit.pipeline.apply_cratedigger_canon_with")
     def test_process_file_deletes_old_album_dir_on_rename(
         self, mock_canon, mock_probe, mock_cover_mkv, mock_dj,
         mock_artist_cover, mock_compose, mock_prepare, mock_split, mock_tag,
