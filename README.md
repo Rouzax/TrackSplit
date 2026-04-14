@@ -44,7 +44,8 @@ It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), wh
 
 - **Chapter-accurate splitting.** Sample-accurate cuts at chapter boundaries, gapless playback across tracks.
 - **Codec-aware output.** FLAC for lossless sources, Opus stream-copy when safe, transparent re-encode when not. Pick with `--format`.
-- **Rich metadata.** Writes TITLE, ARTIST, ALBUMARTIST, ALBUM, TRACKNUMBER, TRACKTOTAL, DISCNUMBER, DATE, GENRE, PUBLISHER, COMMENT, MUSICBRAINZ_ALBUMARTISTID, FESTIVAL, STAGE, VENUE as Vorbis comments.
+- **Rich metadata.** Writes TITLE, ARTIST, ARTISTS, ALBUMARTIST, ALBUMARTISTS, ALBUM, TRACKNUMBER, TRACKTOTAL, DISCNUMBER, DATE, GENRE, PUBLISHER, COMMENT, MUSICBRAINZ_ARTISTID, MUSICBRAINZ_ALBUMARTISTID, FESTIVAL, STAGE, VENUE as Vorbis comments.
+- **Multi-artist aware.** Writes Picard-standard `ARTISTS` and aligned per-artist `MUSICBRAINZ_ARTISTID` so Lyrion and Jellyfin link every collaborator and remixer, not just the headliner.
 - **Album and artist artwork.** Generates 1:1 cover art (embedded in every track and written to `cover.jpg` / `folder.jpg`) and an artist folder image.
 - **Two metadata tiers.** Basic tagging for any chaptered video. Full enrichment when CrateDigger-style tags are present.
 - **Re-run detection.** A manifest in each album folder tracks chapter hashes and source mtime, so repeat runs on the same library are near-instant.

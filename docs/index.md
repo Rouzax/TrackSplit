@@ -23,6 +23,6 @@ TrackSplit reads any chaptered video but shines when paired with **[CrateDigger]
 - **[Getting Started](getting-started.md)**: prerequisites, install, first run.
 - **[Usage](usage.md)**: every CLI flag, with examples.
 - **[Configuration](configuration.md)**: TOML config for custom tool paths.
-- **[Output Structure](output.md)**: what gets written where, and what every tag means.
+- **[Output Structure](output.md)**: what gets written where, and what every tag means. Per-track multi-artist linking (`ARTISTS`, aligned `MUSICBRAINZ_ARTISTID`) is new in v0.6.
 - **[Troubleshooting](troubleshooting.md)**: what to do when something goes wrong.
 - **[FAQ](faq.md)**: short answers to common questions.

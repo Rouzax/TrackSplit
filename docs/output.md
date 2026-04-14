@@ -38,17 +38,20 @@ The album folder name depends on the metadata tier (see below). With full CrateD
 
 Vorbis comments written on every track:
 
-`TITLE`, `ARTIST`, `ALBUMARTIST`, `ALBUM`, `TRACKNUMBER`, `TRACKTOTAL`, `DISCNUMBER`, `DATE`, `GENRE`, `PUBLISHER`, `COMMENT`, `MUSICBRAINZ_ALBUMARTISTID`, `FESTIVAL`, `STAGE`, `VENUE`.
+`TITLE`, `ARTIST`, `ARTISTS`, `ALBUMARTIST`, `ALBUMARTISTS`, `ALBUM`, `TRACKNUMBER`, `TRACKTOTAL`, `DISCNUMBER`, `DATE`, `GENRE`, `PUBLISHER`, `COMMENT`, `MUSICBRAINZ_ARTISTID`, `MUSICBRAINZ_ALBUMARTISTID`, `FESTIVAL`, `STAGE`, `VENUE`.
 
 Most servers only read the common fields (TITLE/ARTIST/ALBUM/TRACKNUMBER/DATE). The custom `FESTIVAL`, `STAGE`, `VENUE` fields preserve festival context for scripts, filters, or smart playlists that care.
 
 ### Artist tagging policy
 
-- `ARTIST` is per-track (the performer of that chapter's track). When a chapter title has no "Artist - Title" separator, `ARTIST` falls back to `ALBUMARTIST`.
-- `ALBUMARTIST` is always the set's headliner (the album-level artist).
+- `ARTIST` is per-track (the performer of that chapter's track), a single-value display string such as `"AFROJACK ft. Eva Simons"`. This is what Jellyfin and Lyrion show as the main track artist. When CrateDigger supplies a per-chapter `PERFORMER` tag, TrackSplit uses it verbatim so "Artist ft. Remixer" forms are preserved. When a chapter title has no "Artist - Title" separator, `ARTIST` falls back to `ALBUMARTIST`.
+- `ARTISTS` is multi-value: the list of individual artists (e.g. `"AFROJACK"`, `"Eva Simons"`). Jellyfin and Lyrion link each one to its own artist page. Remixers are included here even when they are not in the display `ARTIST` string.
+- `MUSICBRAINZ_ARTISTID` is multi-value, positionally aligned with `ARTISTS`. Empty slots are preserved when an individual artist's MBID is unknown, so indexed-zip consumers stay aligned.
+- `ALBUMARTIST` is the set's headliner as a single-value display string. It is sourced from CrateDigger's `CRATEDIGGER_ALBUMARTIST_DISPLAY` when present (e.g. "Armin van Buuren & KI/KI" for B2B sets), otherwise the file-level `ARTIST`.
+- `ALBUMARTISTS` is multi-value: the list of individual DJs for B2B sets (`"Armin van Buuren"`, `"KI/KI"`).
+- `MUSICBRAINZ_ALBUMARTISTID` is multi-value when CrateDigger supplies the album-level artist list, positionally aligned with `ALBUMARTISTS`. For non-B2B sets TrackSplit falls back to a single-value MBID (legacy path), suppressed when the album-artist string contains a collab separator ("X & Y", "X vs. Y", "X x Y"): a single MBID cannot identify two performers, and emitting only one half's MBID would cause media servers to merge the collab album into that member's solo discography.
 - Per-track artists whose case-insensitive form equals `ALBUMARTIST` are normalized to the `ALBUMARTIST` casing, so "AFROJACK - ID" becomes `ARTIST=Afrojack` when the set is by "Afrojack". This prevents Lyrion from listing two contributor rows and prevents Jellyfin from picking up stray upper/lowercase variants.
-- `MUSICBRAINZ_ALBUMARTISTID` holds the album artist's MusicBrainz ID. It is omitted for B2B/collab album artists ("X & Y", "X vs. Y", "X x Y"): a single MBID cannot identify two performers, and emitting only one half's MBID would cause media servers to merge the collab album into that member's solo discography.
-- `MUSICBRAINZ_ARTISTID` (the per-track MBID key) is never written. TrackSplit has no per-track-artist MBIDs; writing the album-artist MBID there caused Lyrion to collapse every track to a single contributor row.
+- `GENRE` is per-track when CrateDigger supplies a chapter-level `GENRE` tag. It falls back to the album's 1001Tracklists genres otherwise.
 
 ## Metadata tiers
 

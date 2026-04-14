@@ -21,6 +21,10 @@ Re-run with `--verbose` to see which branch triggered.
 
 Yes. It is a re-run manifest, nothing more. Delete it to force TrackSplit to rebuild that one album the next time you run. It does not need to be backed up and it contains no information that is not already in the source file.
 
+## How do Lyrion and Jellyfin surface multi-artist tracks?
+
+TrackSplit writes the Picard-standard `ARTISTS` multi-value tag alongside the display `ARTIST`, plus a positionally-aligned `MUSICBRAINZ_ARTISTID` multi-value tag. Both Lyrion and current Jellyfin read these and link each individual contributor to its own artist page. After upgrading TrackSplit and re-running it against previously-split albums, trigger a library rescan in your music server so it picks up the new multi-value fields.
+
 ## How does TrackSplit differ from CrateDigger?
 
 They are complementary, not redundant. **CrateDigger** curates a video library: it identifies recordings, embeds chapters and metadata, generates posters, and syncs with Kodi. **TrackSplit** reads that video library and produces a parallel music library (FLAC/Opus albums, tagged and cover-embedded) for music servers like Jellyfin and Lyrion. The two share naming conventions and canonical IDs so the same set shows up consistently in both worlds.

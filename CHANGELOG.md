@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-04-14
+
+### Added
+
+- Per-track `ARTISTS` multi-value Vorbis tag for individual artist linking in Lyrion and Jellyfin. Remixers are included even when they are not in the display `ARTIST` string.
+- Per-track `MUSICBRAINZ_ARTISTID` multi-value tag, positionally aligned with `ARTISTS`. Empty slots preserved when an individual's MBID is unknown, so indexed consumers stay aligned.
+- Per-track `GENRE` sourced from CrateDigger's chapter-level `GENRE` tag when present. Falls back to the album's 1001Tracklists genres.
+- Album-level `ALBUMARTISTS` multi-value tag for B2B sets (`"Armin van Buuren"`, `"KI/KI"`), plus aligned multi-value `MUSICBRAINZ_ALBUMARTISTID`.
+- Opt-in end-to-end integration test (`tests/integration/`) that runs `cratedigger identify` + `enrich` + `tracksplit` against fresh MKVs. Env-gated, skips by default.
+
+### Changed
+
+- `ARTIST` display string now prefers CrateDigger's per-chapter `PERFORMER` tag, preserving "Artist ft. Remixer" forms verbatim.
+- `ALBUMARTIST` display prefers CrateDigger's `CRATEDIGGER_ALBUMARTIST_DISPLAY` when present (e.g. "Armin van Buuren & KI/KI" for B2B sets).
+- `MUSICBRAINZ_ALBUMARTISTID` is now multi-value when CrateDigger supplies the album-level artist list. Single-value legacy path (with collab suppression) kept for older enrichments.
+
 ## [0.5.1] - 2026-04-12
 
 ### Fixed
