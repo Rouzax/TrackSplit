@@ -51,17 +51,27 @@ def parse_chapters(ffprobe_data: dict) -> list[Chapter]:
     for raw in raw_chapters:
         start = float(raw["start_time"])
         end = float(raw["end_time"])
+        raw_tags = raw.get("tags") or {}
 
         if end - start <= 0:
-            title = raw.get("tags", {}).get("title", "(untitled)")
+            title = raw_tags.get("title", "(untitled)")
             logger.warning(
                 "Skipping zero-duration chapter %r at %.3f s", title, start
             )
             continue
 
-        title = _fix_text((raw.get("tags") or {}).get("title", "").strip())
+        title = _fix_text(raw_tags.get("title", "").strip())
         if not title:
             title = f"Track {len(chapters) + 1:02d}"
+
+        tags: dict[str, str] = {}
+        for k, v in raw_tags.items():
+            if k.lower() == "title" and k != "TITLE":
+                # lowercase "title" is already on Chapter.title; skip.
+                # Keep an uppercase "TITLE" if the source distinguishes them.
+                continue
+            if isinstance(v, str):
+                tags[k.upper()] = _fix_text(v)
 
         chapters.append(
             Chapter(
@@ -69,6 +79,7 @@ def parse_chapters(ffprobe_data: dict) -> list[Chapter]:
                 title=title,
                 start=start,
                 end=end,
+                tags=tags,
             )
         )
 

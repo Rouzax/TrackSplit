@@ -122,6 +122,48 @@ class TestParseChapters:
         assert chapters[0].start == pytest.approx(0.5)
         assert chapters[0].end == pytest.approx(30.123)
 
+    def test_chapter_tags_are_preserved(self):
+        data = _make_ffprobe_data(chapters=[{
+            "start_time": "0", "end_time": "60",
+            "tags": {
+                "title": "A - B [X]",
+                "PERFORMER": "A",
+                "PERFORMER_NAMES": "A|B",
+                "MUSICBRAINZ_ARTISTIDS": "mbid-1|mbid-2",
+                "LABEL": "X",
+                "TITLE": "B",
+                "GENRE": "Trance",
+            },
+        }])
+        ch = parse_chapters(data)[0]
+        assert ch.tags["PERFORMER"] == "A"
+        assert ch.tags["PERFORMER_NAMES"] == "A|B"
+        assert ch.tags["MUSICBRAINZ_ARTISTIDS"] == "mbid-1|mbid-2"
+        assert ch.tags["LABEL"] == "X"
+        assert ch.tags["TITLE"] == "B"
+        assert ch.tags["GENRE"] == "Trance"
+
+
+    def test_chapter_tags_upper_cased_and_ftfy_applied(self):
+        # Mojibake in a chapter tag value is repaired by ftfy.
+        data = _make_ffprobe_data(chapters=[{
+            "start_time": "0", "end_time": "60",
+            "tags": {"title": "x", "performer": "TiÃ«sto"},
+        }])
+        ch = parse_chapters(data)[0]
+        assert ch.tags["PERFORMER"] == "Tiësto"
+
+
+    def test_chapter_title_tag_not_duplicated_into_tags(self):
+        # "title" was already extracted into Chapter.title; don't also store
+        # it under TITLE when the tag dict wouldn't otherwise have one.
+        # (We keep it if the source had an uppercase TITLE distinct from title.)
+        data = _make_ffprobe_data(chapters=[
+            _chapter_entry(0, 60, "Intro"),
+        ])
+        ch = parse_chapters(data)[0]
+        assert "TITLE" not in ch.tags  # no uppercase TITLE in the source
+
 
 # ---------------------------------------------------------------------------
 # parse_tags
