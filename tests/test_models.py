@@ -1,4 +1,4 @@
-from tracksplit.models import Chapter, TrackMeta, AlbumMeta
+from tracksplit.models import AlbumMeta, Chapter, TrackMeta
 
 
 def test_chapter_duration():
@@ -35,3 +35,28 @@ def test_album_meta_album_folder():
 def test_album_meta_album_folder_empty():
     a = AlbumMeta(artist="Test", album="")
     assert a.album_folder == "Unknown Album"
+
+
+def test_chapter_has_tags_dict_default_empty():
+    ch = Chapter(index=1, title="x", start=0.0, end=1.0)
+    assert ch.tags == {}
+
+
+def test_chapter_tags_roundtrip():
+    ch = Chapter(
+        index=1, title="x", start=0.0, end=1.0,
+        tags={"PERFORMER": "A & B", "LABEL": "Armada"},
+    )
+    assert ch.tags["PERFORMER"] == "A & B"
+
+
+def test_trackmeta_multi_artist_defaults():
+    t = TrackMeta(number=1, title="x", start=0.0, end=1.0)
+    assert t.artists == []
+    assert t.artist_mbids == []
+
+
+def test_albummeta_albumartists_defaults():
+    a = AlbumMeta(artist="X", album="Y")
+    assert a.albumartists == []
+    assert a.albumartist_mbids == []
