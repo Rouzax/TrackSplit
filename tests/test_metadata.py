@@ -298,6 +298,57 @@ def test_build_album_meta_tier2_no_festival():
     assert "@" not in album.album
 
 
+def test_build_album_meta_tier2_venue_no_date_year_from_filename():
+    """Tier 2 with venue but no CRATEDIGGER date: year extracted from filename."""
+    tags = {
+        "artist": "Martin Garrix",
+        "festival": "",
+        "date": "",
+        "stage": "",
+        "venue": "Red Rocks Amphitheatre",
+        "genres": [],
+        "albumartists": ["Martin Garrix", "Alesso"],
+        "albumartist_mbids": [],
+    }
+    chapters = _make_chapters(["Track 1"])
+    meta = build_album_meta(
+        tags, chapters, "2025 - Martin Garrix & Alesso - Red Rocks", tier=2
+    )
+    assert meta.album == "Red Rocks Amphitheatre 2025"
+
+
+def test_build_album_meta_tier2_stage_contains_date_no_year_appended():
+    """Tier 2 with stage that already contains the year: year not duplicated."""
+    tags = {
+        "artist": "FISHER",
+        "festival": "",
+        "date": "2026-01-31",
+        "stage": "Bay Oval Park, New Zealand 2026-01-31",
+        "venue": "",
+        "genres": [],
+    }
+    chapters = _make_chapters(["Track 1"])
+    meta = build_album_meta(
+        tags, chapters, "2026 - FISHER [Bay Oval Park, New Zealand 2026-01-31]", tier=2
+    )
+    assert meta.album == "Bay Oval Park, New Zealand 2026-01-31"
+
+
+def test_build_album_meta_tier2_venue_with_date_tag():
+    """Tier 2 with venue and CRATEDIGGER date: year comes from date tag."""
+    tags = {
+        "artist": "Some DJ",
+        "festival": "",
+        "date": "2024-06-15",
+        "stage": "",
+        "venue": "Madison Square Garden",
+        "genres": [],
+    }
+    chapters = _make_chapters(["Track 1"])
+    meta = build_album_meta(tags, chapters, "2024 - Some DJ - MSG", tier=2)
+    assert meta.album == "Madison Square Garden 2024"
+
+
 def test_probe_to_metadata_to_tagger_contract():
     """Integration: verify data flows correctly across module boundaries."""
     from tracksplit.probe import parse_tags

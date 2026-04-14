@@ -139,13 +139,23 @@ def build_album_meta(
         date = tags.get("date", "")
         stage = tags.get("stage", "")
         year = date[:4] if date else ""
+        if not year:
+            _, year = parse_filename(filename_stem)
 
         if festival:
             album = f"{festival} {year}".strip()
             if stage:
                 album = f"{album} ({stage})"
         else:
-            album = filename_stem
+            venue = tags.get("venue", "")
+            location = venue or stage
+            if location:
+                if year and year not in location:
+                    album = f"{location} {year}"
+                else:
+                    album = location
+            else:
+                album = filename_stem
     else:
         artist, year = parse_filename(filename_stem)
         date = year
