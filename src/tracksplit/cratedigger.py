@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -22,6 +23,15 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 _WALK_UP_LIMIT = 10
+
+_config_cache: dict[tuple[str, ...], "CrateDiggerConfig"] = {}
+_config_cache_lock = threading.Lock()
+
+
+def _clear_config_cache() -> None:
+    """Reset the load_config memo. Intended for tests."""
+    with _config_cache_lock:
+        _config_cache.clear()
 
 
 def find_cratedigger_dirs(
@@ -57,6 +67,8 @@ def find_cratedigger_dirs(
 def _load_json(path: Path) -> dict:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
     except (OSError, json.JSONDecodeError) as exc:
         logger.debug("CrateDigger config read failed: %s (%s)", path, exc)
         return {}
@@ -240,9 +252,21 @@ def load_config(
     Later directories (local, near the input file) override earlier ones.
     Missing or malformed files are silently skipped: TrackSplit must keep
     working when no CrateDigger config exists.
+
+    Results are memoized by the resolved directory list so batch runs read
+    each ``.cratedigger`` config only once. Callers must treat the returned
+    config as read-only. Use ``_clear_config_cache()`` if config files may
+    have changed mid-run (e.g. tests that rewrite fixtures).
     """
+    dirs = find_cratedigger_dirs(input_path, home_dir=home_dir)
+    key = tuple(str(d) for d in dirs)
+    with _config_cache_lock:
+        cached = _config_cache.get(key)
+    if cached is not None:
+        return cached
+
     cfg = CrateDiggerConfig()
-    for cd_dir in find_cratedigger_dirs(input_path, home_dir=home_dir):
+    for cd_dir in dirs:
         fest = _load_json(cd_dir / "festivals.json")
         fest = {
             k: v for k, v in fest.items()
@@ -283,7 +307,9 @@ def load_config(
         if isinstance(mbid, dict):
             cfg.mbid_cache.update(mbid)
 
-    return cfg
+    with _config_cache_lock:
+        _config_cache.setdefault(key, cfg)
+        return _config_cache[key]
 
 
 def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:

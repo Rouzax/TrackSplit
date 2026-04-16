@@ -8,10 +8,18 @@ import pytest
 
 from tracksplit.cratedigger import (
     CrateDiggerConfig,
+    _clear_config_cache,
     apply_cratedigger_canon,
     find_cratedigger_dirs,
     load_config,
 )
+
+
+@pytest.fixture(autouse=True)
+def _reset_cratedigger_cache():
+    _clear_config_cache()
+    yield
+    _clear_config_cache()
 
 
 @pytest.fixture
@@ -276,3 +284,52 @@ class TestApplyCratediggerCanon:
         # Should not raise; malformed files are skipped.
         apply_cratedigger_canon(tags, home / "video.mkv")
         assert tags["festival"] == "F"
+
+
+class TestLoadConfigCache:
+    def test_same_dirs_return_same_object(self, cd_home: Path):
+        cfg1 = load_config(cd_home / "a.mkv", home_dir=cd_home)
+        cfg2 = load_config(cd_home / "b.mkv", home_dir=cd_home)
+        assert cfg1 is cfg2
+
+    def test_different_home_returns_different_object(
+        self, cd_home: Path, tmp_path: Path,
+    ):
+        other_home = tmp_path / "other"
+        (other_home / ".cratedigger").mkdir(parents=True)
+        cfg1 = load_config(cd_home / "v.mkv", home_dir=cd_home)
+        cfg2 = load_config(other_home / "v.mkv", home_dir=other_home)
+        assert cfg1 is not cfg2
+
+    def test_clear_cache_forces_reload(self, cd_home: Path):
+        cfg1 = load_config(cd_home / "v.mkv", home_dir=cd_home)
+        _clear_config_cache()
+        cfg2 = load_config(cd_home / "v.mkv", home_dir=cd_home)
+        assert cfg1 is not cfg2
+        assert cfg1.artist_aliases == cfg2.artist_aliases
+
+
+class TestLoadJsonNoise:
+    def test_missing_files_do_not_log(self, tmp_path: Path, caplog):
+        """A .cratedigger dir with no files should produce zero debug logs."""
+        import logging
+        home = tmp_path / "home"
+        (home / ".cratedigger").mkdir(parents=True)
+        with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
+            load_config(home / "video.mkv", home_dir=home)
+        assert not any(
+            "config read failed" in rec.message for rec in caplog.records
+        )
+
+    def test_malformed_json_logs_debug(self, tmp_path: Path, caplog):
+        import logging
+        home = tmp_path / "home"
+        cd = home / ".cratedigger"
+        cd.mkdir(parents=True)
+        (cd / "festivals.json").write_text("{ not json")
+        with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
+            load_config(home / "video.mkv", home_dir=home)
+        assert any(
+            "config read failed" in rec.message and "festivals.json" in rec.message
+            for rec in caplog.records
+        )
