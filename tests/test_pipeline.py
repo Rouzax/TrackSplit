@@ -7,7 +7,12 @@ from unittest.mock import MagicMock, patch, call
 import pytest
 
 from tracksplit.models import AlbumMeta, Chapter, TrackMeta
-from tracksplit.pipeline import build_intro_track, should_regenerate, _safe_log_name
+from tracksplit.pipeline import (
+    _apply_intro_track,
+    build_intro_track,
+    should_regenerate,
+    _safe_log_name,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -59,6 +64,63 @@ class TestBuildIntroTrack:
         assert intro.start == 0.0
         assert intro.end == 5.0
         assert intro.title == "Intro"
+
+
+# ---------------------------------------------------------------------------
+# _apply_intro_track
+# ---------------------------------------------------------------------------
+
+class TestApplyIntroTrack:
+    def test_apply_intro_track_inserts_intro_when_gap_meets_threshold(self):
+        """Gap of 10s meets the threshold, so an Intro track is prepended."""
+        album = AlbumMeta(
+            artist="DJ X",
+            album="Set",
+            tracks=[TrackMeta(number=1, title="Track A", start=10.0, end=60.0)],
+        )
+        chapters = [Chapter(index=1, title="Track A", start=10.0, end=60.0)]
+        _apply_intro_track(album, chapters)
+        assert len(album.tracks) == 2
+        assert album.tracks[0].title == "Intro"
+        assert album.tracks[0].start == 0.0
+        assert album.tracks[0].end == 10.0
+        assert album.tracks[1].start == 10.0
+
+    def test_apply_intro_track_slides_track_one_for_short_gap(self):
+        """Gap of 2s is under threshold: no intro, but track 1 slides to 0.0."""
+        album = AlbumMeta(
+            artist="DJ X",
+            album="Set",
+            tracks=[TrackMeta(number=1, title="Track A", start=2.0, end=60.0)],
+        )
+        chapters = [Chapter(index=1, title="Track A", start=2.0, end=60.0)]
+        _apply_intro_track(album, chapters)
+        assert len(album.tracks) == 1
+        assert album.tracks[0].start == 0.0
+        assert album.tracks[0].title == "Track A"
+
+    def test_apply_intro_track_is_noop_for_zero_gap(self):
+        """First chapter starts at 0.0: no intro, no slide."""
+        album = AlbumMeta(
+            artist="DJ X",
+            album="Set",
+            tracks=[TrackMeta(number=1, title="Track A", start=0.0, end=60.0)],
+        )
+        chapters = [Chapter(index=1, title="Track A", start=0.0, end=60.0)]
+        _apply_intro_track(album, chapters)
+        assert len(album.tracks) == 1
+        assert album.tracks[0].start == 0.0
+
+    def test_apply_intro_track_handles_empty_chapters(self):
+        """No chapters: album is untouched."""
+        album = AlbumMeta(
+            artist="DJ X",
+            album="Set",
+            tracks=[TrackMeta(number=1, title="Whole album", start=0.0, end=60.0)],
+        )
+        _apply_intro_track(album, chapters=[])
+        assert len(album.tracks) == 1
+        assert album.tracks[0].start == 0.0
 
 
 # ---------------------------------------------------------------------------

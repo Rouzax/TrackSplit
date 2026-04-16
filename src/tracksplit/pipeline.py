@@ -36,7 +36,7 @@ from tracksplit.manifest import (
     save_artist_manifest,
 )
 from tracksplit.metadata import build_album_meta, safe_filename
-from tracksplit.models import Chapter, TrackMeta
+from tracksplit.models import AlbumMeta, Chapter, TrackMeta
 from tracksplit.probe import (
     detect_tier,
     has_audio,
@@ -135,6 +135,22 @@ def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
         start=0.0,
         end=chapters[0].start,
     )
+
+
+def _apply_intro_track(album: AlbumMeta, chapters: list[Chapter]) -> None:
+    """Insert an intro track, slide track 1, or leave the album alone.
+
+    When the pre-chapter gap meets the INTRO_MIN_SECONDS threshold, prepend
+    an Intro track. When the gap is positive but under the threshold, move
+    the first track's start to 0.0 so no audio is dropped. Otherwise
+    (zero gap, no chapters, no tracks) do nothing.
+    """
+    intro = build_intro_track(chapters)
+    if intro is not None:
+        album.tracks.insert(0, intro)
+        return
+    if chapters and chapters[0].start > 0.0 and album.tracks:
+        album.tracks[0].start = 0.0
 
 
 def find_prior_album_dirs(
@@ -371,10 +387,8 @@ def process_file(
     # Build album metadata
     album = build_album_meta(tags, chapters, input_path.stem, tier, cd_config=cd_cfg)
 
-    # Handle intro track
-    intro = build_intro_track(chapters)
-    if intro is not None:
-        album.tracks.insert(0, intro)
+    # Handle intro track and short-gap merge
+    _apply_intro_track(album, chapters)
 
     # Handle no chapters: single track spanning full duration
     if not chapters:
