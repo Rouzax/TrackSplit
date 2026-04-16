@@ -67,6 +67,7 @@ class AlbumManifest:
     tags: dict
     track_filenames: list[str]
     cover_sha256: str
+    intro_min_seconds: float | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -90,6 +91,7 @@ class AlbumManifest:
             tags=d["tags"],
             track_filenames=d["track_filenames"],
             cover_sha256=d["cover_sha256"],
+            intro_min_seconds=d.get("intro_min_seconds"),
         )
 
 
@@ -109,6 +111,7 @@ def build_album_manifest(
     track_filenames: list[str],
     cover_bytes: bytes,
 ) -> AlbumManifest:
+    from tracksplit.pipeline import INTRO_MIN_SECONDS  # local import avoids cycle
     return AlbumManifest(
         schema=MANIFEST_SCHEMA,
         source=SourceFingerprint.from_path(
@@ -122,6 +125,7 @@ def build_album_manifest(
         tags=_filter_tags(tags),
         track_filenames=list(track_filenames),
         cover_sha256=_sha256(cover_bytes) if cover_bytes else "",
+        intro_min_seconds=INTRO_MIN_SECONDS,
     )
 
 

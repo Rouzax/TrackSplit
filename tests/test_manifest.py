@@ -6,6 +6,7 @@ from tracksplit.manifest import (
     ALBUM_MANIFEST_FILENAME,
     LEGACY_CHAPTER_CACHE_FILENAME,
     MANIFEST_SCHEMA,
+    AlbumManifest,
     SourceFingerprint,
     build_album_manifest,
     load_album_manifest,
@@ -132,3 +133,40 @@ def test_save_album_manifest_is_atomic(tmp_path, monkeypatch):
     assert leftovers == []
 
     monkeypatch.setattr(_os, "replace", orig_replace)
+
+
+def test_album_manifest_from_dict_defaults_intro_min_seconds_to_none():
+    # Simulates an on-disk manifest written before the field existed.
+    raw = {
+        "schema": 1,
+        "source": {"path": "/x.mkv", "mtime_ns": 1, "size": 2, "enriched_at": ""},
+        "resolved_artist_folder": "Artist",
+        "resolved_album_folder": "Album",
+        "output_format": "flac",
+        "codec_mode": "copy",
+        "chapters": [],
+        "tags": {},
+        "track_filenames": [],
+        "cover_sha256": "",
+    }
+    m = AlbumManifest.from_dict(raw)
+    assert m.intro_min_seconds is None
+
+
+def test_album_manifest_round_trip_preserves_intro_min_seconds(tmp_path):
+    # Build, save, load. The value written now should be the current constant.
+    from tracksplit.pipeline import INTRO_MIN_SECONDS
+    src = tmp_path / "x.mkv"
+    src.write_bytes(b"\x00")
+    m = build_album_manifest(
+        source_path=src,
+        chapters=[],
+        tags={},
+        artist_folder="A",
+        album_folder="B",
+        output_format="flac",
+        codec_mode="copy",
+        track_filenames=[],
+        cover_bytes=b"",
+    )
+    assert m.intro_min_seconds == INTRO_MIN_SECONDS
