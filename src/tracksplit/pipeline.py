@@ -248,37 +248,80 @@ def should_regenerate(
     force: bool,
 ) -> bool:
     """Return True when the album must be (re)generated."""
+    name = source_path.name
     if force:
+        logger.debug("regenerate %s: force=True", name)
         return True
     if not album_dir.exists():
+        logger.debug("regenerate %s: album dir does not exist (%s)", name, album_dir)
         return True
 
     manifest = load_album_manifest(album_dir)
     if manifest is None:
+        logger.debug("regenerate %s: no/unreadable manifest at %s", name, album_dir)
         return True
 
     try:
         current_source = SourceFingerprint.from_path(
             source_path, enriched_at=tags.get("enriched_at", ""),
         )
-    except OSError:
+    except OSError as exc:
+        logger.debug("regenerate %s: stat failed: %s", name, exc)
         return True
 
     if manifest.source != current_source:
+        for field in ("path", "mtime_ns", "size", "enriched_at"):
+            old = getattr(manifest.source, field)
+            new = getattr(current_source, field)
+            if old != new:
+                logger.debug(
+                    "regenerate %s: source.%s changed (%r -> %r)",
+                    name, field, old, new,
+                )
         return True
     if manifest.resolved_artist_folder != artist_folder:
+        logger.debug(
+            "regenerate %s: artist folder changed (%r -> %r)",
+            name, manifest.resolved_artist_folder, artist_folder,
+        )
         return True
     if manifest.resolved_album_folder != album_folder:
+        logger.debug(
+            "regenerate %s: album folder changed (%r -> %r)",
+            name, manifest.resolved_album_folder, album_folder,
+        )
         return True
     if manifest.output_format != output_format:
+        logger.debug(
+            "regenerate %s: output_format changed (%r -> %r)",
+            name, manifest.output_format, output_format,
+        )
         return True
     if manifest.codec_mode != codec_mode:
+        logger.debug(
+            "regenerate %s: codec_mode changed (%r -> %r)",
+            name, manifest.codec_mode, codec_mode,
+        )
         return True
     if manifest.chapters != chapter_dicts:
+        logger.debug(
+            "regenerate %s: chapters differ (%d stored, %d current)",
+            name, len(manifest.chapters), len(chapter_dicts),
+        )
+        if len(manifest.chapters) == len(chapter_dicts):
+            for i, (old, new) in enumerate(zip(manifest.chapters, chapter_dicts)):
+                if old != new:
+                    logger.debug(
+                        "regenerate %s: chapter[%d] %r -> %r", name, i, old, new,
+                    )
         return True
 
     for k in TAG_KEYS:
         if manifest.tags.get(k, "") != tags.get(k, ""):
+            logger.debug(
+                "regenerate %s: tag %r changed (%r -> %r)",
+                name, k, manifest.tags.get(k, ""), tags.get(k, ""),
+            )
             return True
     return False
 
