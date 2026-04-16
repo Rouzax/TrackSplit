@@ -618,6 +618,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#why-is-there-no-00-intro-track-even-though-the-first-chapter-starts-after-000" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why is there no 00 - Intro track even though the first chapter starts after 0:00?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#a-file-was-skipped-even-though-i-expected-it-to-be-processed-why" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -762,6 +773,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#why-is-there-no-00-intro-track-even-though-the-first-chapter-starts-after-000" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why is there no 00 - Intro track even though the first chapter starts after 0:00?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#a-file-was-skipped-even-though-i-expected-it-to-be-processed-why" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -877,6 +899,8 @@
 <h2 id="my-video-has-no-chapters-what-happens">My video has no chapters. What happens?</h2>
 <p>If the video has a readable duration, TrackSplit produces a single-track album covering the whole file. If it cannot read the duration either, the file is skipped with a warning.</p>
 <p>If you expected chapters but there are none, the source may have had them stripped by a downloader or remuxer. <a href="https://github.com/Rouzax/CrateDigger">CrateDigger</a> can identify recordings and embed chapter markers automatically. You can also add chapters manually with MKVToolNix.</p>
+<h2 id="why-is-there-no-00-intro-track-even-though-the-first-chapter-starts-after-000">Why is there no <code>00 - Intro</code> track even though the first chapter starts after 0:00?</h2>
+<p>If the gap between the start of the file and the first chapter is less than 5 seconds, TrackSplit folds that audio into track 1 instead of creating a standalone intro track. This avoids very short "Intro" files that are not musically meaningful. Gaps of 5 seconds or longer still produce a <code>00 - Intro</code> track.</p>
 <h2 id="a-file-was-skipped-even-though-i-expected-it-to-be-processed-why">A file was skipped even though I expected it to be processed. Why?</h2>
 <p>Two common reasons:</p>
 <ol>

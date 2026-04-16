@@ -1074,7 +1074,7 @@
 </ul>
 <h3 id="track-files">Track files</h3>
 <p>One audio file per chapter. Filenames follow the pattern <code>NN - Title.flac</code> (or <code>.opus</code>), where <code>NN</code> is a zero-padded number starting at <code>01</code>.</p>
-<p>If the video has audio before the first chapter marker (an unlabelled intro section), TrackSplit creates an extra track numbered <code>00 - Intro</code> for that segment. This only happens when the first chapter starts after the beginning of the file.</p>
+<p>If the video has audio before the first chapter marker (an unlabelled intro section) and that pre-chapter gap is at least 5 seconds, TrackSplit creates an extra track numbered <code>00 - Intro</code> for that segment. Gaps shorter than 5 seconds are folded into track 1 instead, so track 1 begins at the start of the file and absorbs the lead-in audio. This avoids tiny sliver files for negligible gaps. The threshold is fixed and not user-configurable.</p>
 <h3 id="coverjpg"><code>cover.jpg</code></h3>
 <p>The album cover image, placed at the album level. It is also embedded inside every track file, so your music server sees it whether it reads the folder image or the file tags.</p>
 <p>This file is always created.</p>
