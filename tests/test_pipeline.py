@@ -346,6 +346,28 @@ class TestShouldRegenerate:
             "A", "B", "flac", "copy", force=False,
         ) is False
 
+    def test_should_regenerate_rebuilds_when_stored_threshold_differs(self, tmp_path):
+        """Manifest records a different intro_min_seconds than the current constant."""
+        from tracksplit.pipeline import should_regenerate, INTRO_MIN_SECONDS
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        fp = self._fingerprint(src)
+        chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}]
+        # Stored threshold (3.0) disagrees with the current INTRO_MIN_SECONDS,
+        # so only the stored-threshold-mismatch branch can trigger.
+        assert INTRO_MIN_SECONDS != 3.0
+        self._write_manifest(
+            album, chapters=chapters, intro_min_seconds=3.0, **fp,
+        )
+        tags = {"artist": "A", "album": "", "festival": "", "date": "",
+                "stage": "", "venue": "", "mbid": "",
+                "enriched_at": ""}
+        assert should_regenerate(
+            album, src, tags, chapters,
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
 
 # ---------------------------------------------------------------------------
 # _safe_log_name
