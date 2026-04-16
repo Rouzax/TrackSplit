@@ -323,6 +323,21 @@ def should_regenerate(
             name, manifest.codec_mode, codec_mode,
         )
         return True
+    stored_intro = manifest.intro_min_seconds
+    if stored_intro is None:
+        first_start = chapter_dicts[0]["start"] if chapter_dicts else 0.0
+        if 0 < first_start < INTRO_MIN_SECONDS:
+            logger.debug(
+                "regenerate %s: intro policy upgraded, stored gap %.3fs is under new %.1fs",
+                name, first_start, INTRO_MIN_SECONDS,
+            )
+            return True
+    elif stored_intro != INTRO_MIN_SECONDS:
+        logger.debug(
+            "regenerate %s: intro_min_seconds changed (%r -> %r)",
+            name, stored_intro, INTRO_MIN_SECONDS,
+        )
+        return True
     if manifest.chapters != chapter_dicts:
         logger.debug(
             "regenerate %s: chapters differ (%d stored, %d current)",

@@ -151,6 +151,8 @@ class TestShouldRegenerate:
             "track_filenames": overrides.get("track_filenames", ["01 - T.flac"]),
             "cover_sha256": overrides.get("cover_sha256", "a" * 64),
         }
+        if "intro_min_seconds" in overrides:
+            data["intro_min_seconds"] = overrides["intro_min_seconds"]
         (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
 
     def _mk_source(self, tmp_path, size=10):
@@ -270,6 +272,79 @@ class TestShouldRegenerate:
         assert should_regenerate(
             album, src, {}, [], "A", "B", "flac", "copy", force=False,
         ) is True
+
+    def test_should_regenerate_skips_when_intro_policy_matches(self, tmp_path):
+        """Current manifest with matching intro_min_seconds returns False."""
+        from tracksplit.pipeline import should_regenerate, INTRO_MIN_SECONDS
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        fp = self._fingerprint(src)
+        self._write_manifest(
+            album, intro_min_seconds=INTRO_MIN_SECONDS, **fp,
+        )
+        tags = {"artist": "A", "album": "", "festival": "", "date": "",
+                "stage": "", "venue": "", "mbid": "",
+                "enriched_at": ""}
+        assert should_regenerate(
+            album, src, tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is False
+
+    def test_should_regenerate_skips_legacy_manifest_with_zero_gap(self, tmp_path):
+        """Old manifest (intro_min_seconds=None) with first chapter at 0 returns False."""
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        fp = self._fingerprint(src)
+        # No intro_min_seconds key: simulates a pre-policy manifest on disk.
+        self._write_manifest(album, **fp)
+        tags = {"artist": "A", "album": "", "festival": "", "date": "",
+                "stage": "", "venue": "", "mbid": "",
+                "enriched_at": ""}
+        assert should_regenerate(
+            album, src, tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is False
+
+    def test_should_regenerate_rebuilds_legacy_manifest_with_short_gap(self, tmp_path):
+        """Old manifest, first chapter gap 2.0s (under threshold) returns True."""
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        fp = self._fingerprint(src)
+        chapters = [{"index": 1, "title": "T", "start": 2.0, "end": 60.0}]
+        # Stored chapters match observed chapters, so the plain chapter check
+        # does not fire; only the legacy intro-policy upgrade can trigger.
+        self._write_manifest(album, chapters=chapters, **fp)
+        tags = {"artist": "A", "album": "", "festival": "", "date": "",
+                "stage": "", "venue": "", "mbid": "",
+                "enriched_at": ""}
+        assert should_regenerate(
+            album, src, tags, chapters,
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_should_regenerate_skips_legacy_manifest_with_long_intro(self, tmp_path):
+        """Old manifest, first chapter gap 15.0s (above threshold) returns False."""
+        from tracksplit.pipeline import should_regenerate
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        fp = self._fingerprint(src)
+        chapters = [{"index": 1, "title": "T", "start": 15.0, "end": 60.0}]
+        self._write_manifest(album, chapters=chapters, **fp)
+        tags = {"artist": "A", "album": "", "festival": "", "date": "",
+                "stage": "", "venue": "", "mbid": "",
+                "enriched_at": ""}
+        assert should_regenerate(
+            album, src, tags, chapters,
+            "A", "B", "flac", "copy", force=False,
+        ) is False
 
 
 # ---------------------------------------------------------------------------
