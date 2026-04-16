@@ -52,6 +52,8 @@ logger = logging.getLogger(__name__)
 
 FATAL_DISK_ERRNOS = (errno.ENOSPC, errno.EDQUOT, errno.EROFS)
 
+INTRO_MIN_SECONDS = 5.0
+
 
 def _safe_log_name(path: Path) -> str:
     """Return a logging-safe filename, replacing surrogate bytes."""
@@ -115,15 +117,17 @@ def prune_orphan_tracks(album_dir: Path, expected: set[str]) -> list[str]:
 
 
 def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
-    """Build an intro track if the first chapter starts after 0.0.
+    """Build an intro track if the first chapter starts at or after INTRO_MIN_SECONDS.
 
     Returns a TrackMeta with number=0 and title="Intro" spanning from
     0.0 to the first chapter's start time. Returns None if chapters is
-    empty or the first chapter already starts at 0.0.
+    empty, the first chapter already starts at 0.0, or the gap before
+    the first chapter is smaller than INTRO_MIN_SECONDS (the audio is
+    folded into track 1 elsewhere in the pipeline).
     """
     if not chapters:
         return None
-    if chapters[0].start == 0.0:
+    if chapters[0].start < INTRO_MIN_SECONDS:
         return None
     return TrackMeta(
         number=0,

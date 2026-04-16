@@ -41,6 +41,25 @@ class TestBuildIntroTrack:
         result = build_intro_track([])
         assert result is None
 
+    def test_build_intro_track_returns_none_for_short_gap(self):
+        """First chapter starts at 2.0s (below 5s threshold), no intro."""
+        chapters = [Chapter(index=1, title="Track A", start=2.0, end=60.0)]
+        assert build_intro_track(chapters) is None
+
+    def test_build_intro_track_returns_none_just_under_threshold(self):
+        """First chapter starts at 4.999s (just below threshold), no intro."""
+        chapters = [Chapter(index=1, title="Track A", start=4.999, end=60.0)]
+        assert build_intro_track(chapters) is None
+
+    def test_build_intro_track_creates_intro_at_threshold_boundary(self):
+        """First chapter starts exactly at 5.0s (boundary is exclusive), intro created."""
+        chapters = [Chapter(index=1, title="Track A", start=5.0, end=60.0)]
+        intro = build_intro_track(chapters)
+        assert intro is not None
+        assert intro.start == 0.0
+        assert intro.end == 5.0
+        assert intro.title == "Intro"
+
 
 # ---------------------------------------------------------------------------
 # should_regenerate
