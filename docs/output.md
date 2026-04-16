@@ -67,7 +67,7 @@ Each video gets its own album folder inside the artist folder. The folder name c
 
 One audio file per chapter. Filenames follow the pattern `NN - Title.flac` (or `.opus`), where `NN` is a zero-padded number starting at `01`.
 
-If the video has audio before the first chapter marker (an unlabelled intro section), TrackSplit creates an extra track numbered `00 - Intro` for that segment. This only happens when the first chapter starts after the beginning of the file.
+If the video has audio before the first chapter marker (an unlabelled intro section) and that pre-chapter gap is at least 5 seconds, TrackSplit creates an extra track numbered `00 - Intro` for that segment. Gaps shorter than 5 seconds are folded into track 1 instead, so track 1 begins at the start of the file and absorbs the lead-in audio. This avoids tiny sliver files for negligible gaps. The threshold is fixed and not user-configurable.
 
 ### `cover.jpg`
 

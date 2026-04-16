@@ -14,6 +14,10 @@ If the video has a readable duration, TrackSplit produces a single-track album c
 
 If you expected chapters but there are none, the source may have had them stripped by a downloader or remuxer. [CrateDigger](https://github.com/Rouzax/CrateDigger) can identify recordings and embed chapter markers automatically. You can also add chapters manually with MKVToolNix.
 
+## Why is there no `00 - Intro` track even though the first chapter starts after 0:00?
+
+If the gap between the start of the file and the first chapter is less than 5 seconds, TrackSplit folds that audio into track 1 instead of creating a standalone intro track. This avoids very short "Intro" files that are not musically meaningful. Gaps of 5 seconds or longer still produce a `00 - Intro` track.
+
 ## A file was skipped even though I expected it to be processed. Why?
 
 Two common reasons:
