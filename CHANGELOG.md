@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-04-16
+
 ### Changed
 
 - Intro tracks are now only created when the pre-chapter gap is 5 seconds or longer. Shorter gaps are folded into track 1 so no audio is dropped and no sliver files are written. Affected albums are rebuilt automatically on the next run.
