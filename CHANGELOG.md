@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Intro tracks are now only created when the pre-chapter gap is 5 seconds or longer. Shorter gaps are folded into track 1 so no audio is dropped and no sliver files are written. Affected albums are rebuilt automatically on the next run.
-- `manifest.json` now records `intro_min_seconds`. Manifests written before this version lack the field and are treated as up-to-date unless the stored first-chapter gap falls under the new threshold.
+- `.tracksplit_manifest.json` now records `intro_min_seconds`. Manifests written before this version lack the field and are treated as up-to-date unless the stored first-chapter gap falls under the new threshold.
 
 ## [0.6.2] - 2026-04-14
 
