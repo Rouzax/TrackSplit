@@ -553,7 +553,10 @@ def compose_cover(
     _apply_dark_gradient(canvas)
 
     draw = ImageDraw.Draw(canvas)
-    _draw_centered(draw, size, L["artist_y"], L["artist_text"], L["artist_font"], (255, 255, 255, 255))
+    cursor = L["artist_block_top"]
+    for line in L["artist_lines"]:
+        _draw_centered(draw, size, cursor, line, L["artist_font"], (255, 255, 255, 255))
+        cursor += L["artist_line_h"] + L["artist_pad_lines"]
 
     result = canvas.convert("RGB")
     result = _draw_glow_line(result, L["line_y"], L["line_w"], L["line_h"], accent)

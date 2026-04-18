@@ -235,6 +235,17 @@ class TestComposeCover:
         assert len(L["stage_parts"]) <= 1
         assert L["venue_font"] is None
 
+    def test_compose_cover_multi_artist_does_not_crash(self):
+        result = compose_cover(
+            artist="Axwell & Sebastian Ingrosso & Steve Angello",
+            festival="Tomorrowland",
+            date="2025-07-25",
+            stage="Main Stage",
+        )
+        assert isinstance(result, bytes)
+        img = Image.open(io.BytesIO(result))
+        assert img.size == (1000, 1000)
+
 
 class TestFindDjArtwork:
     def test_finds_dj_artwork_jpg_in_global(self, tmp_path):
