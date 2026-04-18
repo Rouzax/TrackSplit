@@ -11,6 +11,9 @@ from tracksplit.opus_patch import patch_opus_pre_skip
 from tracksplit.subprocess_utils import CancelledError, tracked_run
 from tracksplit.tools import get_tool
 
+OPUS_FRAME_SECONDS = 0.020
+OPUS_FRAME_SAMPLES = 960  # OPUS_FRAME_SECONDS * 48000 Hz
+
 
 def build_split_command(
     input_path: Path,
@@ -113,9 +116,9 @@ def split_tracks(
         use_prefix = (
             apply_opus_prefix
             and i > 0
-            and track.start - 0.020 >= 0.0
+            and track.start - OPUS_FRAME_SECONDS >= 0.0
         )
-        start = track.start - 0.020 if use_prefix else track.start
+        start = track.start - OPUS_FRAME_SECONDS if use_prefix else track.start
 
         cmd = build_split_command(
             full_flac, output_path, start, end,
@@ -124,7 +127,7 @@ def split_tracks(
         tracked_run(cmd, cancel_event=cancel_event)
 
         if use_prefix:
-            patch_opus_pre_skip(output_path, 960)
+            patch_opus_pre_skip(output_path, OPUS_FRAME_SAMPLES)
 
         output_paths.append(output_path)
 

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from tracksplit.models import TrackMeta
 from tracksplit.split import build_split_command, build_track_filename, split_tracks
 
@@ -183,7 +185,9 @@ class TestSplitTracks:
         assert "-vn" in first_cmd
 
 
-from tracksplit.models import TrackMeta
+def _ss_arg(cmd: list[str]) -> float:
+    """Extract the float passed to -ss in an ffmpeg command."""
+    return float(cmd[cmd.index("-ss") + 1])
 
 
 class TestSplitTracksOpusPrefix:
@@ -209,9 +213,9 @@ class TestSplitTracksOpusPrefix:
         )
 
         cmds = [c.args[0] for c in mock_run.call_args_list]
-        assert "0.0" in cmds[0]
-        assert "59.98" in cmds[1]
-        assert "179.98" in cmds[2]
+        assert _ss_arg(cmds[0]) == pytest.approx(0.0)
+        assert _ss_arg(cmds[1]) == pytest.approx(59.98)
+        assert _ss_arg(cmds[2]) == pytest.approx(179.98)
 
         assert mock_patch.call_count == 2
         for c in mock_patch.call_args_list:
@@ -232,8 +236,8 @@ class TestSplitTracksOpusPrefix:
         )
 
         cmds = [c.args[0] for c in mock_run.call_args_list]
-        assert "60.0" in cmds[1]
-        assert "180.0" in cmds[2]
+        assert _ss_arg(cmds[1]) == pytest.approx(60.0)
+        assert _ss_arg(cmds[2]) == pytest.approx(180.0)
         assert mock_patch.call_count == 0
 
     def test_no_offset_when_packet_ms_not_twenty(self, tmp_path, mocker):
@@ -304,5 +308,5 @@ class TestSplitTracksOpusPrefix:
         )
 
         cmds = [c.args[0] for c in mock_run.call_args_list]
-        assert "0.01" in cmds[1]
+        assert _ss_arg(cmds[1]) == pytest.approx(0.01)
         assert mock_patch.call_count == 0
