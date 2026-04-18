@@ -452,7 +452,12 @@ def _layout_album_cover(
         + max(0, len(artist_lines) - 1) * PAD_ARTIST_LINES
     )
 
-    fest_text = festival.upper() if festival else ""
+    # Festival accent slot: festival > venue > stage. Stops at the first
+    # non-empty. We track which source filled it so the stage subline
+    # below can be suppressed if stage is what we drew up top.
+    fest_raw = festival or venue or stage or ""
+    fest_source_is_stage = (not festival) and (not venue) and bool(stage)
+    fest_text = fest_raw.upper() if fest_raw else ""
     fest_font = None
     fest_h = 0
     if fest_text:
@@ -471,8 +476,12 @@ def _layout_album_cover(
         date_h = _font_height(date_font)
 
     # Stage collapses to at most one line: first comma-separated part only.
-    first_stage = (stage or "").split(",")[0].strip()
-    stage_parts = [first_stage] if first_stage else []
+    # Suppress entirely if stage already rendered in the festival slot above.
+    if fest_source_is_stage:
+        stage_parts: list[str] = []
+    else:
+        first_stage = (stage or "").split(",")[0].strip()
+        stage_parts = [first_stage] if first_stage else []
     stage_fonts: list = []
     stage_heights: list[int] = []
     for part in stage_parts:

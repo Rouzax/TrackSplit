@@ -522,3 +522,76 @@ class TestMkvtoolsTempFileUnique:
 
         assert len(seen_paths) == 2
         assert seen_paths[0] != seen_paths[1]
+
+
+class TestFestivalFallback:
+    def test_festival_used_when_present(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A", festival="Ultra", date="", stage="", venue="", size=1000,
+        )
+        assert L["fest_text"] == "ULTRA"
+
+    def test_venue_fills_slot_when_festival_empty(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A", festival="", date="", stage="", venue="Red Rocks", size=1000,
+        )
+        assert L["fest_text"] == "RED ROCKS"
+
+    def test_stage_fills_slot_when_festival_and_venue_empty(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A", festival="", date="", stage="Mainstage", venue="", size=1000,
+        )
+        assert L["fest_text"] == "MAINSTAGE"
+
+    def test_stage_subline_suppressed_when_stage_fills_slot(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A", festival="", date="", stage="Mainstage", venue="", size=1000,
+        )
+        assert L["stage_parts"] == [], (
+            "stage must not render twice when it filled the festival slot"
+        )
+
+    def test_stage_subline_kept_when_festival_fills_slot(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A",
+            festival="Ultra",
+            date="",
+            stage="Mainstage",
+            venue="",
+            size=1000,
+        )
+        assert L["fest_text"] == "ULTRA"
+        assert L["stage_parts"] == ["Mainstage"]
+
+    def test_stage_subline_kept_when_venue_fills_slot(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A",
+            festival="",
+            date="",
+            stage="Mainstage",
+            venue="Red Rocks",
+            size=1000,
+        )
+        assert L["fest_text"] == "RED ROCKS"
+        assert L["stage_parts"] == ["Mainstage"]
+
+    def test_all_empty_leaves_slot_blank(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A", festival="", date="", stage="", venue="", size=1000,
+        )
+        assert L["fest_text"] == ""
+        assert L["fest_font"] is None
