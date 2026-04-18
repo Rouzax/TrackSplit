@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Artist canonical-name resolution was non-deterministic when `dj_cache.json` and `artists.json` disagreed on the casing of a canonical name (for example, `"AFROJACK"` vs `"Afrojack"`). Both casings were inserted as canonical values, and the fallback resolver iterated them via `set(...)`, whose hash-randomized ordering changed between Python processes. Symptom: affected albums were regenerated on every rerun with a log line such as `regenerate ...: tag 'artist' changed ('AFROJACK' -> 'Afrojack')`. The fix replaces `set(...)` with `dict.fromkeys(...)`, preserving insertion order so `dj_cache.json` (loaded first) consistently wins. Users with conflicting configs now get a stable canonical on every run, but should still reconcile the two files to choose the casing they actually want.
+
 ## [0.6.4] - 2026-04-18
 
 ### Added

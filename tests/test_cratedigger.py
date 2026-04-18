@@ -170,6 +170,23 @@ class TestResolveArtist:
         # Unknown artist with no near match returns unchanged.
         assert cfg.resolve_artist("Kolsch") == "Kolsch"
 
+    def test_canonical_fallback_is_deterministic_on_conflicting_configs(self):
+        # Real-world scenario: dj_cache.json has {"name": "AFROJACK"} with
+        # aliases NLW/Kapuchon, while artists.json also carries an "Afrojack"
+        # canonical via its own alias. Both "AFROJACK" and "Afrojack" end up
+        # as canonical values, folding to the same diacritics-insensitive
+        # key. load_config inserts dj_cache entries before artists.json, so
+        # the first-inserted canonical ("AFROJACK") must win every run.
+        # Iterating with set() makes this non-deterministic because string
+        # hashing is randomized per-process; the resolver must preserve
+        # insertion order instead.
+        cfg = CrateDiggerConfig(artist_aliases={
+            "NLW": "AFROJACK",
+            "Kapuchon": "AFROJACK",
+            "SomeOtherAlias": "Afrojack",
+        })
+        assert cfg.resolve_artist("Afrojack") == "AFROJACK"
+
 
 class TestLookupMbid:
     def test_direct_hit(self, cfg):

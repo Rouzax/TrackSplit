@@ -192,7 +192,12 @@ class CrateDiggerConfig:
         for alias, canon in self.artist_aliases.items():
             if _strip_diacritics(alias).lower() == folded:
                 return canon
-        for canon in set(self.artist_aliases.values()):
+        # dict.fromkeys preserves insertion order and deduplicates, so the
+        # first-loaded canonical wins when configs disagree on casing
+        # (e.g. dj_cache has "AFROJACK" and artists.json has "Afrojack"
+        # both folding to "afrojack"). set() iteration is hash-randomized
+        # per-process and would flip-flop across runs.
+        for canon in dict.fromkeys(self.artist_aliases.values()):
             if _strip_diacritics(canon).lower() == folded:
                 return canon
         return name
