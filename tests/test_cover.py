@@ -176,6 +176,36 @@ class TestComposeCover:
         img = Image.open(io.BytesIO(result))
         assert img.size == (1000, 1000)
 
+    def test_multi_artist_produces_multi_line_block(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="Martin Garrix & Alesso",
+            festival="Ultra",
+            date="",
+            stage="",
+            venue="",
+            size=1000,
+        )
+        assert L["artist_lines"] == ["MARTIN GARRIX", "& ALESSO"]
+        # All lines share one font.
+        assert L["artist_font"] is not None
+        # Block sits above the accent rail.
+        assert L["artist_block_top"] + L["artist_block_h"] <= L["line_y"]
+
+    def test_single_artist_single_line_block(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="Hardwell",
+            festival="Ultra",
+            date="",
+            stage="",
+            venue="",
+            size=1000,
+        )
+        assert L["artist_lines"] == ["HARDWELL"]
+
     def test_layout_no_overlap_no_overflow(self):
         """Worst-case text must sit below the photo and stay within canvas."""
         from tracksplit.cover import _layout_album_cover
@@ -191,8 +221,8 @@ class TestComposeCover:
         # Artist text must land within the fade/gradient zone, i.e. below
         # the photo's opaque region.
         photo_fade_start = int(L["photo_h"] * 0.60)
-        assert L["artist_y"] >= photo_fade_start, (
-            f"artist text overlaps opaque photo: artist_y={L['artist_y']} "
+        assert L["artist_block_top"] >= photo_fade_start, (
+            f"artist text overlaps opaque photo: artist_block_top={L['artist_block_top']} "
             f"< fade_start={photo_fade_start}"
         )
         assert L["final_cursor_y"] <= L["size"] - L["bottom_margin"], (

@@ -439,11 +439,18 @@ def _layout_album_cover(
     PAD_DATE_TO_DETAIL = int(14 * s)
     PAD_DETAIL_LINES = int(8 * s)
 
-    artist_text = artist.upper()
+    PAD_ARTIST_LINES = int(6 * s)
+    artist_lines = [line.upper() for line in split_artist(artist)]
+    # Size the shared font to the widest line so all lines align visually.
+    longest = max(artist_lines, key=len) if artist_lines else ""
     artist_font = _auto_fit(
-        artist_text, True, max_text_w, start=int(100 * s), minimum=int(54 * s)
+        longest, True, max_text_w, start=int(100 * s), minimum=int(54 * s)
     )
-    artist_h = _font_height(artist_font)
+    line_h_artist = _font_height(artist_font)
+    artist_block_h = (
+        len(artist_lines) * line_h_artist
+        + max(0, len(artist_lines) - 1) * PAD_ARTIST_LINES
+    )
 
     fest_text = festival.upper() if festival else ""
     fest_font = None
@@ -476,7 +483,7 @@ def _layout_album_cover(
     # Line is pinned so the accent rail sits at the same Y on every cover.
     line_y = int(720 * s)
 
-    artist_y = line_y - PAD_LINE_TO_ARTIST - artist_h
+    artist_block_top = line_y - PAD_LINE_TO_ARTIST - artist_block_h
 
     # Final cursor check after placement.
     cursor_y = line_y + line_h + PAD_LINE_TO_FEST
@@ -489,9 +496,12 @@ def _layout_album_cover(
 
     return {
         "size": size,
-        "artist_text": artist_text,
+        "artist_lines": artist_lines,
         "artist_font": artist_font,
-        "artist_y": artist_y,
+        "artist_line_h": line_h_artist,
+        "artist_pad_lines": PAD_ARTIST_LINES,
+        "artist_block_top": artist_block_top,
+        "artist_block_h": artist_block_h,
         "photo_h": photo_h,
         "line_y": line_y,
         "line_h": line_h,
