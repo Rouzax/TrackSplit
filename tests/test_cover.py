@@ -20,6 +20,7 @@ from tracksplit.cover import (
     find_dj_artwork,
     format_date_display,
     get_accent_color,
+    split_artist,
 )
 
 
@@ -96,6 +97,40 @@ class TestFormatDateDisplay:
         result = format_date_display("2026-03")
         assert isinstance(result, str)
         assert len(result) > 0
+
+
+class TestSplitArtist:
+    def test_single_name(self):
+        assert split_artist("Hardwell") == ["Hardwell"]
+
+    def test_single_ampersand(self):
+        assert split_artist("Martin Garrix & Alesso") == ["Martin Garrix", "& Alesso"]
+
+    def test_multiple_ampersands(self):
+        result = split_artist("Axwell & Sebastian Ingrosso & Steve Angello")
+        assert result == ["Axwell", "& Sebastian Ingrosso", "& Steve Angello"]
+
+    def test_b2b(self):
+        assert split_artist("Adam Beyer B2B Cirez D") == ["Adam Beyer", "B2B Cirez D"]
+
+    def test_vs(self):
+        assert split_artist("Armin VS Vini Vici") == ["Armin", "VS Vini Vici"]
+
+    def test_x(self):
+        assert split_artist("Sub Focus X Dimension") == ["Sub Focus", "X Dimension"]
+
+    def test_parenthetical(self):
+        result = split_artist("Everything Always (Dom Dolla & John Summit)")
+        assert result == ["Everything Always", "Dom Dolla & John Summit"]
+
+    def test_case_insensitive_connectors(self):
+        assert split_artist("Artist1 b2b Artist2") == ["Artist1", "b2b Artist2"]
+
+    def test_embedded_ampersand_no_spaces_not_split(self):
+        assert split_artist("AC&DC") == ["AC&DC"]
+
+    def test_empty_string(self):
+        assert split_artist("") == [""]
 
 
 class TestComposeCover:

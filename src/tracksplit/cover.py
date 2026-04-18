@@ -5,6 +5,7 @@ import io
 import json
 import logging
 import math
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -42,6 +43,48 @@ def _font_height(font: ImageFont.FreeTypeFont | ImageFont.ImageFont) -> int:
     except AttributeError:
         bbox = font.getbbox("Ay")
         return int(bbox[3] - bbox[1])
+
+
+def split_artist(name: str) -> list[str]:
+    """Split a multi-artist credit into one display line per artist.
+
+    Rules (in priority order):
+    1. "Act Name (Artist & Artist)" -> ["Act Name", "Artist & Artist"]
+    2. One or more connectors (" & ", " B2B ", " VS ", " X ", case-insensitive):
+       one line per artist segment, connectors kept on subsequent lines.
+    3. No connector: single-element list with the original name.
+
+    No group protection: users who want a duo kept on one line should
+    alias it to a short canonical form via the artist_aliases config.
+    """
+    paren_match = re.match(r"^(.+?)\s*\((.+)\)\s*$", name)
+    if paren_match:
+        return [paren_match.group(1).strip(), paren_match.group(2).strip()]
+
+    upper = name.upper()
+    splits: list[tuple[int, str]] = []
+    for sep in (" & ", " B2B ", " VS ", " X "):
+        start = 0
+        while True:
+            idx = upper.find(sep, start)
+            if idx == -1:
+                break
+            splits.append((idx, sep))
+            start = idx + len(sep)
+
+    if not splits:
+        return [name]
+    splits.sort()
+
+    if len(splits) == 1:
+        idx, _sep = splits[0]
+        return [name[:idx].strip(), name[idx:].strip()]
+
+    lines = [name[: splits[0][0]].strip()]
+    for i, (idx, _sep) in enumerate(splits):
+        end = splits[i + 1][0] if i + 1 < len(splits) else len(name)
+        lines.append(name[idx:end].strip())
+    return lines
 
 
 def _auto_fit(
