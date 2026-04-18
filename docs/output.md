@@ -79,7 +79,17 @@ This file is always created.
 
 **Multi-artist names break across lines.** If the artist field contains ` & `, ` B2B `, ` VS `, or ` X ` (with spaces around the connector, case-insensitive), the cover stacks one artist per line with the connector carried to each subsequent line, so a three-way B2B like `"Axwell & Sebastian Ingrosso & Steve Angello"` renders as three stacked lines. The shared font is sized to fit the longest line so the stack stays visually aligned. A parenthetical credit like `"Everything Always (Dom Dolla & John Summit)"` splits into the act on the first line and the inner artists on the second.
 
-**Keeping a group name on one line.** Some duos and trios ("Dimitri Vegas & Like Mike", "Swedish House Mafia") read best as a single unit. TrackSplit does not detect these automatically; it splits on any ` & `. To keep a group on one line, add an entry to CrateDigger's `artist_aliases` (see [CrateDigger cache reuse](#cratedigger-cache-reuse)) that maps the long form to a short canonical form such as `"DVLM"`. The short form renders on one line at a larger font, which also stays readable on small thumbnails in Kodi or Jellyfin.
+**Keeping a group name on one line.** Some duos and trios ("Dimitri Vegas & Like Mike", "Swedish House Mafia") read best as a single unit. TrackSplit does not detect these automatically; it splits on any ` & `. To keep a group on one line, add an alias in `~/.cratedigger/artists.json` that maps the long form to a short canonical form. The file uses `{canonical: [aliases]}` shape:
+
+```json
+{
+  "aliases": {
+    "DVLM": ["Dimitri Vegas & Like Mike"]
+  }
+}
+```
+
+With this entry, any track tagged `Dimitri Vegas & Like Mike` resolves to `DVLM` before the cover is drawn, so the name renders on one line at a larger font and stays readable on small thumbnails in Kodi or Jellyfin. The alias also affects the artist folder name, the `ALBUMARTIST` tag, and DJ artwork lookup (all three use the canonical name), so picking a short form you are happy to see elsewhere matters.
 
 **Festival accent fallback.** The line directly below the accent rail shows the festival name when one is present. If there is no festival, TrackSplit falls back to the venue, then to the first comma-separated segment of the stage, then leaves the slot empty. When stage is what fills the accent line, the separate stage subline below is suppressed so the same text does not appear twice. Whitespace-only festival, venue, or stage values are treated as empty and fall through the chain.
 
