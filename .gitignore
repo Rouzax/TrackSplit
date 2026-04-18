@@ -14,3 +14,6 @@ CLAUDE.md
 
 # Internal plans
 docs/plans/
+
+# Git worktrees
+.worktrees/
