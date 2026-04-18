@@ -39,6 +39,22 @@ class TestStatusText:
         plain = t.plain
         assert "ffprobe failed" in plain
 
+    def test_brackets_in_name_not_escaped(self):
+        name = "2025 - Afrojack [kineticFIELD].mkv"
+        for status in ("done", "skipped", "error", "cancelled"):
+            t = status_text(status, name)
+            assert name in t.plain
+            assert "\\[" not in t.plain
+            assert "\\]" not in t.plain
+
+    def test_brackets_in_detail_not_escaped(self):
+        detail = "missing [audio] stream"
+        for status in ("skipped", "error", "cancelled"):
+            t = status_text(status, "video.mkv", detail=detail)
+            assert detail in t.plain
+            assert "\\[" not in t.plain
+            assert "\\]" not in t.plain
+
 
 class TestSummaryPanel:
     def test_all_success(self):

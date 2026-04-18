@@ -29,22 +29,22 @@ def status_text(status: str, name: str, detail: str = "") -> Text:
     text = Text()
     if status == "done":
         text.append("  done  ", style="green")
-        text.append(escape(name))
+        text.append(name)
     elif status == "skipped":
         text.append("  skip  ", style="dim")
-        text.append(escape(name))
+        text.append(name)
         if detail:
-            text.append(f" ({escape(detail)})", style="dim")
+            text.append(f" ({detail})", style="dim")
     elif status == "error":
         text.append("  fail  ", style="red")
-        text.append(escape(name))
+        text.append(name)
         if detail:
-            text.append(f" ({escape(detail)})", style="red")
+            text.append(f" ({detail})", style="red")
     elif status == "cancelled":
         text.append("  canc  ", style="yellow")
-        text.append(escape(name))
+        text.append(name)
         if detail:
-            text.append(f" ({escape(detail)})", style="yellow")
+            text.append(f" ({detail})", style="yellow")
     return text
 
 

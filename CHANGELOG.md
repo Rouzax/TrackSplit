@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Artist canonical-name resolution was non-deterministic when `dj_cache.json` and `artists.json` disagreed on the casing of a canonical name (for example, `"AFROJACK"` vs `"Afrojack"`). Both casings were inserted as canonical values, and the fallback resolver iterated them via `set(...)`, whose hash-randomized ordering changed between Python processes. Symptom: affected albums were regenerated on every rerun with a log line such as `regenerate ...: tag 'artist' changed ('AFROJACK' -> 'Afrojack')`. The fix replaces `set(...)` with `dict.fromkeys(...)`, preserving insertion order so `dj_cache.json` (loaded first) consistently wins. Users with conflicting configs now get a stable canonical on every run, but should still reconcile the two files to choose the casing they actually want.
+- Status lines in the terminal rendered backslashes before `[` and `]` in filenames, for example `2025 - Afrojack - EDC Las Vegas \[kineticFIELD\].mkv` instead of `2025 - Afrojack - EDC Las Vegas [kineticFIELD].mkv`. The cause was `rich.markup.escape()` being applied to name and detail strings passed to `Text.append()`, which does not parse markup and does not need escaping. Brackets in filenames now display correctly across all status lines (done, skipped, error, cancelled).
 
 ## [0.6.4] - 2026-04-18
 
