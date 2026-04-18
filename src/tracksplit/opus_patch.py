@@ -36,7 +36,7 @@ _OGG_PAGE_HEADER_LEN = 27
 _CRC_FIELD_OFFSET = 22
 
 
-def _first_page_length(data: bytes) -> int:
+def _first_page_length(data: bytes | bytearray) -> int:
     if data[:4] != b"OggS":
         raise ValueError("Not an Ogg file (missing 'OggS' capture pattern)")
     nsegs = data[26]
@@ -44,19 +44,19 @@ def _first_page_length(data: bytes) -> int:
     return seg_table_end + sum(data[_OGG_PAGE_HEADER_LEN:seg_table_end])
 
 
-def _opus_head_offset(data: bytes, page_len: int) -> int:
+def _opus_head_offset(data: bytes | bytearray, page_len: int) -> int:
     i = data.find(b"OpusHead", 0, page_len)
     if i < 0:
         raise ValueError("OpusHead not found in first Ogg page")
     return i
 
 
-def _check_mapping_family(data: bytes, opus_head: int) -> None:
+def _check_mapping_family(data: bytes | bytearray, opus_head: int) -> None:
     family = data[opus_head + 18]
     if family != 0:
         raise ValueError(
             f"Unsupported OpusHead channel mapping family {family} "
-            "(only family 0, mono/stereo, is supported)",
+            "(only family 0, mono/stereo, is supported)"
         )
 
 
@@ -77,9 +77,9 @@ def patch_opus_pre_skip(path: Path, new_pre_skip: int) -> None:
     if not 0 <= new_pre_skip <= 0xFFFF:
         raise ValueError(f"pre_skip must fit in uint16, got {new_pre_skip}")
     data = bytearray(path.read_bytes())
-    page_len = _first_page_length(bytes(data))
-    head = _opus_head_offset(bytes(data), page_len)
-    _check_mapping_family(bytes(data), head)
+    page_len = _first_page_length(data)
+    head = _opus_head_offset(data, page_len)
+    _check_mapping_family(data, head)
 
     data[head + 10:head + 12] = new_pre_skip.to_bytes(2, "little")
     data[_CRC_FIELD_OFFSET:_CRC_FIELD_OFFSET + 4] = b"\x00\x00\x00\x00"
