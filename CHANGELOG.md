@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-04-18
+
+### Added
+
+- Multi-line artist rendering on `cover.jpg`. When the artist field contains ` & `, ` B2B `, ` VS `, or ` X ` (with surrounding spaces), each artist renders on its own line, with the connector carried to each subsequent line. The parenthetical form `"Act (A & B)"` splits into the act on line 1 and the inner artists on line 2. The shared font is sized to fit the longest line so the stack stays aligned. Readability on small Kodi/Jellyfin thumbnails is preserved because each line is shorter and fits at a larger font size.
+- Festival accent-line fallback on `cover.jpg`. The line just below the accent rail previously rendered only when a festival name was present. It now falls back to venue, then to the first comma segment of stage. When stage fills the slot, the separate stage subline below is suppressed so the same text does not appear twice. Whitespace-only festival, venue, or stage values are treated as empty and fall through the chain.
+
+### Changed
+
+- Stage rendering is symmetric regardless of role. When stage fills the festival accent slot, it uses the same first-comma-segment collapse as the stage subline, so `"Main Stage, Boom, Belgium"` renders as `"Main Stage"` whether it lands in the accent slot or the subline.
+
+### Docs
+
+- `docs/output.md`: `cover.jpg` section expanded to describe layout, multi-artist line breaks, the group-name short-alias workaround, and the festival accent fallback chain.
+
 ## [0.6.3] - 2026-04-16
 
 ### Changed

@@ -75,6 +75,14 @@ The album cover image, placed at the album level. It is also embedded inside eve
 
 This file is always created.
 
+**What's on the cover:** the artist name above an accent rail, with the festival (or closest available location) below the rail, then the date, then the stage. The accent color is sampled from the background image.
+
+**Multi-artist names break across lines.** If the artist field contains ` & `, ` B2B `, ` VS `, or ` X ` (with spaces around the connector, case-insensitive), the cover stacks one artist per line with the connector carried to each subsequent line, so a three-way B2B like `"Axwell & Sebastian Ingrosso & Steve Angello"` renders as three stacked lines. The shared font is sized to fit the longest line so the stack stays visually aligned. A parenthetical credit like `"Everything Always (Dom Dolla & John Summit)"` splits into the act on the first line and the inner artists on the second.
+
+**Keeping a group name on one line.** Some duos and trios ("Dimitri Vegas & Like Mike", "Swedish House Mafia") read best as a single unit. TrackSplit does not detect these automatically; it splits on any ` & `. To keep a group on one line, add an entry to CrateDigger's `artist_aliases` (see [CrateDigger cache reuse](#cratedigger-cache-reuse)) that maps the long form to a short canonical form such as `"DVLM"`. The short form renders on one line at a larger font, which also stays readable on small thumbnails in Kodi or Jellyfin.
+
+**Festival accent fallback.** The line directly below the accent rail shows the festival name when one is present. If there is no festival, TrackSplit falls back to the venue, then to the first comma-separated segment of the stage, then leaves the slot empty. When stage is what fills the accent line, the separate stage subline below is suppressed so the same text does not appear twice. Whitespace-only festival, venue, or stage values are treated as empty and fall through the chain.
+
 ### `.tracksplit_manifest.json`
 
 A small record file TrackSplit uses internally. It stores a fingerprint of the source file and the settings used, so TrackSplit can detect on the next run whether anything changed and skip the album if not.
