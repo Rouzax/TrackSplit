@@ -15,6 +15,7 @@ from tracksplit.probe import (
     is_video_file,
     get_audio_codec,
     is_lossless_codec,
+    get_opus_packet_duration_ms,
     LOSSLESS_CODECS,
     VIDEO_EXTENSIONS,
 )
@@ -489,3 +490,45 @@ class TestParseTagsAlbumArtists:
         assert tags["albumartist_display"] == ""
         assert tags["albumartists"] == []
         assert tags["albumartist_mbids"] == []
+
+
+class TestGetOpusPacketDurationMs:
+    def test_all_packets_agree(self, mocker):
+        fake_stdout = (
+            "[PACKET]\nduration_time=0.020000\n[/PACKET]\n"
+            "[PACKET]\nduration_time=0.020000\n[/PACKET]\n"
+            "[PACKET]\nduration_time=0.020000\n[/PACKET]\n"
+        )
+        mocker.patch(
+            "tracksplit.probe.subprocess.run",
+            return_value=mocker.Mock(stdout=fake_stdout, returncode=0),
+        )
+        assert get_opus_packet_duration_ms(Path("/tmp/x.mkv")) == 20
+
+    def test_packets_disagree_returns_none(self, mocker):
+        fake_stdout = (
+            "[PACKET]\nduration_time=0.020000\n[/PACKET]\n"
+            "[PACKET]\nduration_time=0.060000\n[/PACKET]\n"
+        )
+        mocker.patch(
+            "tracksplit.probe.subprocess.run",
+            return_value=mocker.Mock(stdout=fake_stdout, returncode=0),
+        )
+        assert get_opus_packet_duration_ms(Path("/tmp/x.mkv")) is None
+
+    def test_empty_output_returns_none(self, mocker):
+        mocker.patch(
+            "tracksplit.probe.subprocess.run",
+            return_value=mocker.Mock(stdout="", returncode=0),
+        )
+        assert get_opus_packet_duration_ms(Path("/tmp/x.mkv")) is None
+
+    def test_60ms_packets(self, mocker):
+        fake_stdout = (
+            "[PACKET]\nduration_time=0.060000\n[/PACKET]\n" * 5
+        )
+        mocker.patch(
+            "tracksplit.probe.subprocess.run",
+            return_value=mocker.Mock(stdout=fake_stdout, returncode=0),
+        )
+        assert get_opus_packet_duration_ms(Path("/tmp/x.mkv")) == 60
