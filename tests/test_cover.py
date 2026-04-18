@@ -595,3 +595,33 @@ class TestFestivalFallback:
         )
         assert L["fest_text"] == ""
         assert L["fest_font"] is None
+
+    def test_stage_with_commas_collapses_in_accent_slot(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A",
+            festival="",
+            date="",
+            stage="Main, Balcony",
+            venue="",
+            size=1000,
+        )
+        # Accent slot renders the collapsed first segment, matching the
+        # subline collapse rule so the same stage input looks the same
+        # wherever it renders.
+        assert L["fest_text"] == "MAIN"
+        assert L["stage_parts"] == []
+
+    def test_whitespace_only_festival_falls_through_to_venue(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A",
+            festival="   ",
+            date="",
+            stage="",
+            venue="Red Rocks",
+            size=1000,
+        )
+        assert L["fest_text"] == "RED ROCKS"

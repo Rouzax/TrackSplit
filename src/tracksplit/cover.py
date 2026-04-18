@@ -439,6 +439,11 @@ def _layout_album_cover(
     PAD_DATE_TO_DETAIL = int(14 * s)
     PAD_DETAIL_LINES = int(8 * s)
 
+    festival = (festival or "").strip()
+    venue = (venue or "").strip()
+    stage = (stage or "").strip()
+    first_stage = stage.split(",")[0].strip() if stage else ""
+
     PAD_ARTIST_LINES = int(6 * s)
     artist_lines = [line.upper() for line in split_artist(artist)]
     # Size the shared font to the widest line so all lines align visually.
@@ -452,11 +457,11 @@ def _layout_album_cover(
         + max(0, len(artist_lines) - 1) * PAD_ARTIST_LINES
     )
 
-    # Festival accent slot: festival > venue > stage. Stops at the first
-    # non-empty. We track which source filled it so the stage subline
-    # below can be suppressed if stage is what we drew up top.
-    fest_raw = festival or venue or stage or ""
-    fest_source_is_stage = (not festival) and (not venue) and bool(stage)
+    # Festival accent slot: festival > venue > stage (first comma segment).
+    # Stops at the first non-empty. We track which source filled it so the
+    # stage subline below can be suppressed if stage is what we drew up top.
+    fest_raw = festival or venue or first_stage or ""
+    fest_source_is_stage = (not festival) and (not venue) and bool(first_stage)
     fest_text = fest_raw.upper() if fest_raw else ""
     fest_font = None
     fest_h = 0
@@ -480,7 +485,6 @@ def _layout_album_cover(
     if fest_source_is_stage:
         stage_parts: list[str] = []
     else:
-        first_stage = (stage or "").split(",")[0].strip()
         stage_parts = [first_stage] if first_stage else []
     stage_fonts: list = []
     stage_heights: list[int] = []
