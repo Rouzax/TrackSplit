@@ -19,7 +19,11 @@ _CRC_TABLE: list[int] = _build_table()
 
 
 def ogg_crc(data: bytes) -> int:
-    """Compute the Ogg page CRC (CRC-32/MPEG-2) over `data`."""
+    """Compute the Ogg page CRC over `data`.
+
+    CRC-32 with polynomial 0x04C11DB7, init 0, no reflection, no xorout
+    (RFC 3533).
+    """
     crc = 0
     for b in data:
         crc = ((crc << 8) & 0xFFFFFFFF) ^ _CRC_TABLE[((crc >> 24) ^ b) & 0xFF]
