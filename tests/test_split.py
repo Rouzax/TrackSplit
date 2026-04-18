@@ -181,3 +181,128 @@ class TestSplitTracks:
         # Check from_video flag produces -vn
         first_cmd = mock_run.call_args_list[0][0][0]
         assert "-vn" in first_cmd
+
+
+from tracksplit.models import TrackMeta
+
+
+class TestSplitTracksOpusPrefix:
+    def _tracks(self):
+        return [
+            TrackMeta(number=1, title="One", start=0.0, end=60.0),
+            TrackMeta(number=2, title="Two", start=60.0, end=180.0),
+            TrackMeta(number=3, title="Three", start=180.0, end=300.0),
+        ]
+
+    def test_prefix_offset_for_tracks_two_and_three(self, tmp_path, mocker):
+        from tracksplit.split import split_tracks
+
+        audio = tmp_path / "src.mkv"
+        audio.touch()
+        mock_run = mocker.patch("tracksplit.split.tracked_run")
+        mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
+
+        split_tracks(
+            audio, self._tracks(), tmp_path / "out",
+            ext=".opus", codec_mode="copy", from_video=True,
+            opus_packet_ms=20,
+        )
+
+        cmds = [c.args[0] for c in mock_run.call_args_list]
+        assert "0.0" in cmds[0]
+        assert "59.98" in cmds[1]
+        assert "179.98" in cmds[2]
+
+        assert mock_patch.call_count == 2
+        for c in mock_patch.call_args_list:
+            assert c.args[1] == 960
+
+    def test_no_offset_when_packet_ms_is_none(self, tmp_path, mocker):
+        from tracksplit.split import split_tracks
+
+        audio = tmp_path / "src.mkv"
+        audio.touch()
+        mock_run = mocker.patch("tracksplit.split.tracked_run")
+        mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
+
+        split_tracks(
+            audio, self._tracks(), tmp_path / "out",
+            ext=".opus", codec_mode="copy", from_video=True,
+            opus_packet_ms=None,
+        )
+
+        cmds = [c.args[0] for c in mock_run.call_args_list]
+        assert "60.0" in cmds[1]
+        assert "180.0" in cmds[2]
+        assert mock_patch.call_count == 0
+
+    def test_no_offset_when_packet_ms_not_twenty(self, tmp_path, mocker):
+        from tracksplit.split import split_tracks
+
+        audio = tmp_path / "src.mkv"
+        audio.touch()
+        mock_run = mocker.patch("tracksplit.split.tracked_run")
+        mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
+
+        split_tracks(
+            audio, self._tracks(), tmp_path / "out",
+            ext=".opus", codec_mode="copy", from_video=True,
+            opus_packet_ms=60,
+        )
+
+        assert mock_patch.call_count == 0
+
+    def test_no_offset_for_libopus_mode(self, tmp_path, mocker):
+        from tracksplit.split import split_tracks
+
+        audio = tmp_path / "src.mkv"
+        audio.touch()
+        mock_run = mocker.patch("tracksplit.split.tracked_run")
+        mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
+
+        split_tracks(
+            audio, self._tracks(), tmp_path / "out",
+            ext=".opus", codec_mode="libopus", from_video=True,
+            opus_packet_ms=20,
+        )
+
+        assert mock_patch.call_count == 0
+
+    def test_no_offset_for_flac(self, tmp_path, mocker):
+        from tracksplit.split import split_tracks
+
+        audio = tmp_path / "src.flac"
+        audio.touch()
+        mock_run = mocker.patch("tracksplit.split.tracked_run")
+        mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
+
+        split_tracks(
+            audio, self._tracks(), tmp_path / "out",
+            ext=".flac", codec_mode="copy",
+            opus_packet_ms=20,
+        )
+
+        assert mock_patch.call_count == 0
+
+    def test_defensive_guard_negative_start(self, tmp_path, mocker):
+        from tracksplit.split import split_tracks
+
+        audio = tmp_path / "src.mkv"
+        audio.touch()
+        mock_run = mocker.patch("tracksplit.split.tracked_run")
+        mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
+
+        tracks = [
+            TrackMeta(number=1, title="One", start=0.0, end=0.01),
+            TrackMeta(number=2, title="Two", start=0.01, end=60.0),
+        ]
+
+        split_tracks(
+            audio, tracks, tmp_path / "out",
+            ext=".opus", codec_mode="copy", from_video=True,
+            opus_packet_ms=20,
+        )
+
+        cmds = [c.args[0] for c in mock_run.call_args_list]
+        assert "0.01" in cmds[1]
+        assert mock_patch.call_count == 0

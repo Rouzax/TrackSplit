@@ -7,6 +7,7 @@ from pathlib import Path
 
 from tracksplit.metadata import safe_filename
 from tracksplit.models import TrackMeta
+from tracksplit.opus_patch import patch_opus_pre_skip
 from tracksplit.subprocess_utils import CancelledError, tracked_run
 from tracksplit.tools import get_tool
 
@@ -70,14 +71,27 @@ def split_tracks(
     from_video: bool = False,
     on_progress: Callable[[str, int, int], None] | None = None,
     cancel_event: threading.Event | None = None,
+    opus_packet_ms: int | None = None,
 ) -> list[Path]:
     """Split audio into individual track files.
 
     Creates output_dir if it does not exist. For each track, the end time
-    is the next track's start time, or None for the last track.
-    Returns the list of output file paths.
+    is the next track's start time, or None for the last track. Returns
+    the list of output file paths.
+
+    When ``ext == ".opus"``, ``codec_mode == "copy"``, and
+    ``opus_packet_ms == 20``, every track after the first is cut 20 ms
+    earlier than its ``track.start`` and its OpusHead pre_skip is
+    rewritten to 960. The decoder uses the extra prefix packet to warm
+    up and discards it via pre_skip, eliminating the short click at
+    track boundaries in gapless-aware players.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
+    apply_opus_prefix = (
+        ext == ".opus"
+        and codec_mode == "copy"
+        and opus_packet_ms == 20
+    )
 
     total = len(tracks)
     output_paths: list[Path] = []
@@ -91,17 +105,27 @@ def split_tracks(
         filename = build_track_filename(track, ext=ext)
         output_path = output_dir / filename
 
-        # End time is next track's start, or None for the last track
         if i + 1 < len(tracks):
             end = tracks[i + 1].start
         else:
             end = None
 
+        use_prefix = (
+            apply_opus_prefix
+            and i > 0
+            and track.start - 0.020 >= 0.0
+        )
+        start = track.start - 0.020 if use_prefix else track.start
+
         cmd = build_split_command(
-            full_flac, output_path, track.start, end,
+            full_flac, output_path, start, end,
             codec_mode=codec_mode, from_video=from_video,
         )
         tracked_run(cmd, cancel_event=cancel_event)
+
+        if use_prefix:
+            patch_opus_pre_skip(output_path, 960)
+
         output_paths.append(output_path)
 
     return output_paths
