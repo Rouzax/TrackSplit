@@ -1041,3 +1041,79 @@ class TestRefreshArtistCover:
                 artist, artist_name="A", dj_artwork_data=b"x",
                 compose=lambda **kw: b"IGNORED",
             )
+
+
+class TestResolveOpusCopyPacketMs:
+    def test_20ms_source_keeps_copy_mode(self, mocker):
+        from tracksplit import pipeline
+
+        mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms", return_value=20,
+        )
+        codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+            audio_path=Path("/tmp/src.mkv"),
+            ext=".opus",
+            codec_mode="copy",
+        )
+        assert codec_mode == "copy"
+        assert packet_ms == 20
+
+    def test_60ms_source_escalates_to_libopus(self, mocker, caplog):
+        from tracksplit import pipeline
+
+        mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms", return_value=60,
+        )
+        with caplog.at_level("WARNING", logger="tracksplit.pipeline"):
+            codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+                audio_path=Path("/tmp/src.mkv"),
+                ext=".opus",
+                codec_mode="copy",
+            )
+        assert codec_mode == "libopus"
+        assert packet_ms is None
+        assert any("frame duration" in r.message for r in caplog.records)
+
+    def test_probe_returns_none_escalates(self, mocker):
+        from tracksplit import pipeline
+
+        mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms", return_value=None,
+        )
+        codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+            audio_path=Path("/tmp/src.mkv"),
+            ext=".opus",
+            codec_mode="copy",
+        )
+        assert codec_mode == "libopus"
+        assert packet_ms is None
+
+    def test_flac_passthrough_skips_probe(self, mocker):
+        from tracksplit import pipeline
+
+        mock_probe = mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms",
+        )
+        codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+            audio_path=Path("/tmp/src.flac"),
+            ext=".flac",
+            codec_mode="copy",
+        )
+        assert codec_mode == "copy"
+        assert packet_ms is None
+        mock_probe.assert_not_called()
+
+    def test_libopus_mode_passthrough_skips_probe(self, mocker):
+        from tracksplit import pipeline
+
+        mock_probe = mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms",
+        )
+        codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+            audio_path=Path("/tmp/src.mkv"),
+            ext=".opus",
+            codec_mode="libopus",
+        )
+        assert codec_mode == "libopus"
+        assert packet_ms is None
+        mock_probe.assert_not_called()
