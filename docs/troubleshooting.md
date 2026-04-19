@@ -137,6 +137,24 @@ On spinning disks or network shares, `--workers 1` is usually faster than the de
 
 ---
 
+## Short click or gap between tracks
+
+**What you see:** A brief click at the start of each non-first track, or a gap of 1-2 seconds, when playing Opus output.
+
+**Step 1: Check whether your player supports gapless playback.**
+
+The Jellyfin mobile app decodes tracks independently and does not support gapless playback. A 1-2s gap between tracks in that app is a player architecture limitation that no file-level change can remove. Use Symfonium, mpv, or another gapless-aware player if seamless playback matters to you. FLAC output is inherently gapless in any player that handles FLAC correctly.
+
+**Step 2: If your player is gapless-aware and a click is still audible, check whether the files were produced by version 0.6.5 or later.**
+
+Earlier versions did not insert the warmup frame, so the first window of each non-first track could lose audio and sometimes decoded as silence. Re-run TrackSplit on the source video to trigger a rebuild; the manifest staleness check will detect the outdated output and replace it.
+
+**Step 3: If the click persists on a gapless-aware player after rebuilding, gather diagnostic information.**
+
+Run `opusinfo` on a few consecutive output tracks and open an issue, including the `opusinfo` output, the exact player and version, and the output of `tracksplit --check`.
+
+---
+
 ## Cover art looks wrong or fonts are missing
 
 **What you see:** An error mentioning a missing font file, or generated artwork looks broken.

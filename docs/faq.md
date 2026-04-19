@@ -57,6 +57,14 @@ TrackSplit writes a multi-value `ARTISTS` tag listing every individual contribut
 
 If you upgraded TrackSplit and re-ran it against existing albums, trigger a library rescan in your music server so it picks up the updated tags.
 
+## Does TrackSplit produce gapless output?
+
+Yes, for both output formats, subject to player support.
+
+**FLAC:** gapless in any player that handles FLAC correctly.
+
+**Opus:** gapless in players that support gapless playback, such as Symfonium and mpv. TrackSplit inserts the necessary warmup frame and sets the correct `pre_skip` value so the decoder trims it cleanly at each boundary. The Jellyfin mobile app does not support gapless playback and introduces a 1-2s gap between tracks regardless of file content. That gap is a player-side limitation and cannot be fixed at the file level.
+
 ## How does TrackSplit differ from CrateDigger?
 
 They do different jobs and work best together. **CrateDigger** builds a video library: it identifies recordings, embeds chapter markers and metadata, generates posters, and syncs with Kodi. **TrackSplit** reads that video library and produces a parallel music library of tagged FLAC or Opus albums for music servers like Jellyfin and Lyrion.
