@@ -19,6 +19,12 @@ from tracksplit.tools import get_tool
 
 logger = logging.getLogger(__name__)
 
+# Bump this when compose_cover output changes (layout, padding, colors,
+# fonts, accent logic, gradient math, etc). TrackSplit uses the stored
+# vs current value of this constant to decide whether an existing album
+# needs a cover-only rebuild on the skip path.
+COVER_SCHEMA_VERSION = 1
+
 # ---------------------------------------------------------------------------
 # Font helpers
 # ---------------------------------------------------------------------------
