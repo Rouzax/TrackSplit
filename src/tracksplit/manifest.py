@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 ALBUM_MANIFEST_FILENAME = ".tracksplit_manifest.json"
 ARTIST_MANIFEST_FILENAME = ".tracksplit_artist.json"
 LEGACY_CHAPTER_CACHE_FILENAME = ".tracksplit_chapters.json"
-MANIFEST_SCHEMA = 1
+MANIFEST_SCHEMA = 2
 
 
 TAG_KEYS = (

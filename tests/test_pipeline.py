@@ -660,7 +660,7 @@ class TestProcessFileManifest:
         """When the album is unchanged but DJ artwork bytes differ, artist
         cover is rewritten during the skip path."""
         from tracksplit.manifest import (
-            ArtistManifest, artwork_sha256,
+            ArtistManifest, MANIFEST_SCHEMA, artwork_sha256,
             build_album_manifest, save_album_manifest, save_artist_manifest,
         )
         from tracksplit.pipeline import process_file
@@ -693,7 +693,7 @@ class TestProcessFileManifest:
         (artist_dir / "folder.jpg").write_bytes(b"OLD")
         (artist_dir / "artist.jpg").write_bytes(b"OLD")
         save_artist_manifest(artist_dir, ArtistManifest(
-            schema=1, artist="DJ X",
+            schema=MANIFEST_SCHEMA, artist="DJ X",
             dj_artwork_sha256=artwork_sha256(b"OLD_ARTWORK"),
         ))
 
@@ -928,7 +928,7 @@ class TestRefreshArtistCover:
 
     def test_skips_when_artwork_hash_unchanged(self, tmp_path):
         from tracksplit.manifest import (
-            ArtistManifest, artwork_sha256, save_artist_manifest,
+            ArtistManifest, MANIFEST_SCHEMA, artwork_sha256, save_artist_manifest,
         )
         from tracksplit.pipeline import refresh_artist_cover
         artist = tmp_path / "A"
@@ -938,7 +938,7 @@ class TestRefreshArtistCover:
         save_artist_manifest(
             artist,
             ArtistManifest(
-                schema=1, artist="A",
+                schema=MANIFEST_SCHEMA, artist="A",
                 dj_artwork_sha256=artwork_sha256(b"jpg1"),
             ),
         )
@@ -956,8 +956,8 @@ class TestRefreshArtistCover:
 
     def test_rewrites_when_artwork_hash_changes(self, tmp_path):
         from tracksplit.manifest import (
-            ArtistManifest, artwork_sha256, load_artist_manifest,
-            save_artist_manifest,
+            ArtistManifest, MANIFEST_SCHEMA, artwork_sha256,
+            load_artist_manifest, save_artist_manifest,
         )
         from tracksplit.pipeline import refresh_artist_cover
         artist = tmp_path / "A"
@@ -966,7 +966,7 @@ class TestRefreshArtistCover:
         save_artist_manifest(
             artist,
             ArtistManifest(
-                schema=1, artist="A",
+                schema=MANIFEST_SCHEMA, artist="A",
                 dj_artwork_sha256=artwork_sha256(b"old"),
             ),
         )
@@ -980,7 +980,7 @@ class TestRefreshArtistCover:
 
     def test_rewrites_when_jpg_missing_even_if_hash_matches(self, tmp_path):
         from tracksplit.manifest import (
-            ArtistManifest, artwork_sha256, save_artist_manifest,
+            ArtistManifest, MANIFEST_SCHEMA, artwork_sha256, save_artist_manifest,
         )
         from tracksplit.pipeline import refresh_artist_cover
         artist = tmp_path / "A"
@@ -988,7 +988,7 @@ class TestRefreshArtistCover:
         save_artist_manifest(
             artist,
             ArtistManifest(
-                schema=1, artist="A",
+                schema=MANIFEST_SCHEMA, artist="A",
                 dj_artwork_sha256=artwork_sha256(b"jpg1"),
             ),
         )
@@ -1041,3 +1041,79 @@ class TestRefreshArtistCover:
                 artist, artist_name="A", dj_artwork_data=b"x",
                 compose=lambda **kw: b"IGNORED",
             )
+
+
+class TestResolveOpusCopyPacketMs:
+    def test_20ms_source_keeps_copy_mode(self, mocker):
+        from tracksplit import pipeline
+
+        mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms", return_value=20,
+        )
+        codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+            audio_path=Path("/tmp/src.mkv"),
+            ext=".opus",
+            codec_mode="copy",
+        )
+        assert codec_mode == "copy"
+        assert packet_ms == 20
+
+    def test_60ms_source_escalates_to_libopus(self, mocker, caplog):
+        from tracksplit import pipeline
+
+        mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms", return_value=60,
+        )
+        with caplog.at_level("WARNING", logger="tracksplit.pipeline"):
+            codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+                audio_path=Path("/tmp/src.mkv"),
+                ext=".opus",
+                codec_mode="copy",
+            )
+        assert codec_mode == "libopus"
+        assert packet_ms is None
+        assert any("frame duration" in r.message for r in caplog.records)
+
+    def test_probe_returns_none_escalates(self, mocker):
+        from tracksplit import pipeline
+
+        mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms", return_value=None,
+        )
+        codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+            audio_path=Path("/tmp/src.mkv"),
+            ext=".opus",
+            codec_mode="copy",
+        )
+        assert codec_mode == "libopus"
+        assert packet_ms is None
+
+    def test_flac_passthrough_skips_probe(self, mocker):
+        from tracksplit import pipeline
+
+        mock_probe = mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms",
+        )
+        codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+            audio_path=Path("/tmp/src.flac"),
+            ext=".flac",
+            codec_mode="copy",
+        )
+        assert codec_mode == "copy"
+        assert packet_ms is None
+        mock_probe.assert_not_called()
+
+    def test_libopus_mode_passthrough_skips_probe(self, mocker):
+        from tracksplit import pipeline
+
+        mock_probe = mocker.patch.object(
+            pipeline, "get_opus_packet_duration_ms",
+        )
+        codec_mode, packet_ms = pipeline._resolve_opus_copy_packet_ms(
+            audio_path=Path("/tmp/src.mkv"),
+            ext=".opus",
+            codec_mode="libopus",
+        )
+        assert codec_mode == "libopus"
+        assert packet_ms is None
+        mock_probe.assert_not_called()

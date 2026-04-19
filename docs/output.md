@@ -93,6 +93,21 @@ With this entry, any track tagged `Dimitri Vegas & Like Mike` resolves to `DVLM`
 
 **Festival accent fallback.** The line directly below the accent rail shows the festival name when one is present. If there is no festival, TrackSplit falls back to the venue, then to the first comma-separated segment of the stage, then leaves the slot empty. When stage is what fills the accent line, the separate stage subline below is suppressed so the same text does not appear twice. Whitespace-only festival, venue, or stage values are treated as empty and fall through the chain.
 
+### Gapless playback
+
+FLAC output is inherently gapless: any player that handles FLAC correctly will move from one track to the next without a gap or click.
+
+Opus output is gapless in players that support gapless playback, such as Symfonium and mpv. TrackSplit achieves this by prepending two 20ms warmup frames (40ms total) to each track after the first and setting the `pre_skip` field in the Opus stream header to 1920, so the decoder discards the warmup cleanly and audio starts exactly at the chapter boundary.
+
+Two conditions are required for this path:
+
+- The source Opus stream uses 20ms frames (the default in Matroska files produced by CrateDigger).
+- The audio is mono or stereo (standard channel mapping family 0).
+
+When either condition is not met, TrackSplit falls back to re-encoding with libopus, which also produces gapless output but takes longer.
+
+Players that do not support gapless playback, such as the Jellyfin mobile app, will introduce a 1-2s gap between tracks regardless of file content. This is a player-side limitation that cannot be fixed at the file level.
+
 ### `.tracksplit_manifest.json`
 
 A small record file TrackSplit uses internally. It stores a fingerprint of the source file and the settings used, so TrackSplit can detect on the next run whether anything changed and skip the album if not.

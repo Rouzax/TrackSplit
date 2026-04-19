@@ -167,3 +167,35 @@ LOSSLESS_CODECS = {"flac", "alac", "pcm_s16le", "pcm_s24le", "pcm_s32le", "pcm_f
 def is_lossless_codec(codec: str) -> bool:
     """Check if a codec is lossless."""
     return codec in LOSSLESS_CODECS or codec.startswith("pcm_")
+
+
+def get_opus_packet_duration_ms(path: Path) -> int | None:
+    """Return packet duration in ms if the first 20 audio packets agree.
+
+    Returns None if packets disagree, the duration_time field is missing,
+    or ffprobe produces no output. Callers use this to decide whether the
+    Opus stream-copy path can safely apply the 20 ms prefix-frame fix.
+    """
+    cmd = [
+        get_tool("ffprobe"),
+        "-v", "error",
+        "-show_packets",
+        "-select_streams", "a:0",
+        "-read_intervals", "%+#20",
+        "-show_entries", "packet=duration_time",
+        "-of", "default=noprint_wrappers=1",
+        str(path),
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    durations_ms: set[int] = set()
+    for line in result.stdout.splitlines():
+        if not line.startswith("duration_time="):
+            continue
+        try:
+            seconds = float(line.split("=", 1)[1])
+        except ValueError:
+            return None
+        durations_ms.add(int(round(seconds * 1000)))
+    if len(durations_ms) != 1:
+        return None
+    return next(iter(durations_ms))

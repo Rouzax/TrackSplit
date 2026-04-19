@@ -39,6 +39,7 @@ from tracksplit.metadata import build_album_meta, safe_filename
 from tracksplit.models import AlbumMeta, Chapter, TrackMeta
 from tracksplit.probe import (
     detect_tier,
+    get_opus_packet_duration_ms,
     has_audio,
     is_video_file,
     parse_chapters,
@@ -361,6 +362,30 @@ def should_regenerate(
     return False
 
 
+def _resolve_opus_copy_packet_ms(
+    audio_path: Path, ext: str, codec_mode: str,
+) -> tuple[str, int | None]:
+    """Decide whether the Opus copy path can use the prefix-frame fix.
+
+    Returns (codec_mode, opus_packet_ms). For non-opus or non-copy cases
+    the inputs are returned unchanged with packet_ms=None. For the opus
+    copy case, probes the source and either confirms 20 ms packets or
+    escalates to libopus re-encode (logging a warning) when the packet
+    duration is anything else.
+    """
+    if ext != ".opus" or codec_mode != "copy":
+        return codec_mode, None
+    packet_ms = get_opus_packet_duration_ms(audio_path)
+    if packet_ms == 20:
+        return "copy", 20
+    logger.warning(
+        "Unusual Opus frame duration %r on %s, re-encoding with libopus "
+        "for safe gapless output",
+        packet_ms, audio_path.name,
+    )
+    return "libopus", None
+
+
 def process_file(
     input_path: Path,
     output_dir: Path,
@@ -479,12 +504,17 @@ def process_file(
         )
         from_video = (audio_path == input_path)
 
+        codec_mode, opus_packet_ms = _resolve_opus_copy_packet_ms(
+            audio_path, ext, codec_mode,
+        )
+
         # Split into tracks
         _progress("Splitting tracks")
         track_paths = split_tracks(
             audio_path, album.tracks, album_dir,
             ext=ext, codec_mode=codec_mode, from_video=from_video,
             on_progress=on_progress, cancel_event=cancel_event,
+            opus_packet_ms=opus_packet_ms,
         )
 
         # Cover art
