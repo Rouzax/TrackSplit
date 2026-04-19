@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-04-19
+
 ### Fixed
 
 - Short click at track boundaries in gapless-aware players (Symfonium, mpv) when output format is Opus. The root cause was that ffmpeg wrote `pre_skip = 312` on stream-copied mid-stream cuts; Opus is a lapped-transform codec that requires one frame of decoder warmup, so the first window of each non-first track lost audio and sometimes decoded as silence. The fix prepends one 20ms prefix frame to every track after the first and rewrites OpusHead `pre_skip` to 960, so the decoder trims the warmup cleanly. Sources with non-20ms Opus frames or multichannel mapping fall back to libopus re-encode. Affected albums will be rebuilt automatically on the next run because the byte-level output change causes the manifest staleness check to fire. Note: the 1-2s gap between tracks in the Jellyfin app is a player architecture limitation (no continuous decode across tracks) and cannot be fixed at the file level. Use Symfonium, mpv, or another gapless-aware player for seamless playback.
