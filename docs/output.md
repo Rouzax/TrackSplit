@@ -97,7 +97,7 @@ With this entry, any track tagged `Dimitri Vegas & Like Mike` resolves to `DVLM`
 
 FLAC output is inherently gapless: any player that handles FLAC correctly will move from one track to the next without a gap or click.
 
-Opus output is gapless in players that support gapless playback, such as Symfonium and mpv. TrackSplit achieves this by prepending a 20ms warmup frame to each track after the first and setting the `pre_skip` field in the Opus stream header to 960, so the decoder trims the warmup cleanly at the boundary.
+Opus output is gapless in players that support gapless playback, such as Symfonium and mpv. TrackSplit achieves this by prepending two 20ms warmup frames (40ms total) to each track after the first and setting the `pre_skip` field in the Opus stream header to 1920, so the decoder discards the warmup cleanly and audio starts exactly at the chapter boundary.
 
 Two conditions are required for this path:
 

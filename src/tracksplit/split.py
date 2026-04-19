@@ -14,6 +14,13 @@ from tracksplit.tools import get_tool
 OPUS_FRAME_SECONDS = 0.020
 OPUS_FRAME_SAMPLES = 960  # OPUS_FRAME_SECONDS * 48000 Hz
 
+# Empirically, one frame of decoder warmup leaves audible discontinuity at
+# track boundaries because Opus SILK mode keeps multi-frame prediction
+# history. Two frames give the decoder enough context to stabilise.
+OPUS_PREFIX_FRAMES = 2
+OPUS_PREFIX_SECONDS = OPUS_FRAME_SECONDS * OPUS_PREFIX_FRAMES
+OPUS_PREFIX_SAMPLES = OPUS_FRAME_SAMPLES * OPUS_PREFIX_FRAMES
+
 
 def build_split_command(
     input_path: Path,
@@ -83,11 +90,14 @@ def split_tracks(
     the list of output file paths.
 
     When ``ext == ".opus"``, ``codec_mode == "copy"``, and
-    ``opus_packet_ms == 20``, every track after the first is cut 20 ms
-    earlier than its ``track.start`` and its OpusHead pre_skip is
-    rewritten to 960. The decoder uses the extra prefix packet to warm
-    up and discards it via pre_skip, eliminating the short click at
-    track boundaries in gapless-aware players.
+    ``opus_packet_ms == 20``, every track after the first is cut
+    ``OPUS_PREFIX_FRAMES`` * 20 ms earlier than its ``track.start`` and
+    its OpusHead pre_skip is rewritten to ``OPUS_PREFIX_SAMPLES``. The
+    decoder uses the extra prefix packets to warm up and discards them
+    via pre_skip, eliminating the short click at track boundaries in
+    gapless-aware players. Two prefix frames are needed in practice:
+    one frame was not enough to fully recover Opus SILK-mode prediction
+    state at the cut point.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     apply_opus_prefix = (
@@ -116,9 +126,9 @@ def split_tracks(
         use_prefix = (
             apply_opus_prefix
             and i > 0
-            and track.start - OPUS_FRAME_SECONDS >= 0.0
+            and track.start - OPUS_PREFIX_SECONDS >= 0.0
         )
-        start = track.start - OPUS_FRAME_SECONDS if use_prefix else track.start
+        start = track.start - OPUS_PREFIX_SECONDS if use_prefix else track.start
 
         cmd = build_split_command(
             full_flac, output_path, start, end,
@@ -127,7 +137,7 @@ def split_tracks(
         tracked_run(cmd, cancel_event=cancel_event)
 
         if use_prefix:
-            patch_opus_pre_skip(output_path, OPUS_FRAME_SAMPLES)
+            patch_opus_pre_skip(output_path, OPUS_PREFIX_SAMPLES)
 
         output_paths.append(output_path)
 

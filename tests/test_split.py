@@ -216,12 +216,12 @@ class TestSplitTracksOpusPrefix:
 
         cmds = [c.args[0] for c in mock_run.call_args_list]
         assert _ss_arg(cmds[0]) == pytest.approx(0.0)
-        assert _ss_arg(cmds[1]) == pytest.approx(59.98)
-        assert _ss_arg(cmds[2]) == pytest.approx(179.98)
+        assert _ss_arg(cmds[1]) == pytest.approx(59.96)
+        assert _ss_arg(cmds[2]) == pytest.approx(179.96)
 
         assert mock_patch.call_count == 2
         for c in mock_patch.call_args_list:
-            assert c.args[1] == 960
+            assert c.args[1] == 1920
 
     def test_no_offset_when_packet_ms_is_none(self, tmp_path, mocker):
         from tracksplit.split import split_tracks
@@ -372,8 +372,8 @@ class TestSplitTracksOpusEndToEnd:
         assert len(written) == 3
 
         assert read_opus_pre_skip(written[0]) == 312
-        assert read_opus_pre_skip(written[1]) == 960
-        assert read_opus_pre_skip(written[2]) == 960
+        assert read_opus_pre_skip(written[1]) == 1920
+        assert read_opus_pre_skip(written[2]) == 1920
 
     def test_split_without_prefix_leaves_source_pre_skip(self, tmp_path):
         mkv = _make_opus_mkv(tmp_path, [0.0, 0.5, 1.0], total=1.5)
