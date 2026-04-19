@@ -1,8 +1,10 @@
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from tracksplit.models import TrackMeta
+from tracksplit.opus_patch import read_opus_pre_skip
 from tracksplit.split import build_split_command, build_track_filename, split_tracks
 
 
@@ -310,3 +312,85 @@ class TestSplitTracksOpusPrefix:
         cmds = [c.args[0] for c in mock_run.call_args_list]
         assert _ss_arg(cmds[1]) == pytest.approx(0.01)
         assert mock_patch.call_count == 0
+
+
+def _make_opus_mkv(tmp_path: Path, chapter_starts: list[float], total: float) -> Path:
+    """Synthesize a stereo Opus-in-MKV with explicit chapter starts (seconds)."""
+    opus_file = tmp_path / "audio.opus"
+    subprocess.run(
+        [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-f", "lavfi",
+            "-i", f"sine=frequency=440:duration={total}:sample_rate=48000",
+            "-ac", "2", "-c:a", "libopus", "-b:a", "64k",
+            str(opus_file),
+        ],
+        check=True,
+    )
+    lines = [";FFMETADATA1"]
+    for i, start in enumerate(chapter_starts):
+        end = chapter_starts[i + 1] if i + 1 < len(chapter_starts) else total
+        lines.append("[CHAPTER]")
+        lines.append("TIMEBASE=1/1000")
+        lines.append(f"START={int(start * 1000)}")
+        lines.append(f"END={int(end * 1000)}")
+        lines.append(f"title=Track {i + 1}")
+    meta_file = tmp_path / "meta.txt"
+    meta_file.write_text("\n".join(lines) + "\n")
+    mkv_file = tmp_path / "source.mkv"
+    subprocess.run(
+        [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-i", str(opus_file),
+            "-i", str(meta_file),
+            "-map_metadata", "1",
+            "-c:a", "copy",
+            str(mkv_file),
+        ],
+        check=True,
+    )
+    return mkv_file
+
+
+class TestSplitTracksOpusEndToEnd:
+    def test_split_writes_expected_pre_skip_values(self, tmp_path):
+        mkv = _make_opus_mkv(tmp_path, [0.0, 0.5, 1.0], total=1.5)
+        tracks = [
+            TrackMeta(number=1, title="One", start=0.0, end=0.5),
+            TrackMeta(number=2, title="Two", start=0.5, end=1.0),
+            TrackMeta(number=3, title="Three", start=1.0, end=1.5),
+        ]
+        out_dir = tmp_path / "out"
+
+        split_tracks(
+            mkv, tracks, out_dir,
+            ext=".opus", codec_mode="copy", from_video=True,
+            opus_packet_ms=20,
+        )
+
+        written = sorted(out_dir.glob("*.opus"))
+        assert len(written) == 3
+
+        assert read_opus_pre_skip(written[0]) == 312
+        assert read_opus_pre_skip(written[1]) == 960
+        assert read_opus_pre_skip(written[2]) == 960
+
+    def test_split_without_prefix_leaves_source_pre_skip(self, tmp_path):
+        mkv = _make_opus_mkv(tmp_path, [0.0, 0.5, 1.0], total=1.5)
+        tracks = [
+            TrackMeta(number=1, title="One", start=0.0, end=0.5),
+            TrackMeta(number=2, title="Two", start=0.5, end=1.0),
+            TrackMeta(number=3, title="Three", start=1.0, end=1.5),
+        ]
+        out_dir = tmp_path / "out"
+
+        split_tracks(
+            mkv, tracks, out_dir,
+            ext=".opus", codec_mode="copy", from_video=True,
+            opus_packet_ms=None,
+        )
+
+        written = sorted(out_dir.glob("*.opus"))
+        assert len(written) == 3
+        for path in written:
+            assert read_opus_pre_skip(path) == 312
