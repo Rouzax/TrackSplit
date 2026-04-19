@@ -660,7 +660,7 @@ class TestProcessFileManifest:
         """When the album is unchanged but DJ artwork bytes differ, artist
         cover is rewritten during the skip path."""
         from tracksplit.manifest import (
-            ArtistManifest, artwork_sha256,
+            ArtistManifest, MANIFEST_SCHEMA, artwork_sha256,
             build_album_manifest, save_album_manifest, save_artist_manifest,
         )
         from tracksplit.pipeline import process_file
@@ -693,7 +693,7 @@ class TestProcessFileManifest:
         (artist_dir / "folder.jpg").write_bytes(b"OLD")
         (artist_dir / "artist.jpg").write_bytes(b"OLD")
         save_artist_manifest(artist_dir, ArtistManifest(
-            schema=1, artist="DJ X",
+            schema=MANIFEST_SCHEMA, artist="DJ X",
             dj_artwork_sha256=artwork_sha256(b"OLD_ARTWORK"),
         ))
 
@@ -928,7 +928,7 @@ class TestRefreshArtistCover:
 
     def test_skips_when_artwork_hash_unchanged(self, tmp_path):
         from tracksplit.manifest import (
-            ArtistManifest, artwork_sha256, save_artist_manifest,
+            ArtistManifest, MANIFEST_SCHEMA, artwork_sha256, save_artist_manifest,
         )
         from tracksplit.pipeline import refresh_artist_cover
         artist = tmp_path / "A"
@@ -938,7 +938,7 @@ class TestRefreshArtistCover:
         save_artist_manifest(
             artist,
             ArtistManifest(
-                schema=1, artist="A",
+                schema=MANIFEST_SCHEMA, artist="A",
                 dj_artwork_sha256=artwork_sha256(b"jpg1"),
             ),
         )
@@ -956,8 +956,8 @@ class TestRefreshArtistCover:
 
     def test_rewrites_when_artwork_hash_changes(self, tmp_path):
         from tracksplit.manifest import (
-            ArtistManifest, artwork_sha256, load_artist_manifest,
-            save_artist_manifest,
+            ArtistManifest, MANIFEST_SCHEMA, artwork_sha256,
+            load_artist_manifest, save_artist_manifest,
         )
         from tracksplit.pipeline import refresh_artist_cover
         artist = tmp_path / "A"
@@ -966,7 +966,7 @@ class TestRefreshArtistCover:
         save_artist_manifest(
             artist,
             ArtistManifest(
-                schema=1, artist="A",
+                schema=MANIFEST_SCHEMA, artist="A",
                 dj_artwork_sha256=artwork_sha256(b"old"),
             ),
         )
@@ -980,7 +980,7 @@ class TestRefreshArtistCover:
 
     def test_rewrites_when_jpg_missing_even_if_hash_matches(self, tmp_path):
         from tracksplit.manifest import (
-            ArtistManifest, artwork_sha256, save_artist_manifest,
+            ArtistManifest, MANIFEST_SCHEMA, artwork_sha256, save_artist_manifest,
         )
         from tracksplit.pipeline import refresh_artist_cover
         artist = tmp_path / "A"
@@ -988,7 +988,7 @@ class TestRefreshArtistCover:
         save_artist_manifest(
             artist,
             ArtistManifest(
-                schema=1, artist="A",
+                schema=MANIFEST_SCHEMA, artist="A",
                 dj_artwork_sha256=artwork_sha256(b"jpg1"),
             ),
         )
