@@ -170,3 +170,40 @@ def test_album_manifest_round_trip_preserves_intro_min_seconds(tmp_path):
         cover_bytes=b"",
     )
     assert m.intro_min_seconds == INTRO_MIN_SECONDS
+
+
+def test_album_manifest_legacy_dict_without_cover_schema_version_defaults_to_zero():
+    raw = {
+        "schema": 2,
+        "source": {"path": "/x.mkv", "mtime_ns": 1, "size": 2, "enriched_at": ""},
+        "resolved_artist_folder": "Artist",
+        "resolved_album_folder": "Album",
+        "output_format": "flac",
+        "codec_mode": "copy",
+        "chapters": [],
+        "tags": {},
+        "track_filenames": [],
+        "cover_sha256": "",
+    }
+    m = AlbumManifest.from_dict(raw)
+    assert m.cover_schema_version == 0
+
+
+def test_album_manifest_round_trip_preserves_cover_schema_version(tmp_path):
+    from tracksplit.cover import COVER_SCHEMA_VERSION
+    src = tmp_path / "x.mkv"
+    src.write_bytes(b"\x00")
+    m = build_album_manifest(
+        source_path=src,
+        chapters=[],
+        tags={},
+        artist_folder="A",
+        album_folder="B",
+        output_format="flac",
+        codec_mode="copy",
+        track_filenames=[],
+        cover_bytes=b"",
+    )
+    assert m.cover_schema_version == COVER_SCHEMA_VERSION
+    roundtrip = AlbumManifest.from_dict(m.to_dict())
+    assert roundtrip.cover_schema_version == COVER_SCHEMA_VERSION
