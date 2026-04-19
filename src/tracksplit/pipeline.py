@@ -283,6 +283,12 @@ def rebuild_cover_only(
     catch, delete the manifest, and fall through to a full regen.
     """
     background_data = extract(source_path, ffprobe_data=ffprobe_data)
+    if background_data is None:
+        logger.debug(
+            "rebuild_cover_only: no embedded cover in %s; "
+            "composing with gradient fallback",
+            source_path.name,
+        )
     tags = manifest.tags
     cover_bytes = compose(
         artist=tags.get("artist", ""),
@@ -311,10 +317,19 @@ def rebuild_cover_only(
     if folder_path.exists():
         atomic_write_bytes(folder_path, cover_bytes)
 
+    missing: list[str] = []
     for name in manifest.track_filenames:
         track_path = album_dir / name
         if track_path.exists():
             replace_cover_only(track_path, cover_bytes)
+        else:
+            missing.append(name)
+    if missing:
+        logger.warning(
+            "rebuild_cover_only: %d track file(s) in manifest not on disk "
+            "for %s: %s",
+            len(missing), album_dir.name, ", ".join(missing),
+        )
 
     updated = dataclass_replace(
         manifest,
@@ -339,8 +354,15 @@ def should_regenerate(
     codec_mode: str,
     *,
     force: bool,
+    manifest: AlbumManifest | None = None,
 ) -> bool:
-    """Return True when the album must be (re)generated."""
+    """Return True when the album must be (re)generated.
+
+    ``manifest``: pre-loaded album manifest. If provided, the function
+    reuses it instead of reading from disk so callers that also need the
+    manifest (for example, to check ``cover_schema_version``) can avoid
+    a second load.
+    """
     name = source_path.name
     if force:
         logger.debug("regenerate %s: force=True", name)
@@ -349,7 +371,8 @@ def should_regenerate(
         logger.debug("regenerate %s: album dir does not exist (%s)", name, album_dir)
         return True
 
-    manifest = load_album_manifest(album_dir)
+    if manifest is None:
+        manifest = load_album_manifest(album_dir)
     if manifest is None:
         logger.debug("regenerate %s: no/unreadable manifest at %s", name, album_dir)
         return True
@@ -529,13 +552,13 @@ def process_file(
     ext, codec_mode = decide_codec(ffprobe_data, output_format)
     chapter_dicts = _chapters_to_dicts(chapters)
 
+    skip_manifest = load_album_manifest(album_dir)
     skip = not should_regenerate(
         album_dir, input_path, tags, chapter_dicts,
         artist_folder, album_folder, ext.lstrip("."), codec_mode,
-        force=force,
+        force=force, manifest=skip_manifest,
     )
     if skip:
-        skip_manifest = load_album_manifest(album_dir)
         if (
             skip_manifest is not None
             and skip_manifest.cover_schema_version < COVER_SCHEMA_VERSION
@@ -547,9 +570,19 @@ def process_file(
                     source_path=input_path,
                     ffprobe_data=ffprobe_data,
                 )
+            except OSError as exc:
+                if exc.errno in FATAL_DISK_ERRNOS:
+                    raise
+                logger.warning(
+                    "Cover-only rebuild failed for %s (%s); "
+                    "falling through to full regen",
+                    _safe_log_name(input_path), exc,
+                )
+                (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
+                skip = False
             except Exception as exc:
                 logger.warning(
-                    "Cover-only rebuild failed for %s: %s; "
+                    "Cover-only rebuild failed for %s (%s); "
                     "falling through to full regen",
                     _safe_log_name(input_path), exc,
                 )

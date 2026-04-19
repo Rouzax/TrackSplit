@@ -1309,10 +1309,13 @@ class TestSkipBranchCoverRebuild:
         m = _replace(m, cover_schema_version=0)
         save_album_manifest(album_dir, m)
 
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.refresh_artist_cover")
     @patch("tracksplit.pipeline.rebuild_cover_only")
     @patch("tracksplit.pipeline.run_ffprobe")
     def test_triggers_rebuild_on_version_mismatch(
-        self, mock_probe, mock_rebuild, tmp_path,
+        self, mock_probe, mock_rebuild, mock_refresh_artist,
+        mock_prepare, tmp_path,
     ):
         from tracksplit.pipeline import process_file
         mock_probe.return_value = self._probe()
@@ -1327,6 +1330,12 @@ class TestSkipBranchCoverRebuild:
         kwargs = mock_rebuild.call_args.kwargs
         assert kwargs["album_dir"] == album_dir
         assert kwargs["source_path"] == src
+        assert mock_refresh_artist.call_count == 1, (
+            "skip path after cover rebuild should still refresh artist cover"
+        )
+        assert mock_prepare.call_count == 0, (
+            "audio prep must NOT run on a clean skip"
+        )
 
     @patch("tracksplit.pipeline.tag_all")
     @patch("tracksplit.pipeline.split_tracks")
