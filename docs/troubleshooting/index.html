@@ -659,6 +659,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#short-click-or-gap-between-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short click or gap between tracks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cover-art-looks-wrong-or-fonts-are-missing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -830,6 +841,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#short-click-or-gap-between-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short click or gap between tracks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cover-art-looks-wrong-or-fonts-are-missing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -978,6 +1000,15 @@
 </table>
 <p>Quick check: watch CPU while a batch runs. Near idle means you can raise <code>--workers</code>. Near 100% means you should not.</p>
 <p>On spinning disks or network shares, <code>--workers 1</code> is usually faster than the default regardless of codec, because disk seeks between parallel writes cost more than any CPU saving.</p>
+<hr />
+<h2 id="short-click-or-gap-between-tracks">Short click or gap between tracks</h2>
+<p><strong>What you see:</strong> A brief click at the start of each non-first track, or a gap of 1-2 seconds, when playing Opus output.</p>
+<p><strong>Step 1: Check whether your player supports gapless playback.</strong></p>
+<p>The Jellyfin mobile app decodes tracks independently and does not support gapless playback. A 1-2s gap between tracks in that app is a player architecture limitation that no file-level change can remove. Use Symfonium, mpv, or another gapless-aware player if seamless playback matters to you. FLAC output is inherently gapless in any player that handles FLAC correctly.</p>
+<p><strong>Step 2: If your player is gapless-aware and a click is still audible, check whether the files were produced by version 0.6.5 or later.</strong></p>
+<p>Earlier versions did not insert the warmup frame, so the first window of each non-first track could lose audio and sometimes decoded as silence. Re-run TrackSplit on the source video to trigger a rebuild; the manifest staleness check will detect the outdated output and replace it.</p>
+<p><strong>Step 3: If the click persists on a gapless-aware player after rebuilding, gather diagnostic information.</strong></p>
+<p>Run <code>opusinfo</code> on a few consecutive output tracks and open an issue, including the <code>opusinfo</code> output, the exact player and version, and the output of <code>tracksplit --check</code>.</p>
 <hr />
 <h2 id="cover-art-looks-wrong-or-fonts-are-missing">Cover art looks wrong or fonts are missing</h2>
 <p><strong>What you see:</strong> An error mentioning a missing font file, or generated artwork looks broken.</p>

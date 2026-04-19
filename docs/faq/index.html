@@ -706,6 +706,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#does-tracksplit-produce-gapless-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does TrackSplit produce gapless output?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-does-tracksplit-differ-from-cratedigger" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -861,6 +872,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#does-tracksplit-produce-gapless-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does TrackSplit produce gapless output?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-does-tracksplit-differ-from-cratedigger" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -923,6 +945,10 @@
 <h2 id="how-do-jellyfin-and-lyrion-show-multi-artist-tracks">How do Jellyfin and Lyrion show multi-artist tracks?</h2>
 <p>TrackSplit writes a multi-value <code>ARTISTS</code> tag listing every individual contributor alongside the display <code>ARTIST</code> string. It also writes a positionally-aligned <code>MUSICBRAINZ_ARTISTID</code> tag so each artist links to their own page. Both Jellyfin and Lyrion read these tags and surface every collaborator, not just the headliner.</p>
 <p>If you upgraded TrackSplit and re-ran it against existing albums, trigger a library rescan in your music server so it picks up the updated tags.</p>
+<h2 id="does-tracksplit-produce-gapless-output">Does TrackSplit produce gapless output?</h2>
+<p>Yes, for both output formats, subject to player support.</p>
+<p><strong>FLAC:</strong> gapless in any player that handles FLAC correctly.</p>
+<p><strong>Opus:</strong> gapless in players that support gapless playback, such as Symfonium and mpv. TrackSplit inserts the necessary warmup frame and sets the correct <code>pre_skip</code> value so the decoder trims it cleanly at each boundary. The Jellyfin mobile app does not support gapless playback and introduces a 1-2s gap between tracks regardless of file content. That gap is a player-side limitation and cannot be fixed at the file level.</p>
 <h2 id="how-does-tracksplit-differ-from-cratedigger">How does TrackSplit differ from CrateDigger?</h2>
 <p>They do different jobs and work best together. <strong>CrateDigger</strong> builds a video library: it identifies recordings, embeds chapter markers and metadata, generates posters, and syncs with Kodi. <strong>TrackSplit</strong> reads that video library and produces a parallel music library of tagged FLAC or Opus albums for music servers like Jellyfin and Lyrion.</p>
 <p>Because they share the same artist names, festival spellings, and MusicBrainz IDs, the same set shows up consistently whether you are browsing your video library or your music library.</p>
