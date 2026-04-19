@@ -529,11 +529,33 @@ def process_file(
     ext, codec_mode = decide_codec(ffprobe_data, output_format)
     chapter_dicts = _chapters_to_dicts(chapters)
 
-    if not should_regenerate(
+    skip = not should_regenerate(
         album_dir, input_path, tags, chapter_dicts,
         artist_folder, album_folder, ext.lstrip("."), codec_mode,
         force=force,
-    ):
+    )
+    if skip:
+        skip_manifest = load_album_manifest(album_dir)
+        if (
+            skip_manifest is not None
+            and skip_manifest.cover_schema_version < COVER_SCHEMA_VERSION
+        ):
+            try:
+                rebuild_cover_only(
+                    album_dir=album_dir,
+                    manifest=skip_manifest,
+                    source_path=input_path,
+                    ffprobe_data=ffprobe_data,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Cover-only rebuild failed for %s: %s; "
+                    "falling through to full regen",
+                    _safe_log_name(input_path), exc,
+                )
+                (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
+                skip = False
+    if skip:
         dj_artwork_data = find_dj_artwork(input_path, artist=album.artist)
         artist_dir = output_dir / safe_filename(album.artist_folder)
         refresh_artist_cover(
