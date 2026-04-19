@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-04-19
+
+### Fixed
+
+- Noisy `Manifest schema mismatch` warnings when rerunning TrackSplit after the 0.6.5 schema bump. The pipeline's rename-detection scan (`find_prior_album_dirs`) loads every manifest under the output root once per source file, so with pre-0.6.5 manifests still on disk, users saw the same mismatch warning logged many times per run. The warning is now a debug-level log: schema mismatches remain visible under `--verbose` but no longer clutter normal output. Regeneration behaviour is unchanged; affected albums still rebuild automatically.
+
 ## [0.6.5] - 2026-04-19
 
 ### Fixed

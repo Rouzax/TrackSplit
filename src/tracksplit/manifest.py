@@ -160,7 +160,7 @@ def load_album_manifest(album_dir: Path) -> AlbumManifest | None:
     try:
         data = json.loads(path.read_text())
         if data.get("schema") != MANIFEST_SCHEMA:
-            logger.warning(
+            logger.debug(
                 "Manifest schema mismatch at %s: got %r, expected %r",
                 path, data.get("schema"), MANIFEST_SCHEMA,
             )
@@ -188,7 +188,7 @@ def load_artist_manifest(artist_dir: Path) -> ArtistManifest | None:
     try:
         d = json.loads(path.read_text())
         if d.get("schema") != MANIFEST_SCHEMA:
-            logger.warning(
+            logger.debug(
                 "Artist manifest schema mismatch at %s: got %r, expected %r",
                 path, d.get("schema"), MANIFEST_SCHEMA,
             )
