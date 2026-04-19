@@ -670,6 +670,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#album-covers-look-outdated-after-upgrading-tracksplit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Album covers look outdated after upgrading TrackSplit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cover-art-looks-wrong-or-fonts-are-missing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -852,6 +863,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#album-covers-look-outdated-after-upgrading-tracksplit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Album covers look outdated after upgrading TrackSplit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cover-art-looks-wrong-or-fonts-are-missing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1009,6 +1031,11 @@
 <p>Earlier versions did not insert the warmup frame, so the first window of each non-first track could lose audio and sometimes decoded as silence. Re-run TrackSplit on the source video to trigger a rebuild; the manifest staleness check will detect the outdated output and replace it.</p>
 <p><strong>Step 3: If the click persists on a gapless-aware player after rebuilding, gather diagnostic information.</strong></p>
 <p>Run <code>opusinfo</code> on a few consecutive output tracks and open an issue, including the <code>opusinfo</code> output, the exact player and version, and the output of <code>tracksplit --check</code>.</p>
+<hr />
+<h2 id="album-covers-look-outdated-after-upgrading-tracksplit">Album covers look outdated after upgrading TrackSplit</h2>
+<p><strong>What you see:</strong> <code>cover.jpg</code>, <code>folder.jpg</code>, and embedded track artwork still show the old cover layout after upgrading TrackSplit, even though audio tracks are correct.</p>
+<p><strong>What is happening:</strong> Earlier versions had no way to detect that the cover renderer had changed, so existing albums kept their old cover files until you forced a full rebuild. Since version 0.6.7, TrackSplit tracks which cover layout was used for each album and detects the mismatch automatically on the next normal run.</p>
+<p><strong>What to do:</strong> Nothing. On the first run after upgrading, TrackSplit recomposes and re-embeds the cover for each affected album and logs either <code>Cover-only rebuild for &lt;album&gt;: N track(s) re-embedded</code> or <code>Cover already current for &lt;album&gt;; schema version bumped</code>. Audio is not re-extracted or re-encoded during this refresh, so it completes quickly. You do not need to pass <code>--force</code>.</p>
 <hr />
 <h2 id="cover-art-looks-wrong-or-fonts-are-missing">Cover art looks wrong or fonts are missing</h2>
 <p><strong>What you see:</strong> An error mentioning a missing font file, or generated artwork looks broken.</p>
