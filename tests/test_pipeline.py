@@ -1117,3 +1117,302 @@ class TestResolveOpusCopyPacketMs:
         assert codec_mode == "libopus"
         assert packet_ms is None
         mock_probe.assert_not_called()
+
+
+class TestRebuildCoverOnly:
+    @staticmethod
+    def _silent_flac(path: Path) -> None:
+        import shutil
+        import subprocess
+        if shutil.which("ffmpeg") is None:
+            pytest.skip("ffmpeg required")
+        subprocess.run(
+            ["ffmpeg", "-y", "-f", "lavfi",
+             "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+             "-t", "0.2", "-c:a", "flac", str(path)],
+            check=True, capture_output=True,
+        )
+
+    def _make_manifest(
+        self, *, album_dir: Path, track_filename: str,
+        cover_sha: str, schema_version: int = 0,
+    ):
+        from tracksplit.manifest import (
+            AlbumManifest, SourceFingerprint, save_album_manifest,
+        )
+        manifest = AlbumManifest(
+            schema=2,
+            source=SourceFingerprint(
+                path="/fake.mkv", mtime_ns=1, size=1, enriched_at="",
+            ),
+            resolved_artist_folder="Artist",
+            resolved_album_folder="Album",
+            output_format="flac",
+            codec_mode="copy",
+            chapters=[],
+            tags={"artist": "A", "album": "B", "festival": "F"},
+            track_filenames=[track_filename],
+            cover_sha256=cover_sha,
+            cover_schema_version=schema_version,
+        )
+        save_album_manifest(album_dir, manifest)
+        return manifest
+
+    def test_rewrites_cover_and_embeds_in_tracks(self, tmp_path):
+        import hashlib
+        from mutagen.flac import FLAC
+        from tracksplit.cover import COVER_SCHEMA_VERSION
+        from tracksplit.manifest import load_album_manifest
+        from tracksplit.pipeline import rebuild_cover_only
+
+        album_dir = tmp_path / "Artist" / "Album"
+        album_dir.mkdir(parents=True)
+        track = album_dir / "01 - Song.flac"
+        self._silent_flac(track)
+
+        old_cover = b"old-jpg-bytes"
+        (album_dir / "cover.jpg").write_bytes(old_cover)
+        manifest = self._make_manifest(
+            album_dir=album_dir,
+            track_filename=track.name,
+            cover_sha=hashlib.sha256(old_cover).hexdigest(),
+            schema_version=0,
+        )
+
+        new_cover = b"\xff\xd8\xff\xe0new-cover-bytes"
+        compose_calls = []
+        def _compose(**kw):
+            compose_calls.append(kw)
+            return new_cover
+
+        rebuild_cover_only(
+            album_dir=album_dir,
+            manifest=manifest,
+            source_path=Path("/fake.mkv"),
+            ffprobe_data={},
+            extract=lambda src, *, ffprobe_data: b"bg",
+            compose=_compose,
+        )
+
+        assert (album_dir / "cover.jpg").read_bytes() == new_cover
+        reread = FLAC(str(track))
+        assert len(reread.pictures) == 1
+        assert reread.pictures[0].data == new_cover
+
+        updated = load_album_manifest(album_dir)
+        assert updated.cover_schema_version == COVER_SCHEMA_VERSION
+        assert updated.cover_sha256 == hashlib.sha256(new_cover).hexdigest()
+
+        assert compose_calls and compose_calls[0]["artist"] == "A"
+        assert compose_calls[0]["festival"] == "F"
+
+    def test_updates_folder_jpg_when_present(self, tmp_path):
+        import hashlib
+        from tracksplit.pipeline import rebuild_cover_only
+
+        album_dir = tmp_path / "Artist" / "Album"
+        album_dir.mkdir(parents=True)
+        track = album_dir / "01.flac"
+        self._silent_flac(track)
+        (album_dir / "cover.jpg").write_bytes(b"old")
+        (album_dir / "folder.jpg").write_bytes(b"old")
+        manifest = self._make_manifest(
+            album_dir=album_dir, track_filename=track.name,
+            cover_sha=hashlib.sha256(b"old").hexdigest(),
+        )
+
+        new_cover = b"\xff\xd8new"
+        rebuild_cover_only(
+            album_dir=album_dir, manifest=manifest,
+            source_path=Path("/fake.mkv"), ffprobe_data={},
+            extract=lambda src, *, ffprobe_data: None,
+            compose=lambda **kw: new_cover,
+        )
+        assert (album_dir / "folder.jpg").read_bytes() == new_cover
+
+    def test_short_circuits_when_hash_unchanged(self, tmp_path):
+        """If compose produces the same bytes as the stored cover_sha256,
+        only bump the schema version; do not rewrite files."""
+        import hashlib
+        from tracksplit.cover import COVER_SCHEMA_VERSION
+        from tracksplit.manifest import load_album_manifest
+        from tracksplit.pipeline import rebuild_cover_only
+
+        album_dir = tmp_path / "Artist" / "Album"
+        album_dir.mkdir(parents=True)
+        track = album_dir / "01.flac"
+        self._silent_flac(track)
+
+        existing_cover = b"same-cover-bytes"
+        (album_dir / "cover.jpg").write_bytes(existing_cover)
+        existing_track_mtime = track.stat().st_mtime_ns
+        existing_cover_mtime = (album_dir / "cover.jpg").stat().st_mtime_ns
+        manifest = self._make_manifest(
+            album_dir=album_dir, track_filename=track.name,
+            cover_sha=hashlib.sha256(existing_cover).hexdigest(),
+            schema_version=0,
+        )
+
+        rebuild_cover_only(
+            album_dir=album_dir, manifest=manifest,
+            source_path=Path("/fake.mkv"), ffprobe_data={},
+            extract=lambda src, *, ffprobe_data: None,
+            compose=lambda **kw: existing_cover,
+        )
+
+        assert (album_dir / "cover.jpg").stat().st_mtime_ns == existing_cover_mtime
+        assert track.stat().st_mtime_ns == existing_track_mtime
+        updated = load_album_manifest(album_dir)
+        assert updated.cover_schema_version == COVER_SCHEMA_VERSION
+        assert updated.cover_sha256 == hashlib.sha256(existing_cover).hexdigest()
+
+
+class TestSkipBranchCoverRebuild:
+    """process_file's skip branch should trigger a cover-only rebuild
+    when the stored cover_schema_version is older than the current
+    COVER_SCHEMA_VERSION, and fall through to a full regen when that
+    rebuild raises.
+    """
+
+    def _probe(self):
+        return {
+            "streams": [{"codec_type": "audio", "codec_name": "flac"}],
+            "format": {"tags": {"ARTIST": "DJ X",
+                                 "CRATEDIGGER_1001TL_FESTIVAL": "Show",
+                                 "CRATEDIGGER_1001TL_DATE": "2025"},
+                       "duration": "600.0"},
+            "chapters": [
+                {"start_time": "0.0", "end_time": "600.0",
+                 "tags": {"title": "Track 1"}},
+            ],
+        }
+
+    def _write_manifest_with_stale_cover_version(self, src, album_dir):
+        from tracksplit.manifest import (
+            TAG_KEYS, build_album_manifest, save_album_manifest,
+        )
+        from dataclasses import replace as _replace
+        tags = {k: "" for k in TAG_KEYS}
+        tags["artist"] = "DJ X"
+        tags["festival"] = "Show"
+        tags["date"] = "2025"
+        m = build_album_manifest(
+            source_path=src,
+            chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0}],
+            tags=tags,
+            artist_folder="DJ X",
+            album_folder="Show 2025",
+            output_format="flac", codec_mode="copy",
+            track_filenames=["01 - DJ X - Track 1.flac"],
+            cover_bytes=b"",
+        )
+        m = _replace(m, cover_schema_version=0)
+        save_album_manifest(album_dir, m)
+
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.refresh_artist_cover")
+    @patch("tracksplit.pipeline.rebuild_cover_only")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_triggers_rebuild_on_version_mismatch(
+        self, mock_probe, mock_rebuild, mock_refresh_artist,
+        mock_prepare, tmp_path,
+    ):
+        from tracksplit.pipeline import process_file
+        mock_probe.return_value = self._probe()
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+        album_dir = tmp_path / "out" / "DJ X" / "Show 2025"
+        album_dir.mkdir(parents=True)
+        self._write_manifest_with_stale_cover_version(src, album_dir)
+
+        assert process_file(src, tmp_path / "out") is False
+        assert mock_rebuild.call_count == 1
+        kwargs = mock_rebuild.call_args.kwargs
+        assert kwargs["album_dir"] == album_dir
+        assert kwargs["source_path"] == src
+        assert mock_refresh_artist.call_count == 1, (
+            "skip path after cover rebuild should still refresh artist cover"
+        )
+        assert mock_prepare.call_count == 0, (
+            "audio prep must NOT run on a clean skip"
+        )
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.rebuild_cover_only")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_falls_through_to_full_regen_when_rebuild_fails(
+        self, mock_probe, mock_rebuild, mock_cover_mkv, mock_dj,
+        mock_artist_cover, mock_compose, mock_prepare, mock_split,
+        mock_tag, tmp_path,
+    ):
+        from tracksplit.cover import COVER_SCHEMA_VERSION
+        from tracksplit.manifest import (
+            ALBUM_MANIFEST_FILENAME, load_album_manifest,
+        )
+        from tracksplit.pipeline import process_file
+
+        mock_probe.return_value = self._probe()
+        mock_rebuild.side_effect = RuntimeError("simulated rebuild failure")
+        mock_cover_mkv.return_value = None
+        mock_dj.return_value = None
+        mock_compose.return_value = b"NEW-JPEG"
+        mock_artist_cover.return_value = b"NEW-JPEG2"
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+        out = tmp_path / "out"
+        album_dir = out / "DJ X" / "Show 2025"
+        album_dir.mkdir(parents=True)
+        self._write_manifest_with_stale_cover_version(src, album_dir)
+
+        mock_prepare.return_value = (src, ".flac", "copy")
+        mock_split.return_value = [
+            album_dir / "01 - DJ X - Track 1.flac",
+        ]
+
+        assert process_file(src, out) is True
+        assert mock_rebuild.call_count == 1
+        assert mock_prepare.called, "full regen prepare_audio was not reached"
+
+        fresh = load_album_manifest(album_dir)
+        assert fresh is not None, f"manifest missing after full regen at {album_dir}"
+        assert fresh.cover_schema_version == COVER_SCHEMA_VERSION
+
+    @patch("tracksplit.pipeline.rebuild_cover_only")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_clean_skip_when_version_current(
+        self, mock_probe, mock_rebuild, tmp_path,
+    ):
+        from tracksplit.pipeline import process_file
+        mock_probe.return_value = self._probe()
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+        album_dir = tmp_path / "out" / "DJ X" / "Show 2025"
+        album_dir.mkdir(parents=True)
+        from tracksplit.manifest import (
+            TAG_KEYS, build_album_manifest, save_album_manifest,
+        )
+        tags = {k: "" for k in TAG_KEYS}
+        tags["artist"] = "DJ X"
+        tags["festival"] = "Show"
+        tags["date"] = "2025"
+        m = build_album_manifest(
+            source_path=src,
+            chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0}],
+            tags=tags,
+            artist_folder="DJ X",
+            album_folder="Show 2025",
+            output_format="flac", codec_mode="copy",
+            track_filenames=["01 - DJ X - Track 1.flac"],
+            cover_bytes=b"",
+        )
+        save_album_manifest(album_dir, m)
+
+        assert process_file(src, tmp_path / "out") is False
+        assert mock_rebuild.call_count == 0

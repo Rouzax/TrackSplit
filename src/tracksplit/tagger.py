@@ -157,3 +157,33 @@ def tag_all(
             tag_ogg(p, album, track, cover_data=cover_data)
         else:
             tag_flac(p, album, track, cover_data=cover_data)
+
+
+def replace_cover_only(path: str | Path, cover_data: bytes) -> None:
+    """Replace the front cover picture on a FLAC or Opus file without
+    touching other tags. Used by the cover-only rebuild path.
+    """
+    p = Path(path)
+    ext = p.suffix.lower()
+    if ext in (".ogg", ".opus"):
+        audio = OggOpus(str(p))
+        pic = Picture()
+        pic.type = 3
+        pic.mime = "image/jpeg"
+        pic.desc = "Cover"
+        pic.data = cover_data
+        audio["METADATA_BLOCK_PICTURE"] = [
+            base64.b64encode(pic.write()).decode("ascii")
+        ]
+        audio.save()
+    elif ext == ".flac":
+        audio = FLAC(str(p))
+        audio.clear_pictures()
+        pic = Picture()
+        pic.type = 3
+        pic.mime = "image/jpeg"
+        pic.data = cover_data
+        audio.add_picture(pic)
+        audio.save()
+    else:
+        raise ValueError(f"Unsupported extension for cover replace: {ext!r}")

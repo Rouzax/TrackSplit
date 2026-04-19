@@ -155,6 +155,16 @@ Run `opusinfo` on a few consecutive output tracks and open an issue, including t
 
 ---
 
+## Album covers look outdated after upgrading TrackSplit
+
+**What you see:** `cover.jpg`, `folder.jpg`, and embedded track artwork still show the old cover layout after upgrading TrackSplit, even though audio tracks are correct.
+
+**What is happening:** Earlier versions had no way to detect that the cover renderer had changed, so existing albums kept their old cover files until you forced a full rebuild. Since version 0.6.7, TrackSplit tracks which cover layout was used for each album and detects the mismatch automatically on the next normal run.
+
+**What to do:** Nothing. On the first run after upgrading, TrackSplit recomposes and re-embeds the cover for each affected album and logs either `Cover-only rebuild for <album>: N track(s) re-embedded` or `Cover already current for <album>; schema version bumped`. Audio is not re-extracted or re-encoded during this refresh, so it completes quickly. You do not need to pass `--force`.
+
+---
+
 ## Cover art looks wrong or fonts are missing
 
 **What you see:** An error mentioning a missing font file, or generated artwork looks broken.

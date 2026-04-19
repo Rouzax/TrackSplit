@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from mutagen.flac import FLAC
+from mutagen.flac import FLAC, Picture
 
 from tracksplit.models import AlbumMeta, TrackMeta
 from tracksplit.tagger import build_tag_dict, tag_flac, tag_ogg, tag_all
@@ -352,3 +352,62 @@ def test_multi_artist_tags_survive_flac_roundtrip(tmp_path):
     assert list(audio["MUSICBRAINZ_ARTISTID"]) == ["m-a", "", "m-c"]
     assert list(audio["ALBUMARTISTS"]) == ["Armin van Buuren", "KI/KI"]
     assert list(audio["MUSICBRAINZ_ALBUMARTISTID"]) == ["m-arm", "m-ki"]
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg required")
+def test_replace_cover_only_flac_preserves_tags(tmp_path):
+    flac_path = tmp_path / "test.flac"
+    _make_silent_flac(flac_path)
+
+    # Seed with tags and an initial picture so we can confirm
+    # only the picture is replaced, not the tags.
+    audio = FLAC(flac_path)
+    audio["artist"] = ["Original Artist"]
+    audio["title"] = ["Original Title"]
+    initial_pic = Picture()
+    initial_pic.type = 3
+    initial_pic.mime = "image/jpeg"
+    initial_pic.data = b"old-cover-bytes"
+    audio.add_picture(initial_pic)
+    audio.save()
+
+    new_cover = b"\xff\xd8\xff\xe0new-cover-bytes"
+    from tracksplit.tagger import replace_cover_only
+    replace_cover_only(flac_path, new_cover)
+
+    reread = FLAC(flac_path)
+    assert reread["artist"] == ["Original Artist"]
+    assert reread["title"] == ["Original Title"]
+    assert len(reread.pictures) == 1
+    assert reread.pictures[0].data == new_cover
+    assert reread.pictures[0].type == 3
+    assert reread.pictures[0].mime == "image/jpeg"
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg required")
+def test_replace_cover_only_opus_preserves_tags(tmp_path):
+    opus_path = tmp_path / "test.opus"
+    subprocess.run(
+        ["ffmpeg", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
+         "-t", "0.5", "-c:a", "libopus", "-b:a", "32k",
+         str(opus_path), "-y", "-loglevel", "error"],
+        check=True,
+    )
+
+    # Seed with tags
+    from mutagen.oggopus import OggOpus
+    audio = OggOpus(str(opus_path))
+    audio["artist"] = ["Original Artist"]
+    audio["title"] = ["Original Title"]
+    audio.save()
+
+    new_cover = b"\xff\xd8\xff\xe0new-cover-bytes"
+    from tracksplit.tagger import replace_cover_only
+    replace_cover_only(opus_path, new_cover)
+
+    reread = OggOpus(str(opus_path))
+    assert reread["artist"] == ["Original Artist"]
+    assert reread["title"] == ["Original Title"]
+    # Opus stores pics as base64 METADATA_BLOCK_PICTURE
+    key_lower = {k.lower() for k in reread.keys()}
+    assert "metadata_block_picture" in key_lower

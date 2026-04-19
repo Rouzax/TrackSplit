@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.7] - 2026-04-19
+
+### Changed
+
+- TrackSplit now automatically refreshes outdated cover art when you upgrade to a version that ships a revised cover renderer. On a normal skip run, if the stored cover layout version for an album is older than the current one, TrackSplit recomposes the cover from saved metadata and re-embeds it into every existing track, then logs either `Cover-only rebuild for <album>: N track(s) re-embedded` or `Cover already current for <album>; schema version bumped to N`. Audio is never re-extracted or re-encoded during this refresh, so it completes much faster than a full rebuild. No `--force` flag is needed. If a cover rebuild fails mid-album, TrackSplit falls through to a full regeneration in the same run so the album is always left in a consistent state.
+
 ## [0.6.6] - 2026-04-19
 
 ### Fixed
