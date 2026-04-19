@@ -6,14 +6,17 @@ composition for individual video files and directories of video files.
 from __future__ import annotations
 
 import errno
+import hashlib
 import logging
 import shutil
 import tempfile
 import threading
 from collections.abc import Callable
+from dataclasses import replace as dataclass_replace
 from pathlib import Path
 
 from tracksplit.cover import (
+    COVER_SCHEMA_VERSION,
     compose_artist_cover,
     compose_cover,
     extract_cover_from_mkv,
@@ -22,6 +25,8 @@ from tracksplit.cover import (
 from tracksplit.cratedigger import apply_cratedigger_canon_with, load_config
 from tracksplit.extract import decide_codec, prepare_audio
 from tracksplit.manifest import (
+    ALBUM_MANIFEST_FILENAME,
+    AlbumManifest,
     ArtistManifest,
     LEGACY_CHAPTER_CACHE_FILENAME,
     MANIFEST_SCHEMA,
@@ -47,7 +52,7 @@ from tracksplit.probe import (
     run_ffprobe,
 )
 from tracksplit.split import split_tracks
-from tracksplit.tagger import tag_all
+from tracksplit.tagger import replace_cover_only, tag_all
 
 logger = logging.getLogger(__name__)
 
@@ -254,6 +259,73 @@ def refresh_artist_cover(
         logger.warning(
             "Could not refresh artist cover for %s: %s", artist_dir, exc,
         )
+
+
+def rebuild_cover_only(
+    *,
+    album_dir: Path,
+    manifest: AlbumManifest,
+    source_path: Path,
+    ffprobe_data: dict,
+    extract: Callable = extract_cover_from_mkv,
+    compose: Callable = compose_cover,
+) -> None:
+    """Recompose the album cover from the stored tag values and re-embed
+    it into every existing track, without touching audio frames. Updates
+    the on-disk manifest to record the new ``cover_schema_version`` and
+    ``cover_sha256``.
+
+    Short-circuits when the freshly composed bytes match the stored
+    ``cover_sha256``: in that case only the schema version is bumped so
+    future runs can skip this path cleanly.
+
+    Raises on any failure. Callers on the skip branch are expected to
+    catch, delete the manifest, and fall through to a full regen.
+    """
+    background_data = extract(source_path, ffprobe_data=ffprobe_data)
+    tags = manifest.tags
+    cover_bytes = compose(
+        artist=tags.get("artist", ""),
+        festival=tags.get("festival", ""),
+        date=tags.get("date", ""),
+        stage=tags.get("stage", ""),
+        venue=tags.get("venue", ""),
+        background_data=background_data,
+    )
+    new_sha = hashlib.sha256(cover_bytes).hexdigest() if cover_bytes else ""
+
+    if new_sha == manifest.cover_sha256:
+        updated = dataclass_replace(
+            manifest, cover_schema_version=COVER_SCHEMA_VERSION,
+        )
+        save_album_manifest(album_dir, updated)
+        logger.info(
+            "Cover already current for %s; schema version bumped to %d",
+            album_dir.name, COVER_SCHEMA_VERSION,
+        )
+        return
+
+    cover_path = album_dir / "cover.jpg"
+    atomic_write_bytes(cover_path, cover_bytes)
+    folder_path = album_dir / "folder.jpg"
+    if folder_path.exists():
+        atomic_write_bytes(folder_path, cover_bytes)
+
+    for name in manifest.track_filenames:
+        track_path = album_dir / name
+        if track_path.exists():
+            replace_cover_only(track_path, cover_bytes)
+
+    updated = dataclass_replace(
+        manifest,
+        cover_schema_version=COVER_SCHEMA_VERSION,
+        cover_sha256=new_sha,
+    )
+    save_album_manifest(album_dir, updated)
+    logger.info(
+        "Cover-only rebuild for %s: %d track(s) re-embedded",
+        album_dir.name, len(manifest.track_filenames),
+    )
 
 
 def should_regenerate(
