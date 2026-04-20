@@ -250,3 +250,31 @@ class TestIsSuppressed:
         monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", value)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         assert not _is_suppressed()
+
+
+class TestUpgradeCommand:
+    def test_pipx_via_env(self, monkeypatch):
+        from tracksplit.update_check import _upgrade_command
+        monkeypatch.setenv("PIPX_HOME", "/home/user/.local/pipx")
+        monkeypatch.setattr("sys.prefix", "/usr/lib/python3.11")
+        assert "pipx upgrade tracksplit" in _upgrade_command()
+
+    def test_pipx_via_prefix(self, monkeypatch):
+        from tracksplit.update_check import _upgrade_command
+        monkeypatch.delenv("PIPX_HOME", raising=False)
+        monkeypatch.setattr("sys.prefix", "/home/user/.local/pipx/venvs/tracksplit")
+        assert "pipx upgrade tracksplit" in _upgrade_command()
+
+    def test_uv_tool(self, monkeypatch):
+        from tracksplit.update_check import _upgrade_command
+        monkeypatch.delenv("PIPX_HOME", raising=False)
+        monkeypatch.setattr("sys.prefix", "/home/user/.local/share/uv/tools/tracksplit")
+        assert "uv tool upgrade tracksplit" in _upgrade_command()
+
+    def test_default_pip(self, monkeypatch):
+        from tracksplit.update_check import _upgrade_command
+        monkeypatch.delenv("PIPX_HOME", raising=False)
+        monkeypatch.setattr("sys.prefix", "/home/user/venv")
+        cmd = _upgrade_command()
+        assert "pip install --upgrade" in cmd
+        assert "git+https://github.com/Rouzax/TrackSplit" in cmd

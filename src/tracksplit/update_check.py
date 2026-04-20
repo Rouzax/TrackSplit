@@ -106,6 +106,15 @@ def _write_cache(*, latest_version: str | None, ttl_seconds: int) -> None:
         raise
 
 
+def _upgrade_command() -> str:
+    prefix = sys.prefix.replace("\\", "/")
+    if "PIPX_HOME" in os.environ or "/pipx/venvs/" in prefix:
+        return f"pipx upgrade {PACKAGE_NAME}"
+    if "/uv/tools/" in prefix:
+        return f"uv tool upgrade {PACKAGE_NAME}"
+    return f"pip install --upgrade git+{REPO_URL}.git"
+
+
 def _is_suppressed() -> bool:
     """Return True if the update check should be skipped entirely."""
     if os.environ.get(ENV_VAR, "").strip().lower() in _TRUTHY:
