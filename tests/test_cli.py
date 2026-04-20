@@ -3,6 +3,7 @@
 from typer.testing import CliRunner
 
 from tracksplit.cli import app
+from tracksplit.tools import find_active_config
 
 runner = CliRunner()
 
@@ -61,7 +62,6 @@ def test_cli_format_flag_in_help():
 
 def test_find_active_config_returns_none_when_no_file_exists(tmp_path, monkeypatch):
     monkeypatch.setattr("tracksplit.tools._config_candidates", lambda: [tmp_path / "missing.toml"])
-    from tracksplit.tools import find_active_config
     assert find_active_config() is None
 
 
@@ -69,5 +69,4 @@ def test_find_active_config_returns_first_existing(tmp_path, monkeypatch):
     p = tmp_path / "config.toml"
     p.write_text("[tools]\n")
     monkeypatch.setattr("tracksplit.tools._config_candidates", lambda: [tmp_path / "missing.toml", p])
-    from tracksplit.tools import find_active_config
     assert find_active_config() == p
