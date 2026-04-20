@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import time
 
 import pytest
 
 from tracksplit.update_check import (
     SCHEMA_VERSION,
+    _cache_is_fresh,
     _cache_path,
     _is_newer,
     _is_prerelease_string,
@@ -120,3 +122,18 @@ class TestReadWriteCache:
         assert p.exists()
         leftovers = [x for x in p.parent.iterdir() if x.name != p.name]
         assert leftovers == []
+
+
+class TestCacheIsFresh:
+    def test_fresh_recent(self):
+        entry = {"checked_at": int(time.time()) - 1000, "ttl_seconds": 86400}
+        assert _cache_is_fresh(entry)
+
+    def test_stale_expired(self):
+        entry = {"checked_at": int(time.time()) - 100_000, "ttl_seconds": 86400}
+        assert not _cache_is_fresh(entry)
+
+    def test_missing_fields_not_fresh(self):
+        assert not _cache_is_fresh({"ttl_seconds": 86400})
+        assert not _cache_is_fresh({"checked_at": 0})
+        assert not _cache_is_fresh({})

@@ -63,6 +63,15 @@ def _read_cache() -> dict | None:
     return data
 
 
+def _cache_is_fresh(entry: dict) -> bool:
+    """Return True iff the cache entry has not yet expired."""
+    checked_at = entry.get("checked_at")
+    ttl = entry.get("ttl_seconds")
+    if checked_at is None or ttl is None:
+        return False
+    return (time.time() - checked_at) < ttl
+
+
 def _write_cache(*, latest_version: str | None, ttl_seconds: int) -> None:
     """Atomically write a fresh cache entry."""
     p = _cache_path()
