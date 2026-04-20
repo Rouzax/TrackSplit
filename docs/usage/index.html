@@ -601,6 +601,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-help-h" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -992,6 +1003,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-help-h" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1222,22 +1244,26 @@
 <p>Use this after installing TrackSplit to confirm your tools are set up correctly, or after changing a <a href="../configuration/">config file</a> to verify the new paths work.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>tracksplit<span class="w"> </span>--check
 </code></pre></div>
+<h3 id="-version"><code>--version</code></h3>
+<p>Print the installed version and exit.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>tracksplit<span class="w"> </span>--version
+</code></pre></div>
 <h3 id="-help-h"><code>--help</code> / <code>-h</code></h3>
 <p>Prints the built-in help text and exits.</p>
 <h2 id="what-you-see-while-it-runs">What you see while it runs</h2>
 <h3 id="single-file">Single file</h3>
 <p>A spinner shows the current step (probing, extracting, tagging, saving artwork). When it finishes, a single summary line appears:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  done  your-set.mkv: Artist/Festival Year (Stage), 14 tracks
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>  done  your-set.mkv: Artist/Festival Year (Stage), 14 tracks
 </code></pre></div>
 <p>If the file was skipped because nothing changed:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>  skip  your-set.mkv (unchanged)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>  skip  your-set.mkv (unchanged)
 </code></pre></div>
 <h3 id="directory">Directory</h3>
 <p>A progress bar shows how many files are done out of the total. Below it, one spinner line appears per active worker, each showing which file it is currently working on. When all files finish, a summary panel appears:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Processed  12
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>Skipped     3
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>Failed      0
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>Cancelled   0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Processed  12
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>Skipped     3
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>Failed      0
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>Cancelled   0
 </code></pre></div>
 <h2 id="what-it-means-when-a-file-is-skipped">What it means when a file is skipped</h2>
 <p>TrackSplit keeps a small record file (<code>.tracksplit_manifest.json</code>) in each album folder. On subsequent runs it compares the source file and its settings against that record. If nothing meaningful has changed (same chapters, same metadata, same format), it skips the album without redoing any work.</p>
@@ -1254,19 +1280,19 @@
 <p>Partially-written output files may be left behind. Re-running without <code>--force</code> will complete files that finished cleanly; cancelled files will be rebuilt from scratch.</p>
 <h2 id="examples">Examples</h2>
 <p><strong>Turn a single video into an album:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/
 </code></pre></div>
 <p>TrackSplit reads the file, splits the audio at chapter boundaries, tags everything, generates cover art, and writes the album into <code>~/music/library/Artist/Album/</code>.</p>
 <p><strong>Process a whole folder of videos into a music library:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>tracksplit<span class="w"> </span>~/videos/<span class="w"> </span>--output<span class="w"> </span>~/music/library/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>tracksplit<span class="w"> </span>~/videos/<span class="w"> </span>--output<span class="w"> </span>~/music/library/
 </code></pre></div>
 <p>Every recognised video in <code>~/videos/</code> becomes an album. Already-processed files are skipped automatically on repeat runs.</p>
 <p><strong>Preview without writing anything:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--dry-run<span class="w"> </span>--verbose
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--dry-run<span class="w"> </span>--verbose
 </code></pre></div>
 <p>Shows what album name, track count, and output path would be produced. Nothing is written to disk.</p>
 <p><strong>Rebuild after changing format or when something looks wrong:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--force<span class="w"> </span>--format<span class="w"> </span>flac
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--force<span class="w"> </span>--format<span class="w"> </span>flac
 </code></pre></div>
 <p>Ignores the existing album and regenerates everything from scratch as FLAC files.</p>
 <h2 id="advanced-details">Advanced details</h2>
