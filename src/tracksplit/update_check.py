@@ -5,11 +5,19 @@ Keep in sync when editing. Only PACKAGE_NAME, ENV_VAR, and REPO_URL differ.
 """
 from __future__ import annotations
 
+import json
+import os
 import re
+import tempfile
+import time
+from pathlib import Path
 
 PACKAGE_NAME = "tracksplit"
 ENV_VAR = "TRACKSPLIT_NO_UPDATE_CHECK"
 REPO_URL = "https://github.com/Rouzax/TrackSplit"
+
+SCHEMA_VERSION = 1
+_CACHE_FILENAME = "update-check.json"
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 _PRERELEASE_RE = re.compile(r"(a|b|rc|dev|post)", re.IGNORECASE)
@@ -32,6 +40,54 @@ def _is_newer(installed: str, candidate: str) -> bool:
 
 def _is_prerelease_string(v: str) -> bool:
     return bool(_PRERELEASE_RE.search(v))
+
+
+def _cache_path() -> Path:
+    """Return the OS-appropriate path for the cache file."""
+    if win := os.environ.get("LOCALAPPDATA"):
+        return Path(win) / PACKAGE_NAME / _CACHE_FILENAME
+    if xdg := os.environ.get("XDG_CACHE_HOME"):
+        return Path(xdg) / PACKAGE_NAME / _CACHE_FILENAME
+    return Path.home() / ".cache" / PACKAGE_NAME / _CACHE_FILENAME
+
+
+def _read_cache() -> dict | None:
+    """Return the cached entry dict, or None if missing/corrupt/unknown-schema."""
+    p = _cache_path()
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(data, dict) or data.get("schema") != SCHEMA_VERSION:
+        return None
+    return data
+
+
+def _write_cache(*, latest_version: str | None, ttl_seconds: int) -> None:
+    """Atomically write a fresh cache entry."""
+    p = _cache_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema": SCHEMA_VERSION,
+        "checked_at": int(time.time()),
+        "ttl_seconds": ttl_seconds,
+        "latest_version": latest_version,
+    }
+    fd, tmp_path = tempfile.mkstemp(
+        dir=str(p.parent),
+        prefix=p.name + ".",
+        suffix=".tmp",
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(payload, f)
+        os.replace(tmp_path, p)
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def print_cached_update_notice(console) -> None:
