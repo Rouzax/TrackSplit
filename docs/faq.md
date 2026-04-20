@@ -70,3 +70,17 @@ Yes, for both output formats, subject to player support.
 They do different jobs and work best together. **CrateDigger** builds a video library: it identifies recordings, embeds chapter markers and metadata, generates posters, and syncs with Kodi. **TrackSplit** reads that video library and produces a parallel music library of tagged FLAC or Opus albums for music servers like Jellyfin and Lyrion.
 
 Because they share the same artist names, festival spellings, and MusicBrainz IDs, the same set shows up consistently whether you are browsing your video library or your music library.
+
+## What is the yellow "!" message on startup?
+
+That message means a newer release of TrackSplit is available on GitHub. The line shows the new version number and an upgrade command suited to your install method.
+
+To upgrade, run the command printed in the notice. The three common variants are:
+
+- pipx: `pipx upgrade tracksplit`
+- uv: `uv tool upgrade tracksplit`
+- pip: `pip install --upgrade git+https://github.com/Rouzax/TrackSplit.git`
+
+To silence the notice, set `TRACKSPLIT_NO_UPDATE_CHECK=1` in your environment (the values `true` and `yes` are also accepted, case-insensitively). The notice is already suppressed automatically whenever stdout is not a terminal, such as in pipes, redirects, cron jobs, and CI environments.
+
+The check involves no telemetry. It is a standard read-only request to the GitHub Releases API, results are cached locally for 24 hours, and the check never delays or blocks your run. If the network is unreachable, TrackSplit continues silently.

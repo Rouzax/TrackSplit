@@ -50,6 +50,7 @@ It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), wh
 - **Two metadata tiers.** Basic tagging for any chaptered video. Full enrichment when CrateDigger-style tags are present.
 - **Re-run detection.** A manifest in each album folder tracks chapter hashes and source mtime, so repeat runs on the same library are near-instant.
 - **Parallel batch mode.** Process a directory of videos with multiple workers and a live progress display.
+- **Update notifications.** On interactive runs, if a newer GitHub release is available, TrackSplit prints a one-line notice at startup with the new version number and the correct upgrade command for your install method. The notice is silent when output is not a terminal (pipes, redirects, CI, cron) and can be suppressed entirely with `TRACKSPLIT_NO_UPDATE_CHECK=1`.
 
 ## Quick Start
 
@@ -61,12 +62,45 @@ It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), wh
 
 ### Install
 
+Choose the path that fits how you use TrackSplit:
+
+**pipx (recommended for end users):** installs TrackSplit into its own isolated environment and puts the `tracksplit` command on your PATH without affecting other Python projects.
+
+```bash
+pipx install git+https://github.com/Rouzax/TrackSplit.git
+```
+
+Upgrade later with:
+
+```bash
+pipx upgrade tracksplit
+```
+
+**pip (user site or venv):** use this if you prefer pip or are installing into an active virtual environment.
+
+```bash
+pip install git+https://github.com/Rouzax/TrackSplit.git
+```
+
+Upgrade later with:
+
+```bash
+pip install --upgrade git+https://github.com/Rouzax/TrackSplit.git
+```
+
+**From source (contributors):** clone the repository, then install in editable mode:
+
 ```bash
 pip install -e .
-tracksplit --check
 ```
 
 Optional: run `./scripts/setup-hooks.sh` to install the pre-push hook that gates accidental release commits.
+
+After installing, verify your setup:
+
+```bash
+tracksplit --check
+```
 
 `tracksplit --check` probes `ffmpeg`, `ffprobe`, and `mkvextract` and prints their versions (or an install hint if something is missing).
 

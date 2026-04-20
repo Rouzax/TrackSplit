@@ -39,13 +39,21 @@ MKVToolNix provides `mkvextract` and `mkvmerge`, which TrackSplit uses to pull c
 
 ## Install TrackSplit
 
-From the TrackSplit directory, run:
+Choose the path that fits how you use TrackSplit. All options install its Python dependencies and register the `tracksplit` command.
+
+**pipx (recommended):** pipx installs TrackSplit into its own isolated environment, keeping it separate from other Python tools on your system.
 
 ```bash
-pip install -e .
+pipx install git+https://github.com/Rouzax/TrackSplit.git
 ```
 
-This installs TrackSplit and its Python dependencies, and registers the `tracksplit` command. You do not need to install any extra Python packages manually.
+**pip (user site or venv):** use this if you prefer pip or are installing inside an active virtual environment.
+
+```bash
+pip install git+https://github.com/Rouzax/TrackSplit.git
+```
+
+**Contributors:** clone the repository and install in editable mode with `pip install -e .` from the project directory.
 
 ## Verify your setup
 

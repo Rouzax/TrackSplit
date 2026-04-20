@@ -172,6 +172,33 @@ Pressing `Ctrl+C` while TrackSplit is running:
 
 Partially-written output files may be left behind. Re-running without `--force` will complete files that finished cleanly; cancelled files will be rebuilt from scratch.
 
+## Update notifications
+
+When you run TrackSplit interactively and a newer stable release is available on GitHub, it prints a short notice at the top of its output. The notice shows the new version number and the upgrade command for your install method (pipx, uv, or pip). It looks like this:
+
+```
+! TrackSplit 0.6.9 is available. Run: pipx upgrade tracksplit
+```
+
+The check is unobtrusive by design. It runs in the background with a 2-second network timeout, never delays or blocks your run, and is silent on any network failure. Results are cached locally for 24 hours (1 hour after a failed check), so the check happens at most once per day.
+
+**When it stays silent automatically:** the notice is suppressed whenever stdout is not a terminal, including pipes, redirects, cron jobs, and CI environments. Nothing extra is needed in those contexts.
+
+**To disable it explicitly:** set the environment variable `TRACKSPLIT_NO_UPDATE_CHECK=1` before running. The values `true` and `yes` are also accepted, case-insensitively.
+
+```bash
+TRACKSPLIT_NO_UPDATE_CHECK=1 tracksplit ~/videos/ --output ~/music/library/
+```
+
+**Cache location:**
+
+| Platform | Path |
+|---|---|
+| Linux / macOS | `~/.cache/tracksplit/update-check.json` |
+| Windows | `%LOCALAPPDATA%\tracksplit\update-check.json` |
+
+To force a fresh check, delete the cache file. TrackSplit will check GitHub again on the next run.
+
 ## Examples
 
 **Turn a single video into an album:**
