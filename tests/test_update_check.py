@@ -137,3 +137,88 @@ class TestCacheIsFresh:
         assert not _cache_is_fresh({"ttl_seconds": 86400})
         assert not _cache_is_fresh({"checked_at": 0})
         assert not _cache_is_fresh({})
+
+
+class TestFetchLatestRelease:
+    def _fake_response(self, body: bytes):
+        from io import BytesIO
+        r = BytesIO(body)
+        return r
+
+    def test_success(self):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import _fetch_latest_release
+        payload = b'{"tag_name": "v0.7.0"}'
+        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+            assert _fetch_latest_release() == "0.7.0"
+
+    def test_strips_single_leading_v(self):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import _fetch_latest_release
+        payload = b'{"tag_name": "v1.0.0"}'
+        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+            assert _fetch_latest_release() == "1.0.0"
+
+    def test_no_leading_v(self):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import _fetch_latest_release
+        payload = b'{"tag_name": "0.7.0"}'
+        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+            assert _fetch_latest_release() == "0.7.0"
+
+    def test_timeout_returns_none(self):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import _fetch_latest_release
+        with patch("tracksplit.update_check.urlopen", side_effect=TimeoutError()):
+            assert _fetch_latest_release() is None
+
+    def test_url_error_returns_none(self):
+        from unittest.mock import patch
+        from urllib.error import URLError
+
+        from tracksplit.update_check import _fetch_latest_release
+        with patch("tracksplit.update_check.urlopen", side_effect=URLError("dns")):
+            assert _fetch_latest_release() is None
+
+    def test_http_error_returns_none(self):
+        from unittest.mock import patch
+        from urllib.error import HTTPError
+
+        from tracksplit.update_check import _fetch_latest_release
+        err = HTTPError("u", 500, "boom", {}, None)  # type: ignore[arg-type]
+        with patch("tracksplit.update_check.urlopen", side_effect=err):
+            assert _fetch_latest_release() is None
+
+    def test_malformed_json_returns_none(self):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import _fetch_latest_release
+        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(b"not json")):
+            assert _fetch_latest_release() is None
+
+    def test_missing_tag_returns_none(self):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import _fetch_latest_release
+        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(b"{}")):
+            assert _fetch_latest_release() is None
+
+    def test_prerelease_returns_none(self):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import _fetch_latest_release
+        payload = b'{"tag_name": "v0.7.0rc1"}'
+        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+            assert _fetch_latest_release() is None
+
+    def test_malformed_tag_returns_none(self):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import _fetch_latest_release
+        payload = b'{"tag_name": "bogus"}'
+        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+            assert _fetch_latest_release() is None

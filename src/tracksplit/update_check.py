@@ -11,6 +11,7 @@ import re
 import tempfile
 import time
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 PACKAGE_NAME = "tracksplit"
 ENV_VAR = "TRACKSPLIT_NO_UPDATE_CHECK"
@@ -18,6 +19,9 @@ REPO_URL = "https://github.com/Rouzax/TrackSplit"
 
 SCHEMA_VERSION = 1
 _CACHE_FILENAME = "update-check.json"
+
+_RELEASES_URL_TEMPLATE = "https://api.github.com/repos/{owner_repo}/releases/latest"
+_HTTP_TIMEOUT_SECONDS = 2.0
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 _PRERELEASE_RE = re.compile(r"(a|b|rc|dev|post)", re.IGNORECASE)
@@ -97,6 +101,42 @@ def _write_cache(*, latest_version: str | None, ttl_seconds: int) -> None:
         except OSError:
             pass
         raise
+
+
+def _releases_url() -> str:
+    owner_repo = REPO_URL.rsplit("github.com/", 1)[-1].rstrip("/")
+    return _RELEASES_URL_TEMPLATE.format(owner_repo=owner_repo)
+
+
+def _user_agent() -> str:
+    try:
+        from importlib.metadata import version
+        return f"{PACKAGE_NAME}/{version(PACKAGE_NAME)} (+update-check)"
+    except Exception:
+        return f"{PACKAGE_NAME}/unknown (+update-check)"
+
+
+def _fetch_latest_release() -> str | None:
+    """Return the latest stable release version string, or None on any failure."""
+    try:
+        req = Request(_releases_url(), headers={"User-Agent": _user_agent()})
+        with urlopen(req, timeout=_HTTP_TIMEOUT_SECONDS) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return None
+
+    tag = data.get("tag_name") if isinstance(data, dict) else None
+    if not isinstance(tag, str) or not tag:
+        return None
+
+    if tag.startswith("v"):
+        tag = tag[1:]
+
+    if _is_prerelease_string(tag):
+        return None
+    if _parse_version(tag) is None:
+        return None
+    return tag
 
 
 def print_cached_update_notice(console) -> None:
