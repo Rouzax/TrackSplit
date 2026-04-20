@@ -358,6 +358,9 @@ def main(
     """Process video files and extract audio chapters into tagged albums."""
     _setup_logging(verbose, debug)
 
+    from tracksplit.update_check import print_cached_update_notice
+    print_cached_update_notice(console)
+
     if check:
         raise typer.Exit(code=_run_check())
 
@@ -444,4 +447,11 @@ def main(
 
 def run() -> None:
     """Entry point referenced in pyproject.toml."""
-    app()
+    try:
+        app()
+    finally:
+        try:
+            from tracksplit.update_check import refresh_update_cache
+            refresh_update_cache()
+        except BaseException:
+            pass

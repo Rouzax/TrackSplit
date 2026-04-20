@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - `--version` flag on the CLI.
 - scripts/git-hooks/pre-push hook that gates 'chore: release' commits behind an interactive prompt.
+- Startup update notification: prints a notice when a newer GitHub Release is available. Silent in non-interactive contexts; suppressible with TRACKSPLIT_NO_UPDATE_CHECK=1.
 
 ## [0.6.7] - 2026-04-19
 
