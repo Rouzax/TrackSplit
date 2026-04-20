@@ -66,6 +66,8 @@ pip install -e .
 tracksplit --check
 ```
 
+Optional: run `./scripts/setup-hooks.sh` to install the pre-push hook that gates accidental release commits.
+
 `tracksplit --check` probes `ffmpeg`, `ffprobe`, and `mkvextract` and prints their versions (or an install hint if something is missing).
 
 ### Usage
