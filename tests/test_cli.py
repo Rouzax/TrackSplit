@@ -26,6 +26,14 @@ def test_cli_help():
     assert "output" in result.output.lower()
 
 
+def test_version_flag_prints_version_and_exits():
+    """--version should print the installed version and exit 0."""
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    from importlib.metadata import version
+    assert version("tracksplit") in result.stdout
+
+
 def test_cli_invalid_format_rejected():
     """Invalid --format value should fail with a clean message."""
     import tempfile, os

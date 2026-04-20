@@ -281,12 +281,27 @@ def _run_check() -> int:
     return 1 if any_fail else 0
 
 
+def _version_callback(value: bool) -> None:
+    if value:
+        from importlib.metadata import version
+
+        typer.echo(f"tracksplit {version('tracksplit')}")
+        raise typer.Exit()
+
+
 @app.command()
 def main(
     input_path: Optional[Path] = typer.Argument(
         None,
         exists=True,
         help="Video file or directory of video files to process.",
+    ),
+    version_flag: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show version and exit.",
     ),
     output: Optional[Path] = typer.Option(
         None,

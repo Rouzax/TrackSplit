@@ -114,6 +114,14 @@ Use this after installing TrackSplit to confirm your tools are set up correctly,
 tracksplit --check
 ```
 
+### `--version`
+
+Print the installed version and exit.
+
+```bash
+tracksplit --version
+```
+
 ### `--help` / `-h`
 
 Prints the built-in help text and exits.
