@@ -5,6 +5,7 @@ Keep in sync when editing. Only PACKAGE_NAME, ENV_VAR, and REPO_URL differ.
 """
 from __future__ import annotations
 
+import importlib.metadata
 import json
 import os
 import re
@@ -166,7 +167,30 @@ def _fetch_latest_release() -> str | None:
 def print_cached_update_notice(console) -> None:
     """Called at CLI startup. Prints a notice if the cache indicates a
     newer release is available. No network I/O. Silent on any failure."""
-    raise NotImplementedError
+    try:
+        if _is_suppressed():
+            return
+        entry = _read_cache()
+        if entry is None:
+            return
+        latest = entry.get("latest_version")
+        if not isinstance(latest, str) or not latest:
+            return
+        try:
+            installed = importlib.metadata.version(PACKAGE_NAME)
+        except importlib.metadata.PackageNotFoundError:
+            return
+        if not _is_newer(installed=installed, candidate=latest):
+            return
+        cmd = _upgrade_command()
+        console.print(
+            f"[yellow]![/yellow] A new {PACKAGE_NAME} version is available: "
+            f"{installed} \u2192 {latest}"
+        )
+        console.print(f"  Upgrade: [cyan]{cmd}[/cyan]")
+    except BaseException:
+        import logging
+        logging.getLogger(__name__).debug("update-check notice failed", exc_info=True)
 
 
 def refresh_update_cache() -> None:

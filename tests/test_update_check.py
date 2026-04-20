@@ -278,3 +278,76 @@ class TestUpgradeCommand:
         cmd = _upgrade_command()
         assert "pip install --upgrade" in cmd
         assert "git+https://github.com/Rouzax/TrackSplit" in cmd
+
+
+class TestPrintCachedUpdateNotice:
+    def _make_console(self):
+        from io import StringIO
+
+        from rich.console import Console
+        buf = StringIO()
+        return Console(file=buf, force_terminal=False, width=120), buf
+
+    def test_newer_version_prints(self, tmp_path, monkeypatch):
+        from tracksplit.update_check import print_cached_update_notice
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        monkeypatch.setattr(
+            "tracksplit.update_check.importlib.metadata.version",
+            lambda _: "0.6.7",
+        )
+        _write_cache(latest_version="0.7.0", ttl_seconds=86400)
+        console, buf = self._make_console()
+        print_cached_update_notice(console)
+        out = buf.getvalue()
+        assert "0.6.7" in out
+        assert "0.7.0" in out
+        assert "tracksplit" in out
+
+    def test_same_version_silent(self, tmp_path, monkeypatch):
+        from tracksplit.update_check import print_cached_update_notice
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        monkeypatch.setattr(
+            "tracksplit.update_check.importlib.metadata.version",
+            lambda _: "0.7.0",
+        )
+        _write_cache(latest_version="0.7.0", ttl_seconds=86400)
+        console, buf = self._make_console()
+        print_cached_update_notice(console)
+        assert buf.getvalue() == ""
+
+    def test_null_latest_silent(self, tmp_path, monkeypatch):
+        from tracksplit.update_check import print_cached_update_notice
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        _write_cache(latest_version=None, ttl_seconds=3600)
+        console, buf = self._make_console()
+        print_cached_update_notice(console)
+        assert buf.getvalue() == ""
+
+    def test_no_cache_silent(self, tmp_path, monkeypatch):
+        from tracksplit.update_check import print_cached_update_notice
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        console, buf = self._make_console()
+        print_cached_update_notice(console)
+        assert buf.getvalue() == ""
+
+    def test_suppressed_silent(self, tmp_path, monkeypatch):
+        from tracksplit.update_check import print_cached_update_notice
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
+        _write_cache(latest_version="99.0.0", ttl_seconds=86400)
+        console, buf = self._make_console()
+        print_cached_update_notice(console)
+        assert buf.getvalue() == ""
