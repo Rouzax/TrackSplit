@@ -94,8 +94,6 @@ pip install --upgrade git+https://github.com/Rouzax/TrackSplit.git
 pip install -e .
 ```
 
-Optional: run `./scripts/setup-hooks.sh` to install the pre-push hook that gates accidental release commits.
-
 After installing, verify your setup:
 
 ```bash
