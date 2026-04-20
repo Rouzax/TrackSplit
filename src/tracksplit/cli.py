@@ -320,9 +320,9 @@ def _run_check() -> int:
     else:
         parts = []
         if errors:
-            parts.append(f"[red]{errors} error(s)[/red]")
+            parts.append(f"[red]{errors} {'error' if errors == 1 else 'errors'}[/red]")
         if warnings:
-            parts.append(f"[yellow]{warnings} warning(s)[/yellow]")
+            parts.append(f"[yellow]{warnings} {'warning' if warnings == 1 else 'warnings'}[/yellow]")
         out.print(", ".join(parts) + ".")
 
     return 1 if errors else 0
