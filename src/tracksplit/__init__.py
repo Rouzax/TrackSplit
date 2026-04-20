@@ -1,1 +1,1 @@
-__version__ = "0.6.6"
+"""TrackSplit: extract audio from video chapters into FLAC music albums."""
