@@ -26,7 +26,7 @@ from tracksplit.console import (
 from tracksplit.pipeline import find_video_files, process_file
 from tracksplit.probe import is_video_file
 from tracksplit.subprocess_utils import CancelledError, kill_active_processes
-from tracksplit.tools import install_hint, verify_required_tools, verify_tool
+from tracksplit.tools import install_hint, verify_required_tools
 
 app = typer.Typer(
     name="tracksplit",
@@ -276,7 +276,7 @@ _PACKAGES = ["Pillow", "mutagen", "rich", "numpy", "ftfy", "typer"]
 def _run_check() -> int:
     """Probe tools, config, and packages. Returns exit code (1 if required check fails)."""
     import sys as _sys
-    from tracksplit.tools import find_active_config, install_hint, verify_tool
+    from tracksplit.tools import find_active_config, install_hint, verify_tool  # type: ignore[reportAttributeAccessIssue]
     from importlib.metadata import PackageNotFoundError, version
 
     out = make_console(file=_sys.stdout)
