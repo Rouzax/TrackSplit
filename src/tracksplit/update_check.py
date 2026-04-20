@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -22,6 +23,8 @@ _CACHE_FILENAME = "update-check.json"
 
 _RELEASES_URL_TEMPLATE = "https://api.github.com/repos/{owner_repo}/releases/latest"
 _HTTP_TIMEOUT_SECONDS = 2.0
+
+_TRUTHY = {"1", "true", "yes"}
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 _PRERELEASE_RE = re.compile(r"(a|b|rc|dev|post)", re.IGNORECASE)
@@ -101,6 +104,18 @@ def _write_cache(*, latest_version: str | None, ttl_seconds: int) -> None:
         except OSError:
             pass
         raise
+
+
+def _is_suppressed() -> bool:
+    """Return True if the update check should be skipped entirely."""
+    if os.environ.get(ENV_VAR, "").strip().lower() in _TRUTHY:
+        return True
+    try:
+        if not sys.stdout.isatty():
+            return True
+    except (AttributeError, ValueError):
+        return True
+    return False
 
 
 def _releases_url() -> str:

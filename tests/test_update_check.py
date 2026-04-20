@@ -222,3 +222,31 @@ class TestFetchLatestRelease:
         payload = b'{"tag_name": "bogus"}'
         with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
             assert _fetch_latest_release() is None
+
+
+class TestIsSuppressed:
+    def test_not_suppressed_default(self, monkeypatch):
+        from tracksplit.update_check import _is_suppressed
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        assert not _is_suppressed()
+
+    def test_suppressed_when_not_tty(self, monkeypatch):
+        from tracksplit.update_check import _is_suppressed
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: False)
+        assert _is_suppressed()
+
+    @pytest.mark.parametrize("value", ["1", "true", "yes", "TRUE", "Yes"])
+    def test_env_var_truthy(self, monkeypatch, value):
+        from tracksplit.update_check import _is_suppressed
+        monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", value)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        assert _is_suppressed()
+
+    @pytest.mark.parametrize("value", ["0", "false", "no", ""])
+    def test_env_var_falsy(self, monkeypatch, value):
+        from tracksplit.update_check import _is_suppressed
+        monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", value)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        assert not _is_suppressed()
