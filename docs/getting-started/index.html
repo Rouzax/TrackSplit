@@ -988,18 +988,22 @@
 <li><strong>Windows:</strong> download the installer from <a href="https://mkvtoolnix.download/downloads.html">mkvtoolnix.download</a>.</li>
 </ul>
 <h2 id="install-tracksplit">Install TrackSplit</h2>
-<p>From the TrackSplit directory, run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+<p>Choose the path that fits how you use TrackSplit. All options install its Python dependencies and register the <code>tracksplit</code> command.</p>
+<p><strong>pipx (recommended):</strong> pipx installs TrackSplit into its own isolated environment, keeping it separate from other Python tools on your system.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pipx<span class="w"> </span>install<span class="w"> </span>git+https://github.com/Rouzax/TrackSplit.git
 </code></pre></div>
-<p>This installs TrackSplit and its Python dependencies, and registers the <code>tracksplit</code> command. You do not need to install any extra Python packages manually.</p>
+<p><strong>pip (user site or venv):</strong> use this if you prefer pip or are installing inside an active virtual environment.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/Rouzax/TrackSplit.git
+</code></pre></div>
+<p><strong>Contributors:</strong> clone the repository and install in editable mode with <code>pip install -e .</code> from the project directory.</p>
 <h2 id="verify-your-setup">Verify your setup</h2>
 <p>Run the built-in check to confirm TrackSplit can find its tools:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>tracksplit<span class="w"> </span>--check
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>tracksplit<span class="w"> </span>--check
 </code></pre></div>
 <p>You should see something like:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>✓ ffmpeg     ffmpeg version 7.0.2 ...
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>✓ ffprobe    ffprobe version 7.0.2 ...
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>✓ mkvextract mkvextract v82.0 ...
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>✓ ffmpeg     ffmpeg version 7.0.2 ...
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>✓ ffprobe    ffprobe version 7.0.2 ...
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>✓ mkvextract mkvextract v82.0 ...
 </code></pre></div>
 <p>What the symbols mean:</p>
 <ul>
@@ -1010,7 +1014,7 @@
 <p>If a required tool is missing, the check prints an install hint. Fix the missing tool and run <code>tracksplit --check</code> again before continuing. If the tool is installed but TrackSplit cannot find it, see <a href="../configuration/">Configuration</a> to point TrackSplit at a custom path.</p>
 <h2 id="your-first-run">Your first run</h2>
 <p>Point TrackSplit at a chaptered video file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tracksplit<span class="w"> </span>~/videos/your-set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>tracksplit<span class="w"> </span>~/videos/your-set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/
 </code></pre></div>
 <p>Replace <code>~/videos/your-set.mkv</code> with your file and <code>~/music/library/</code> with wherever you want the music to go.</p>
 <p>If you leave out <code>--output</code>, TrackSplit writes into your current working directory.</p>
@@ -1027,19 +1031,19 @@
 </ol>
 <h2 id="what-success-looks-like">What success looks like</h2>
 <p>After a successful run you will see a summary line in the terminal, such as:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Done: Afrojack/Tomorrowland 2024 (Mainstage), 14 tracks
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Done: Afrojack/Tomorrowland 2024 (Mainstage), 14 tracks
 </code></pre></div>
 <p>And your output directory will contain:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>~/music/library/
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  Afrojack/
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    folder.jpg
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    artist.jpg
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    Tomorrowland 2024 (Mainstage)/
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>      01 - Track Title.flac
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>      02 - Track Title.flac
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>      ...
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>      cover.jpg
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>      .tracksplit_manifest.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>~/music/library/
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  Afrojack/
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    folder.jpg
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    artist.jpg
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    Tomorrowland 2024 (Mainstage)/
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>      01 - Track Title.flac
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>      02 - Track Title.flac
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>      ...
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>      cover.jpg
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>      .tracksplit_manifest.json
 </code></pre></div>
 <ul>
 <li><code>*.flac</code> (or <code>*.opus</code>): one audio file per chapter, tagged and ready for your music server.</li>
@@ -1052,11 +1056,11 @@
 <p>TrackSplit only reads your source video files. It never modifies, moves, or deletes them. All output goes to the directory you specify (or your current working directory).</p>
 <h2 id="running-it-a-second-time">Running it a second time</h2>
 <p>Run the same command again and TrackSplit will finish almost instantly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>tracksplit<span class="w"> </span>~/videos/your-set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>tracksplit<span class="w"> </span>~/videos/your-set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/
 </code></pre></div>
 <p>TrackSplit checks the <code>.tracksplit_manifest.json</code> record against the source file. If nothing meaningful changed (chapters, tags, audio format), it skips the album entirely. This makes it safe and fast to run TrackSplit regularly against a large video library.</p>
 <p>To force a full rebuild even when nothing changed, add <code>--force</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>tracksplit<span class="w"> </span>~/videos/your-set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--force
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>tracksplit<span class="w"> </span>~/videos/your-set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--force
 </code></pre></div>
 <h2 id="what-to-do-next">What to do next</h2>
 <ul>

@@ -727,6 +727,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#what-is-the-yellow-message-on-startup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is the yellow "!" message on startup?
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -893,6 +904,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#what-is-the-yellow-message-on-startup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is the yellow "!" message on startup?
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -952,6 +974,16 @@
 <h2 id="how-does-tracksplit-differ-from-cratedigger">How does TrackSplit differ from CrateDigger?</h2>
 <p>They do different jobs and work best together. <strong>CrateDigger</strong> builds a video library: it identifies recordings, embeds chapter markers and metadata, generates posters, and syncs with Kodi. <strong>TrackSplit</strong> reads that video library and produces a parallel music library of tagged FLAC or Opus albums for music servers like Jellyfin and Lyrion.</p>
 <p>Because they share the same artist names, festival spellings, and MusicBrainz IDs, the same set shows up consistently whether you are browsing your video library or your music library.</p>
+<h2 id="what-is-the-yellow-message-on-startup">What is the yellow "!" message on startup?</h2>
+<p>That message means a newer release of TrackSplit is available on GitHub. The line shows the new version number and an upgrade command suited to your install method.</p>
+<p>To upgrade, run the command printed in the notice. The three common variants are:</p>
+<ul>
+<li>pipx: <code>pipx upgrade tracksplit</code></li>
+<li>uv: <code>uv tool upgrade tracksplit</code></li>
+<li>pip: <code>pip install --upgrade git+https://github.com/Rouzax/TrackSplit.git</code></li>
+</ul>
+<p>To silence the notice, set <code>TRACKSPLIT_NO_UPDATE_CHECK=1</code> in your environment (the values <code>true</code> and <code>yes</code> are also accepted, case-insensitively). The notice is already suppressed automatically whenever stdout is not a terminal, such as in pipes, redirects, cron jobs, and CI environments.</p>
+<p>The check involves no telemetry. It is a standard read-only request to the GitHub Releases API, results are cached locally for 24 hours, and the check never delays or blocks your run. If the network is unreachable, TrackSplit continues silently.</p>
 
 
 

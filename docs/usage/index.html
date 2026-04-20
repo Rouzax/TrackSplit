@@ -689,6 +689,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#update-notifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update notifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#examples" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1091,6 +1102,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#update-notifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update notifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#examples" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1278,21 +1300,50 @@
 <li>Reports any in-progress files as <code>cancelled</code> in the final summary.</li>
 </ol>
 <p>Partially-written output files may be left behind. Re-running without <code>--force</code> will complete files that finished cleanly; cancelled files will be rebuilt from scratch.</p>
+<h2 id="update-notifications">Update notifications</h2>
+<p>When you run TrackSplit interactively and a newer stable release is available on GitHub, it prints a short notice at the top of its output. The notice shows the new version number and the upgrade command for your install method (pipx, uv, or pip). It looks like this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>! TrackSplit 0.6.9 is available. Run: pipx upgrade tracksplit
+</code></pre></div>
+<p>The check is unobtrusive by design. It runs in the background with a 2-second network timeout, never delays or blocks your run, and is silent on any network failure. Results are cached locally for 24 hours (1 hour after a failed check), so the check happens at most once per day.</p>
+<p><strong>When it stays silent automatically:</strong> the notice is suppressed whenever stdout is not a terminal, including pipes, redirects, cron jobs, and CI environments. Nothing extra is needed in those contexts.</p>
+<p><strong>To disable it explicitly:</strong> set the environment variable <code>TRACKSPLIT_NO_UPDATE_CHECK=1</code> before running. The values <code>true</code> and <code>yes</code> are also accepted, case-insensitively.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nv">TRACKSPLIT_NO_UPDATE_CHECK</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>tracksplit<span class="w"> </span>~/videos/<span class="w"> </span>--output<span class="w"> </span>~/music/library/
+</code></pre></div>
+<p><strong>Cache location:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux / macOS</td>
+<td><code>~/.cache/tracksplit/update-check.json</code></td>
+</tr>
+<tr>
+<td>Windows</td>
+<td><code>%LOCALAPPDATA%\tracksplit\update-check.json</code></td>
+</tr>
+</tbody>
+</table>
+<p>To force a fresh check, delete the cache file. TrackSplit will check GitHub again on the next run.</p>
 <h2 id="examples">Examples</h2>
 <p><strong>Turn a single video into an album:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/
 </code></pre></div>
 <p>TrackSplit reads the file, splits the audio at chapter boundaries, tags everything, generates cover art, and writes the album into <code>~/music/library/Artist/Album/</code>.</p>
 <p><strong>Process a whole folder of videos into a music library:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>tracksplit<span class="w"> </span>~/videos/<span class="w"> </span>--output<span class="w"> </span>~/music/library/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>tracksplit<span class="w"> </span>~/videos/<span class="w"> </span>--output<span class="w"> </span>~/music/library/
 </code></pre></div>
 <p>Every recognised video in <code>~/videos/</code> becomes an album. Already-processed files are skipped automatically on repeat runs.</p>
 <p><strong>Preview without writing anything:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--dry-run<span class="w"> </span>--verbose
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--dry-run<span class="w"> </span>--verbose
 </code></pre></div>
 <p>Shows what album name, track count, and output path would be produced. Nothing is written to disk.</p>
 <p><strong>Rebuild after changing format or when something looks wrong:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--force<span class="w"> </span>--format<span class="w"> </span>flac
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--force<span class="w"> </span>--format<span class="w"> </span>flac
 </code></pre></div>
 <p>Ignores the existing album and regenerates everything from scratch as FLAC files.</p>
 <h2 id="advanced-details">Advanced details</h2>
