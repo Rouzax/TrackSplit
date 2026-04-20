@@ -3,7 +3,7 @@
 from typer.testing import CliRunner
 
 from tracksplit.cli import app
-from tracksplit.tools import find_active_config
+from tracksplit.tools import find_active_config  # type: ignore[reportAttributeAccessIssue]
 
 runner = CliRunner()
 
