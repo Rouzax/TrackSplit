@@ -1262,10 +1262,19 @@
 <li><code>--debug</code>: prints the full command lines sent to FFmpeg and all subprocess output. Use this when something fails and you want to see exactly what went wrong.</li>
 </ul>
 <h3 id="-check"><code>--check</code></h3>
-<p>Probes <code>ffmpeg</code>, <code>ffprobe</code>, and <code>mkvextract</code> and prints their versions, then exits. It does not process any video files.</p>
-<p>Use this after installing TrackSplit to confirm your tools are set up correctly, or after changing a <a href="../configuration/">config file</a> to verify the new paths work.</p>
+<p>Verify your environment before processing any files. TrackSplit checks that all required external tools are installed, config files are present, and Python packages are available, then exits without processing any video files.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>tracksplit<span class="w"> </span>--check
 </code></pre></div>
+<p>TrackSplit prints a grouped report with a status marker for each item:</p>
+<ul>
+<li><code>✓</code> the item is present and working</li>
+<li><code>!</code> the item is missing or unconfigured, but optional</li>
+<li><code>✗</code> the item is missing and required</li>
+<li><code>~</code> informational (using built-in defaults, such as when no config file is present)</li>
+</ul>
+<p>A summary line at the end reports <code>All checks passed.</code> when nothing is wrong, or counts the errors and warnings otherwise.</p>
+<p>The command exits with code 0 if all required checks pass. Warnings (optional items missing) do not affect the exit code. The command exits with code 1 if any required tool or Python package is absent.</p>
+<p>Use this after installing TrackSplit to confirm your setup is complete, or after changing a <a href="../configuration/">config file</a> to verify the new paths work.</p>
 <h3 id="-version"><code>--version</code></h3>
 <p>Print the installed version and exit.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>tracksplit<span class="w"> </span>--version
