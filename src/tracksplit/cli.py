@@ -292,7 +292,7 @@ def _run_check() -> int:
             marker = "[red]\u2717[/red]" if required else "[yellow]![/yellow]"
             suffix = "" if required else " (optional, cover art only)"
             out.print(f"  {marker} {name:<12} {detail}{suffix}")
-            out.print(f"    Install: [cyan]{install_hint(name)}[/cyan]")
+            out.print(f"    [cyan]{install_hint(name)}[/cyan]")
             if required:
                 errors += 1
             else:
@@ -433,7 +433,7 @@ def main(
     if tool_errors:
         for name, detail in tool_errors:
             print_error(f"{name}: {detail}", console=console)
-            console.print(f"  Install: [cyan]{install_hint(name)}[/cyan]")
+            console.print(f"  [cyan]{install_hint(name)}[/cyan]")
         console.print(
             "  Or set tool paths in tracksplit.toml "
             "(see [cyan]tracksplit.toml.example[/cyan]).",

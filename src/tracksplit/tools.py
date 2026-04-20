@@ -111,19 +111,22 @@ def get_tool(name: str) -> str:
     return _tool_paths.get(name, name)
 
 
+_INSTALL_PACKAGES: dict[str, dict[str, str]] = {
+    "ffmpeg":     {"brew": "ffmpeg",     "apt": "ffmpeg",     "winget": "Gyan.FFmpeg"},
+    "ffprobe":    {"brew": "ffmpeg",     "apt": "ffmpeg",     "winget": "Gyan.FFmpeg"},
+    "mkvextract": {"brew": "mkvtoolnix", "apt": "mkvtoolnix", "winget": "MKVToolNix.MKVToolNix"},
+    "mkvmerge":   {"brew": "mkvtoolnix", "apt": "mkvtoolnix", "winget": "MKVToolNix.MKVToolNix"},
+}
+
+
 def _install_hint(tool: str) -> str:
     """Return an OS-specific install suggestion for a missing tool."""
-    if tool in ("ffmpeg", "ffprobe"):
-        pkg = "ffmpeg"
-    elif tool in ("mkvextract", "mkvmerge"):
-        pkg = "mkvtoolnix"
-    else:
-        pkg = tool
+    pkg = _INSTALL_PACKAGES.get(tool, {})
     if sys.platform == "darwin":
-        return f"brew install {pkg}"
+        return f"Install with: brew install {pkg.get('brew', tool)}"
     if sys.platform == "win32":
-        return f"choco install {pkg}  (or scoop install {pkg})"
-    return f"apt install {pkg}  # or your distro's equivalent"
+        return f"Install with: winget install {pkg.get('winget', tool)}"
+    return f"Install with: apt install {pkg.get('apt', tool)}"
 
 
 def verify_tool(name: str) -> tuple[bool, str]:
