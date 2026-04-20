@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.9] - 2026-04-20
+
+### Added
+
+- `--check` flag: verifies your environment before processing any files. Checks that all required external tools (ffmpeg, mkvmerge, etc.) and Python packages are installed and that config files are present, then exits without processing any video. Exits with code 0 when all required items pass; exits with code 1 if any required tool or package is absent. Optional/informational items produce warnings that do not affect the exit code. Output is grouped by category with a summary line at the end.
+
 ## [0.6.8] - 2026-04-20
 
 ### Added
