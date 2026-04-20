@@ -70,3 +70,41 @@ def test_find_active_config_returns_first_existing(tmp_path, monkeypatch):
     p.write_text("[tools]\n")
     monkeypatch.setattr("tracksplit.tools._config_candidates", lambda: [tmp_path / "missing.toml", p])
     assert find_active_config() == p
+
+
+def test_check_flag_exits_zero_when_all_tools_present(monkeypatch):
+    monkeypatch.setattr("tracksplit.tools.verify_tool", lambda name: (True, f"{name} version 1.0"))
+    monkeypatch.setattr("tracksplit.tools.find_active_config", lambda: None)
+    result = runner.invoke(app, ["--check"])
+    assert result.exit_code == 0
+
+
+def test_check_flag_exits_one_when_required_tool_missing(monkeypatch):
+    def fake_verify(name):
+        if name == "ffmpeg":
+            return False, "not found on PATH"
+        return True, f"{name} version 1.0"
+    monkeypatch.setattr("tracksplit.tools.verify_tool", fake_verify)
+    monkeypatch.setattr("tracksplit.tools.find_active_config", lambda: None)
+    result = runner.invoke(app, ["--check"])
+    assert result.exit_code == 1
+
+
+def test_check_flag_exits_zero_when_only_optional_tool_missing(monkeypatch):
+    def fake_verify(name):
+        if name in ("mkvextract", "mkvmerge"):
+            return False, "not found on PATH"
+        return True, f"{name} version 1.0"
+    monkeypatch.setattr("tracksplit.tools.verify_tool", fake_verify)
+    monkeypatch.setattr("tracksplit.tools.find_active_config", lambda: None)
+    result = runner.invoke(app, ["--check"])
+    assert result.exit_code == 0
+
+
+def test_check_flag_shows_section_headers(monkeypatch):
+    monkeypatch.setattr("tracksplit.tools.verify_tool", lambda name: (True, f"{name} 1.0"))
+    monkeypatch.setattr("tracksplit.tools.find_active_config", lambda: None)
+    result = runner.invoke(app, ["--check"])
+    assert "Tools" in result.output
+    assert "Config" in result.output
+    assert "Python packages" in result.output

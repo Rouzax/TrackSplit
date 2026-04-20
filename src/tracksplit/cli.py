@@ -263,22 +263,69 @@ def _process_directory(
     console.print(summary_panel(processed, skipped, failed, cancelled))
 
 
+_TOOLS: list[tuple[str, bool]] = [
+    ("ffmpeg", True),
+    ("ffprobe", True),
+    ("mkvextract", False),
+    ("mkvmerge", False),
+]
+
+_PACKAGES = ["Pillow", "mutagen", "rich", "numpy", "ftfy", "typer"]
+
+
 def _run_check() -> int:
-    """Probe configured tools and print their versions. Returns exit code."""
-    any_fail = False
-    for name in ("ffmpeg", "ffprobe", "mkvextract"):
+    """Probe tools, config, and packages. Returns exit code (1 if required check fails)."""
+    import sys as _sys
+    from tracksplit.tools import find_active_config, install_hint, verify_tool
+    from importlib.metadata import PackageNotFoundError, version
+
+    out = make_console(file=_sys.stdout)
+    errors = 0
+    warnings = 0
+
+    out.print("\n[bold]Tools[/bold]")
+    for name, required in _TOOLS:
         ok, detail = verify_tool(name)
         if ok:
-            console.print(f"[green]\u2713[/green] {name:<10} {detail}")
+            out.print(f"  [green]\u2713[/green] {name:<12} {detail}")
         else:
-            required = name in ("ffmpeg", "ffprobe")
             marker = "[red]\u2717[/red]" if required else "[yellow]![/yellow]"
-            label = "missing" if required else "missing (optional)"
-            console.print(f"{marker} {name:<10} {label}: {detail}")
-            console.print(f"  Install: [cyan]{install_hint(name)}[/cyan]")
+            suffix = "" if required else " (optional \u2014 cover art)"
+            out.print(f"  {marker} {name:<12} {detail}{suffix}")
+            out.print(f"    Install: [cyan]{install_hint(name)}[/cyan]")
             if required:
-                any_fail = True
-    return 1 if any_fail else 0
+                errors += 1
+            else:
+                warnings += 1
+
+    out.print("\n[bold]Config[/bold]")
+    cfg = find_active_config()
+    if cfg:
+        out.print(f"  [green]\u2713[/green] {cfg}")
+    else:
+        out.print("  [dim]\u007e[/dim] No config file found \u2014 using built-in defaults")
+
+    out.print("\n[bold]Python packages[/bold]")
+    for pkg in _PACKAGES:
+        try:
+            ver = version(pkg)
+            out.print(f"  [green]\u2713[/green] {pkg:<16} {ver}")
+        except PackageNotFoundError:
+            out.print(f"  [red]\u2717[/red] {pkg:<16} not found")
+            errors += 1
+
+    out.print()
+    if errors == 0 and warnings == 0:
+        out.print("[green]All checks passed.[/green]")
+    else:
+        parts = []
+        if errors:
+            parts.append(f"[red]{errors} error(s)[/red]")
+        if warnings:
+            parts.append(f"[yellow]{warnings} warning(s)[/yellow]")
+        out.print(", ".join(parts) + ".")
+
+    return 1 if errors else 0
 
 
 def _version_callback(value: bool) -> None:
