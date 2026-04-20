@@ -6,6 +6,7 @@ import logging
 import os
 import signal
 import subprocess
+import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -270,16 +271,15 @@ _TOOLS: list[tuple[str, bool]] = [
     ("mkvmerge", False),
 ]
 
-_PACKAGES = ["Pillow", "mutagen", "rich", "numpy", "ftfy", "typer"]
+_PACKAGES: list[str] = ["Pillow", "mutagen", "rich", "numpy", "ftfy", "typer"]
 
 
 def _run_check() -> int:
     """Probe tools, config, and packages. Returns exit code (1 if required check fails)."""
-    import sys as _sys
     from tracksplit.tools import find_active_config, install_hint, verify_tool  # type: ignore[reportAttributeAccessIssue]
     from importlib.metadata import PackageNotFoundError, version
 
-    out = make_console(file=_sys.stdout)
+    out = make_console(file=sys.stdout)
     errors = 0
     warnings = 0
 
@@ -290,7 +290,7 @@ def _run_check() -> int:
             out.print(f"  [green]\u2713[/green] {name:<12} {detail}")
         else:
             marker = "[red]\u2717[/red]" if required else "[yellow]![/yellow]"
-            suffix = "" if required else " (optional \u2014 cover art)"
+            suffix = "" if required else " (optional, cover art only)"
             out.print(f"  {marker} {name:<12} {detail}{suffix}")
             out.print(f"    Install: [cyan]{install_hint(name)}[/cyan]")
             if required:
@@ -303,7 +303,7 @@ def _run_check() -> int:
     if cfg:
         out.print(f"  [green]\u2713[/green] {cfg}")
     else:
-        out.print("  [dim]\u007e[/dim] No config file found \u2014 using built-in defaults")
+        out.print("  [dim]\u007e[/dim] No config file found, using built-in defaults")
 
     out.print("\n[bold]Python packages[/bold]")
     for pkg in _PACKAGES:
@@ -399,7 +399,7 @@ def main(
     check: bool = typer.Option(
         False,
         "--check",
-        help="Verify ffmpeg/ffprobe/mkvextract are reachable, then exit.",
+        help="Verify tools, config file, and Python packages, then exit.",
     ),
 ) -> None:
     """Process video files and extract audio chapters into tagged albums."""
