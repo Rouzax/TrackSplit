@@ -106,13 +106,24 @@ tracksplit ~/videos/ --workers 8
 
 ### `--check`
 
-Probes `ffmpeg`, `ffprobe`, and `mkvextract` and prints their versions, then exits. It does not process any video files.
-
-Use this after installing TrackSplit to confirm your tools are set up correctly, or after changing a [config file](configuration.md) to verify the new paths work.
+Verify your environment before processing any files. TrackSplit checks that all required external tools are installed, config files are present, and Python packages are available, then exits without processing any video files.
 
 ```bash
 tracksplit --check
 ```
+
+TrackSplit prints a grouped report with a status marker for each item:
+
+- `✓` the item is present and working
+- `!` the item is missing or unconfigured, but optional
+- `✗` the item is missing and required
+- `~` the item could not be verified
+
+A summary line at the end shows how many checks passed, how many produced warnings, and how many failed.
+
+The command exits with code 0 if all required checks pass. Warnings (optional items missing) do not affect the exit code. The command exits with code 1 if any required tool or Python package is absent.
+
+Use this after installing TrackSplit to confirm your setup is complete, or after changing a [config file](configuration.md) to verify the new paths work.
 
 ### `--version`
 
