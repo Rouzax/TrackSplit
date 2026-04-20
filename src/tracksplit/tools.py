@@ -62,6 +62,14 @@ def _config_candidates() -> list[Path]:
     return candidates
 
 
+def find_active_config() -> Path | None:
+    """Return the first config file that exists, or None."""
+    for path in _config_candidates():
+        if path.is_file():
+            return path
+    return None
+
+
 def _load_config() -> dict[str, str]:
     """Load tool paths from the first config file found."""
     candidates = _config_candidates()
