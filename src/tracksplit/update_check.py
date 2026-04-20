@@ -27,6 +27,9 @@ _HTTP_TIMEOUT_SECONDS = 2.0
 
 _TRUTHY = {"1", "true", "yes"}
 
+_SUCCESS_TTL_SECONDS = 86400
+_FAILURE_TTL_SECONDS = 3600
+
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 _PRERELEASE_RE = re.compile(r"(a|b|rc|dev|post)", re.IGNORECASE)
 
@@ -196,4 +199,15 @@ def print_cached_update_notice(console) -> None:
 def refresh_update_cache() -> None:
     """Called at CLI exit. Refreshes the cache by hitting the GitHub
     Releases API if the cache is stale. Silent on any failure."""
-    raise NotImplementedError
+    try:
+        if _is_suppressed():
+            return
+        entry = _read_cache()
+        if entry is not None and _cache_is_fresh(entry):
+            return
+        latest = _fetch_latest_release()
+        ttl = _SUCCESS_TTL_SECONDS if latest is not None else _FAILURE_TTL_SECONDS
+        _write_cache(latest_version=latest, ttl_seconds=ttl)
+    except BaseException:
+        import logging
+        logging.getLogger(__name__).debug("update-check refresh failed", exc_info=True)

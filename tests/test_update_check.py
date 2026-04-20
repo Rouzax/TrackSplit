@@ -351,3 +351,101 @@ class TestPrintCachedUpdateNotice:
         console, buf = self._make_console()
         print_cached_update_notice(console)
         assert buf.getvalue() == ""
+
+
+class TestRefreshUpdateCache:
+    def test_stale_triggers_fetch_and_writes(self, tmp_path, monkeypatch):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import refresh_update_cache
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        old_entry = {
+            "schema": SCHEMA_VERSION,
+            "checked_at": 0,
+            "ttl_seconds": 86400,
+            "latest_version": "0.6.0",
+        }
+        p = _cache_path()
+        p.parent.mkdir(parents=True)
+        p.write_text(json.dumps(old_entry))
+
+        with patch("tracksplit.update_check._fetch_latest_release", return_value="0.7.0"):
+            refresh_update_cache()
+
+        entry = _read_cache()
+        assert entry is not None
+        assert entry["latest_version"] == "0.7.0"
+        assert entry["ttl_seconds"] == 86400
+        assert entry["checked_at"] > 0
+
+    def test_fresh_skips_fetch(self, tmp_path, monkeypatch):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import refresh_update_cache
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        fresh_entry = {
+            "schema": SCHEMA_VERSION,
+            "checked_at": int(time.time()),
+            "ttl_seconds": 86400,
+            "latest_version": "0.7.0",
+        }
+        p = _cache_path()
+        p.parent.mkdir(parents=True)
+        p.write_text(json.dumps(fresh_entry))
+
+        with patch("tracksplit.update_check._fetch_latest_release") as m:
+            refresh_update_cache()
+            m.assert_not_called()
+
+    def test_missing_cache_triggers_fetch(self, tmp_path, monkeypatch):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import refresh_update_cache
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+
+        with patch("tracksplit.update_check._fetch_latest_release", return_value="0.7.0"):
+            refresh_update_cache()
+
+        entry = _read_cache()
+        assert entry is not None
+        assert entry["latest_version"] == "0.7.0"
+
+    def test_fetch_failure_writes_short_ttl(self, tmp_path, monkeypatch):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import refresh_update_cache
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+
+        with patch("tracksplit.update_check._fetch_latest_release", return_value=None):
+            refresh_update_cache()
+
+        entry = _read_cache()
+        assert entry is not None
+        assert entry["latest_version"] is None
+        assert entry["ttl_seconds"] == 3600
+
+    def test_suppressed_no_op(self, tmp_path, monkeypatch):
+        from unittest.mock import patch
+
+        from tracksplit.update_check import refresh_update_cache
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
+
+        with patch("tracksplit.update_check._fetch_latest_release") as m:
+            refresh_update_cache()
+            m.assert_not_called()
+
+        assert not _cache_path().exists()
