@@ -246,22 +246,38 @@ def test_fill_mbids_does_not_overwrite_existing():
 
 
 class TestFindCratediggerDirs:
-    def test_finds_global(self, cd_home: Path):
-        dirs = find_cratedigger_dirs(cd_home / "video.mkv", home_dir=cd_home)
-        assert dirs == [cd_home / ".cratedigger"]
+    def test_returns_resolved_dir_when_it_exists(self, tmp_path: Path, monkeypatch):
+        cd_dir = tmp_path / ".cratedigger"
+        cd_dir.mkdir()
+        monkeypatch.setattr(
+            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            lambda _p: cd_dir,
+        )
+        dirs = find_cratedigger_dirs(tmp_path / "video.mkv")
+        assert dirs == [cd_dir]
 
-    def test_walks_up_to_local(self, tmp_path: Path, cd_home: Path):
-        project = tmp_path / "proj"
-        local = project / ".cratedigger"
-        local.mkdir(parents=True)
-        dirs = find_cratedigger_dirs(project / "sub" / "video.mkv", home_dir=cd_home)
-        # Global first, then local found by walk-up.
-        assert dirs[0] == cd_home / ".cratedigger"
-        assert local in dirs
-
-    def test_missing_home_no_crash(self, tmp_path: Path):
-        dirs = find_cratedigger_dirs(tmp_path / "video.mkv", home_dir=tmp_path)
+    def test_returns_empty_when_resolved_dir_missing(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setattr(
+            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            lambda _p: tmp_path / "does_not_exist",
+        )
+        dirs = find_cratedigger_dirs(tmp_path / "video.mkv")
         assert dirs == []
+
+    def test_walk_up_integration(self, tmp_path: Path, monkeypatch):
+        # End-to-end: .cratedigger present at library root, no patching of
+        # the resolver. Exercises the real paths.resolve_cratedigger_data_dir
+        # walk-up. Clear CRATEDIGGER_DATA_DIR so env-var precedence cannot
+        # hijack the lookup in CI or local shells that set it.
+        monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+        library = tmp_path / "library"
+        cd_dir = library / ".cratedigger"
+        cd_dir.mkdir(parents=True)
+        input_file = library / "videos" / "file.mkv"
+        input_file.parent.mkdir(parents=True)
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
+        assert dirs == [cd_dir]
 
 
 class TestApplyCratediggerCanon:

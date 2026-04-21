@@ -1,15 +1,16 @@
 """CrateDigger config reader: festival/artist alias resolution and MBID lookup.
 
 TrackSplit consumes MKVs produced by CrateDigger (sibling project). CrateDigger
-stores canonical naming rules in ``~/.cratedigger/festivals.json`` and
-``~/.cratedigger/artists.json`` plus an ``mbid_cache.json`` mapping artist
-names to MusicBrainz IDs. This module mirrors the subset of CrateDigger's
-resolver logic that TrackSplit needs so that album folders, vorbis tags, and
-cover art all use consistent canonical names.
+stores canonical naming rules in ``festivals.json`` and ``artists.json`` plus
+an ``mbid_cache.json`` mapping artist names to MusicBrainz IDs. This module
+mirrors the subset of CrateDigger's resolver logic that TrackSplit needs so
+that album folders, vorbis tags, and cover art all use consistent canonical
+names.
 
-The lookup chain matches ``find_dj_artwork`` in cover.py: ``~/.cratedigger``
-first, then any ``.cratedigger`` directory found by walking up from the input
-file (up to 10 parent levels).
+Discovery uses :func:`tracksplit.paths.resolve_cratedigger_data_dir`: first
+``$CRATEDIGGER_DATA_DIR``, then a walk-up from the input file looking for a
+``.cratedigger/`` directory (max 10 parents), then CrateDigger's visible
+data dir (``Documents\\CrateDigger\\`` on Windows, ``~/CrateDigger/`` on Linux).
 """
 from __future__ import annotations
 
@@ -20,9 +21,9 @@ import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+from tracksplit import paths
 
-_WALK_UP_LIMIT = 10
+logger = logging.getLogger(__name__)
 
 _config_cache: dict[tuple[str, ...], "CrateDiggerConfig"] = {}
 _config_cache_lock = threading.Lock()
@@ -37,31 +38,19 @@ def _clear_config_cache() -> None:
 def find_cratedigger_dirs(
     input_path: Path, home_dir: Path | None = None
 ) -> list[Path]:
-    """Return existing ``.cratedigger`` directories relevant to ``input_path``.
+    """Return existing CrateDigger data directories relevant to ``input_path``.
 
-    Order: global (``~/.cratedigger``) first, then local directories found by
-    walking up from ``input_path`` (nearest last). Callers should read
-    later-found dirs with higher priority for per-project overrides.
+    Delegates to :func:`tracksplit.paths.resolve_cratedigger_data_dir`. The
+    ``home_dir`` parameter is retained for backward compatibility with
+    existing callers (e.g. ``load_config``) and is ignored; to redirect the
+    lookup in tests, patch ``tracksplit.paths.resolve_cratedigger_data_dir``
+    or set ``$CRATEDIGGER_DATA_DIR``.
+
+    Returns ``[resolved_dir]`` if the resolved directory exists, else ``[]``.
     """
-    if home_dir is None:
-        home_dir = Path.home()
-
-    dirs: list[Path] = []
-    global_cd = home_dir / ".cratedigger"
-    if global_cd.is_dir():
-        dirs.append(global_cd)
-
-    current = input_path.parent if input_path.is_file() else input_path
-    for _ in range(_WALK_UP_LIMIT):
-        candidate = current / ".cratedigger"
-        if candidate.is_dir() and candidate != global_cd:
-            dirs.append(candidate)
-        parent = current.parent
-        if parent == current:
-            break
-        current = parent
-
-    return dirs
+    del home_dir  # accepted but unused; kept for API stability
+    resolved = paths.resolve_cratedigger_data_dir(input_path)
+    return [resolved] if resolved.is_dir() else []
 
 
 def _load_json(path: Path) -> dict:
@@ -95,10 +84,11 @@ def _ci_get(mapping: dict, key: str):
 
 @dataclass
 class CrateDiggerConfig:
-    """Parsed CrateDigger config merged from one or more ``.cratedigger`` dirs.
+    """Parsed CrateDigger config from the resolved ``.cratedigger`` directory.
 
-    Later sources (local, closer to the input file) override earlier ones
-    (global ``~/.cratedigger``).
+    Resolution order: ``$CRATEDIGGER_DATA_DIR`` env var, then a walk-up from
+    the input file, then CrateDigger's visible data dir. The first match
+    wins; there is no cross-source merging.
     """
 
     festival_config: dict = field(default_factory=dict)

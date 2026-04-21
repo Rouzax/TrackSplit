@@ -248,58 +248,77 @@ class TestComposeCover:
 
 
 class TestFindDjArtwork:
-    def test_finds_dj_artwork_jpg_in_global(self, tmp_path):
+    def test_finds_dj_artwork_jpg_in_global(self, tmp_path, monkeypatch):
         """Prefers dj-artwork.jpg over fanart.jpg."""
-        artist_dir = tmp_path / ".cratedigger" / "artists" / "Tiësto"
+        cd_dir = tmp_path / ".cratedigger"
+        artist_dir = cd_dir / "artists" / "Tiësto"
         artist_dir.mkdir(parents=True)
         (artist_dir / "dj-artwork.jpg").write_bytes(b"dj-artwork-data")
         (artist_dir / "fanart.jpg").write_bytes(b"fanart-data")
+        monkeypatch.setattr(
+            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            lambda _p: cd_dir,
+        )
 
         result = find_dj_artwork(
             tmp_path / "music" / "file.mkv",
-            artist="Tiësto", home_dir=tmp_path,
+            artist="Tiësto",
         )
         assert result == b"dj-artwork-data"
 
-    def test_falls_back_to_fanart(self, tmp_path):
+    def test_falls_back_to_fanart(self, tmp_path, monkeypatch):
         """Uses fanart.jpg when dj-artwork.jpg is absent."""
-        artist_dir = tmp_path / ".cratedigger" / "artists" / "DJ"
+        cd_dir = tmp_path / ".cratedigger"
+        artist_dir = cd_dir / "artists" / "DJ"
         artist_dir.mkdir(parents=True)
         (artist_dir / "fanart.jpg").write_bytes(b"fanart-data")
+        monkeypatch.setattr(
+            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            lambda _p: cd_dir,
+        )
 
         result = find_dj_artwork(
             tmp_path / "music" / "file.mkv",
-            artist="DJ", home_dir=tmp_path,
+            artist="DJ",
         )
         assert result == b"fanart-data"
 
-    def test_finds_in_library_cache(self, tmp_path):
-        """Walks up from input to find .cratedigger/artists/."""
+    def test_finds_in_library_cache(self, tmp_path, monkeypatch):
+        """Resolver points at a library-local .cratedigger/artists/ cache."""
         lib_dir = tmp_path / "library"
-        artist_dir = lib_dir / ".cratedigger" / "artists" / "DJ Name"
+        cd_dir = lib_dir / ".cratedigger"
+        artist_dir = cd_dir / "artists" / "DJ Name"
         artist_dir.mkdir(parents=True)
         (artist_dir / "dj-artwork.jpg").write_bytes(b"lib-artwork")
 
         input_file = lib_dir / "videos" / "file.mkv"
         input_file.parent.mkdir(parents=True)
 
-        fake_home = tmp_path / "nope"
-        fake_home.mkdir()
+        monkeypatch.setattr(
+            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            lambda _p: cd_dir,
+        )
 
-        result = find_dj_artwork(input_file, artist="DJ Name", home_dir=fake_home)
+        result = find_dj_artwork(input_file, artist="DJ Name")
         assert result == b"lib-artwork"
 
-    def test_returns_none_when_not_found(self, tmp_path):
-        fake_home = tmp_path / "fakehome"
-        fake_home.mkdir()
+    def test_returns_none_when_not_found(self, tmp_path, monkeypatch):
+        # Patch the resolver to a guaranteed-missing directory so the real
+        # fallback (``~/CrateDigger/``) cannot accidentally satisfy the
+        # lookup on a dev machine.
+        monkeypatch.setattr(
+            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            lambda _p: tmp_path / "does_not_exist",
+        )
         result = find_dj_artwork(
             tmp_path / "file.flac",
-            home_dir=fake_home,
+            artist="Nobody",
         )
         assert result is None
 
     def test_no_artist_returns_none(self, tmp_path):
-        result = find_dj_artwork(tmp_path / "file.flac", home_dir=tmp_path)
+        # Empty artist short-circuits before any resolver lookup.
+        result = find_dj_artwork(tmp_path / "file.flac")
         assert result is None
 
 
