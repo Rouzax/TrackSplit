@@ -200,7 +200,6 @@ The log file contains the same information as `--debug` output, so it is the fir
 
 **What is happening:** TrackSplit found files or directories at locations used by a version before 0.7.0. These paths are no longer read:
 
-- `~/.cratedigger/` (old global CrateDigger fallback)
 - `~/.config/tracksplit/config.toml` (old Linux config location)
 - `~/.cache/tracksplit/` (old Linux cache location)
 - `~/tracksplit.toml` or `~/.tracksplit.toml` (old home-directory config locations)
@@ -209,7 +208,7 @@ TrackSplit does not migrate them automatically.
 
 **Fix:** For each listed path, choose one of:
 
-- **Move it** to the new location. For a config file, copy it to `~/TrackSplit/config.toml` (Linux) or `Documents\TrackSplit\config.toml` (Windows). For CrateDigger data, it should already live in CrateDigger's own data directory and is only a concern if you had a manual `~/.cratedigger/` setup.
+- **Move it** to the new location. For a config file, copy it to `~/TrackSplit/config.toml` (Linux) or `Documents\TrackSplit\config.toml` (Windows).
 - **Delete it** if you no longer need it.
 
 The warning disappears on the next run once none of the old paths exist.

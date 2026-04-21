@@ -143,11 +143,6 @@ def _legacy_paths_present(home: Path | None = None) -> list[Path]:
             if old_win_cache.is_file():
                 legacy.append(old_win_cache.parent)
 
-    # CrateDigger global fallback (TrackSplit used to read this). Keep last so
-    # the ordering in the warning reads TrackSplit-first.
-    old_cd = home / ".cratedigger"
-    if old_cd.is_dir():
-        legacy.append(old_cd)
     return legacy
 
 

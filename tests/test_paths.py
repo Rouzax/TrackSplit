@@ -188,11 +188,13 @@ class TestLegacyPathDetection:
         found = paths._legacy_paths_present(home=tmp_path)
         assert legacy in found
 
-    def test_detects_legacy_cratedigger_home(self, tmp_path: Path):
+    def test_cratedigger_home_not_flagged_yet(self, tmp_path: Path):
+        """~/.cratedigger is NOT flagged until CrateDigger ships its own migration.
+        Tracked for a follow-up once the sibling repo moves to ~/CrateDigger/."""
         legacy = tmp_path / ".cratedigger"
         legacy.mkdir()
         found = paths._legacy_paths_present(home=tmp_path)
-        assert legacy in found
+        assert legacy not in found
 
     def test_empty_when_nothing_legacy(self, tmp_path: Path):
         assert paths._legacy_paths_present(home=tmp_path) == []

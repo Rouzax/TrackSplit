@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Rotating log file written on every run to the platform log directory (`~/.local/state/TrackSplit/log/tracksplit.log` on Linux, `%LOCALAPPDATA%\TrackSplit\Logs\tracksplit.log` on Windows). The log rotates at 5 MB with five backups kept. Console output is unchanged; the log supplements it.
-- One-time startup warning when legacy paths from versions before 0.7.0 are detected (`~/.cratedigger/`, `~/.config/tracksplit/config.toml`, `~/.cache/tracksplit/`, `~/tracksplit.toml`, `~/.tracksplit.toml`). The warning lists the offending paths and instructs the user to migrate or delete them; it clears automatically once the paths are gone.
+- One-time startup warning when legacy paths from versions before 0.7.0 are detected (`~/.config/tracksplit/config.toml`, `~/.cache/tracksplit/`, `~/tracksplit.toml`, `~/.tracksplit.toml`). The warning lists the offending paths and instructs the user to migrate or delete them; it clears automatically once the paths are gone.
 
 ### Changed
 
