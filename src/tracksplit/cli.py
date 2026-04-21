@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import errno
 import logging
+import logging.handlers
 import os
 import signal
 import subprocess
@@ -16,6 +17,7 @@ import typer
 from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
 
+from tracksplit import paths
 from tracksplit.console import (
     BatchProgress,
     FileProgress,
@@ -74,7 +76,7 @@ def _report_failure(name: str, exc: BaseException) -> str:
 
 
 def _setup_logging(verbose: bool, debug: bool) -> None:
-    """Configure root logger with RichHandler."""
+    """Configure root logger with RichHandler and a rotating file handler."""
     if debug:
         level = logging.DEBUG
     elif verbose:
@@ -82,19 +84,30 @@ def _setup_logging(verbose: bool, debug: bool) -> None:
     else:
         level = logging.WARNING
 
+    rich_handler = RichHandler(
+        console=console,
+        rich_tracebacks=True,
+        show_path=False,
+        markup=False,
+        highlighter=NullHighlighter(),
+    )
+
+    log_path = paths.ensure_parent(paths.log_file())
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_path,
+        maxBytes=5 * 1024 * 1024,
+        backupCount=5,
+        encoding="utf-8",
+    )
+    file_handler.setFormatter(logging.Formatter(
+        "%(asctime)s %(levelname)s %(name)s: %(message)s"
+    ))
+
     logging.basicConfig(
         level=level,
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[
-            RichHandler(
-                console=console,
-                rich_tracebacks=True,
-                show_path=False,
-                markup=False,
-                highlighter=NullHighlighter(),
-            ),
-        ],
+        handlers=[rich_handler, file_handler],
         force=True,
     )
 
