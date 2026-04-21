@@ -128,12 +128,12 @@ tracksplit video.mkv --dry-run --verbose
 
 TrackSplit works out of the box if `ffmpeg`, `ffprobe`, and (optionally) the MKVToolNix tools are on your `PATH`. If they are installed elsewhere, point TrackSplit at them via a TOML config. Copy [`tracksplit.toml.example`](tracksplit.toml.example) and uncomment the keys you need.
 
-Search order (first hit wins):
+Place your config file at the location for your platform:
 
-1. `./tracksplit.toml`
-2. `./config.toml`
-3. `~/.config/tracksplit/config.toml` (Linux/macOS) or `$env:APPDATA\tracksplit\config.toml` (Windows PowerShell)
-4. `~/tracksplit.toml`, `~/.tracksplit.toml`
+| Platform | Config file location |
+|---|---|
+| Linux | `~/TrackSplit/config.toml` |
+| Windows | `Documents\TrackSplit\config.toml` |
 
 ```toml
 [tools]
