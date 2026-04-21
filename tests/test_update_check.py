@@ -60,68 +60,67 @@ class TestIsPrereleaseString:
 
 
 class TestCachePath:
-    def test_linux_uses_xdg(self, monkeypatch, tmp_path):
-        monkeypatch.delenv("LOCALAPPDATA", raising=False)
-        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
-        p = _cache_path()
-        assert p == tmp_path / "tracksplit" / "update-check.json"
-
-    def test_linux_fallback_home_cache(self, monkeypatch, tmp_path):
-        monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
-        monkeypatch.delenv("LOCALAPPDATA", raising=False)
-        monkeypatch.setenv("HOME", str(tmp_path))
-        p = _cache_path()
-        assert p == tmp_path / ".cache" / "tracksplit" / "update-check.json"
-
-    def test_windows_uses_localappdata(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
-        p = _cache_path()
-        assert p == tmp_path / "tracksplit" / "update-check.json"
+    def test_returns_cache_dir_joined_with_filename(self, tmp_path):
+        from unittest.mock import patch
+        with patch("tracksplit.update_check.paths") as mock_paths:
+            mock_paths.cache_dir.return_value = tmp_path
+            p = _cache_path()
+            assert p == tmp_path / "update-check.json"
 
 
 class TestReadWriteCache:
-    def test_write_then_read(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
-        monkeypatch.delenv("LOCALAPPDATA", raising=False)
-        _write_cache(latest_version="0.7.0", ttl_seconds=86400)
-        entry = _read_cache()
-        assert entry is not None
-        assert entry["latest_version"] == "0.7.0"
-        assert entry["ttl_seconds"] == 86400
-        assert entry["schema"] == SCHEMA_VERSION
-        assert "checked_at" in entry
+    def test_write_then_read(self, tmp_path):
+        from unittest.mock import patch
+        with patch("tracksplit.update_check.paths") as mock_paths:
+            mock_paths.cache_dir.return_value = tmp_path
+            mock_paths.ensure_parent.side_effect = lambda p: (p.parent.mkdir(parents=True, exist_ok=True), p)[1]
+            _write_cache(latest_version="0.7.0", ttl_seconds=86400)
+            entry = _read_cache()
+            assert entry is not None
+            assert entry["latest_version"] == "0.7.0"
+            assert entry["ttl_seconds"] == 86400
+            assert entry["schema"] == SCHEMA_VERSION
+            assert "checked_at" in entry
 
-    def test_read_missing_returns_none(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
-        monkeypatch.delenv("LOCALAPPDATA", raising=False)
-        assert _read_cache() is None
+    def test_read_missing_returns_none(self, tmp_path):
+        from unittest.mock import patch
+        with patch("tracksplit.update_check.paths") as mock_paths:
+            mock_paths.cache_dir.return_value = tmp_path
+            mock_paths.ensure_parent.side_effect = lambda p: (p.parent.mkdir(parents=True, exist_ok=True), p)[1]
+            assert _read_cache() is None
 
-    def test_read_corrupt_returns_none(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
-        monkeypatch.delenv("LOCALAPPDATA", raising=False)
-        p = _cache_path()
-        p.parent.mkdir(parents=True)
-        p.write_text("not json {{{")
-        assert _read_cache() is None
+    def test_read_corrupt_returns_none(self, tmp_path):
+        from unittest.mock import patch
+        with patch("tracksplit.update_check.paths") as mock_paths:
+            mock_paths.cache_dir.return_value = tmp_path
+            mock_paths.ensure_parent.side_effect = lambda p: (p.parent.mkdir(parents=True, exist_ok=True), p)[1]
+            p = _cache_path()
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("not json {{{")
+            assert _read_cache() is None
 
-    def test_read_unknown_schema_returns_none(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
-        monkeypatch.delenv("LOCALAPPDATA", raising=False)
-        p = _cache_path()
-        p.parent.mkdir(parents=True)
-        p.write_text(json.dumps({"schema": 999, "latest_version": "0.7.0"}))
-        assert _read_cache() is None
+    def test_read_unknown_schema_returns_none(self, tmp_path):
+        from unittest.mock import patch
+        with patch("tracksplit.update_check.paths") as mock_paths:
+            mock_paths.cache_dir.return_value = tmp_path
+            mock_paths.ensure_parent.side_effect = lambda p: (p.parent.mkdir(parents=True, exist_ok=True), p)[1]
+            p = _cache_path()
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(json.dumps({"schema": 999, "latest_version": "0.7.0"}))
+            assert _read_cache() is None
 
-    def test_write_is_atomic(self, tmp_path, monkeypatch):
+    def test_write_is_atomic(self, tmp_path):
         """_write_cache must write to a temp file and rename; a crash mid-write
         must never leave the final file in a corrupted state."""
-        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
-        monkeypatch.delenv("LOCALAPPDATA", raising=False)
-        _write_cache(latest_version="0.7.0", ttl_seconds=86400)
-        p = _cache_path()
-        assert p.exists()
-        leftovers = [x for x in p.parent.iterdir() if x.name != p.name]
-        assert leftovers == []
+        from unittest.mock import patch
+        with patch("tracksplit.update_check.paths") as mock_paths:
+            mock_paths.cache_dir.return_value = tmp_path
+            mock_paths.ensure_parent.side_effect = lambda p: (p.parent.mkdir(parents=True, exist_ok=True), p)[1]
+            _write_cache(latest_version="0.7.0", ttl_seconds=86400)
+            p = _cache_path()
+            assert p.exists()
+            leftovers = [x for x in p.parent.iterdir() if x.name != p.name]
+            assert leftovers == []
 
 
 class TestCacheIsFresh:
