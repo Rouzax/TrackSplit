@@ -179,6 +179,43 @@ pip install -e . --force-reinstall
 
 ---
 
+## Where are my logs?
+
+TrackSplit writes a rotating log file on every run, in addition to what it prints in the terminal. The log file is at:
+
+| Platform | Path |
+|---|---|
+| Linux | `~/.local/state/TrackSplit/log/tracksplit.log` |
+| Windows | `%LOCALAPPDATA%\TrackSplit\Logs\tracksplit.log` |
+
+The log rotates when it reaches 5 MB, and TrackSplit keeps the five most recent files (`tracksplit.log`, `tracksplit.log.1`, up to `tracksplit.log.5`). Older backups are deleted automatically.
+
+The log file contains the same information as `--debug` output, so it is the first place to look if something went wrong during an unattended run. You do not need to re-run with `--debug` to retrieve it.
+
+---
+
+## "Legacy TrackSplit or CrateDigger files detected" warning
+
+**What you see:** A `WARNING` line on startup listing one or more old paths.
+
+**What is happening:** TrackSplit found files or directories at locations used by a version before 0.7.0. These paths are no longer read:
+
+- `~/.cratedigger/` (old global CrateDigger fallback)
+- `~/.config/tracksplit/config.toml` (old Linux config location)
+- `~/.cache/tracksplit/` (old Linux cache location)
+- `~/tracksplit.toml` or `~/.tracksplit.toml` (old home-directory config locations)
+
+TrackSplit does not migrate them automatically.
+
+**Fix:** For each listed path, choose one of:
+
+- **Move it** to the new location. For a config file, copy it to `~/TrackSplit/config.toml` (Linux) or `Documents\TrackSplit\config.toml` (Windows). For CrateDigger data, it should already live in CrateDigger's own data directory and is only a concern if you had a manual `~/.cratedigger/` setup.
+- **Delete it** if you no longer need it.
+
+The warning disappears on the next run once none of the old paths exist.
+
+---
+
 ## Still stuck?
 
 Re-run with `--debug` and save the full output. Then open an issue and include:
