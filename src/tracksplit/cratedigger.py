@@ -35,20 +35,16 @@ def _clear_config_cache() -> None:
         _config_cache.clear()
 
 
-def find_cratedigger_dirs(
-    input_path: Path, home_dir: Path | None = None
-) -> list[Path]:
+def find_cratedigger_dirs(input_path: Path) -> list[Path]:
     """Return existing CrateDigger data directories relevant to ``input_path``.
 
-    Delegates to :func:`tracksplit.paths.resolve_cratedigger_data_dir`. The
-    ``home_dir`` parameter is retained for backward compatibility with
-    existing callers (e.g. ``load_config``) and is ignored; to redirect the
-    lookup in tests, patch ``tracksplit.paths.resolve_cratedigger_data_dir``
-    or set ``$CRATEDIGGER_DATA_DIR``.
+    Delegates to :func:`tracksplit.paths.resolve_cratedigger_data_dir`. To
+    redirect the lookup in tests, patch
+    ``tracksplit.paths.resolve_cratedigger_data_dir`` or set
+    ``$CRATEDIGGER_DATA_DIR``.
 
     Returns ``[resolved_dir]`` if the resolved directory exists, else ``[]``.
     """
-    del home_dir  # accepted but unused; kept for API stability
     resolved = paths.resolve_cratedigger_data_dir(input_path)
     return [resolved] if resolved.is_dir() else []
 
@@ -239,21 +235,19 @@ def _invert_alias_map(raw: dict[str, list[str]]) -> dict[str, str]:
     return flat
 
 
-def load_config(
-    input_path: Path, home_dir: Path | None = None
-) -> CrateDiggerConfig:
-    """Build a merged config view from all relevant CrateDigger directories.
+def load_config(input_path: Path) -> CrateDiggerConfig:
+    """Load the CrateDigger config from the directory resolved for ``input_path``.
 
-    Later directories (local, near the input file) override earlier ones.
-    Missing or malformed files are silently skipped: TrackSplit must keep
-    working when no CrateDigger config exists.
+    Returns an empty config if no directory exists. Missing or malformed
+    files inside a found directory are silently skipped: TrackSplit must keep
+    working when CrateDigger data is incomplete.
 
-    Results are memoized by the resolved directory list so batch runs read
-    each ``.cratedigger`` config only once. Callers must treat the returned
-    config as read-only. Use ``_clear_config_cache()`` if config files may
-    have changed mid-run (e.g. tests that rewrite fixtures).
+    Results are memoized by the resolved directory so batch runs read each
+    ``.cratedigger`` config only once. Callers must treat the returned config
+    as read-only. Use ``_clear_config_cache()`` if config files may have
+    changed mid-run (e.g. tests that rewrite fixtures).
     """
-    dirs = find_cratedigger_dirs(input_path, home_dir=home_dir)
+    dirs = find_cratedigger_dirs(input_path)
     key = tuple(str(d) for d in dirs)
     with _config_cache_lock:
         cached = _config_cache.get(key)

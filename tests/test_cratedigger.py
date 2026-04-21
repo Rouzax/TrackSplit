@@ -82,7 +82,7 @@ def cd_home(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def cfg(cd_home: Path) -> CrateDiggerConfig:
-    return load_config(cd_home / "video.mkv", home_dir=cd_home)
+    return load_config(cd_home / "video.mkv")
 
 
 class TestResolveFestival:
@@ -321,8 +321,8 @@ class TestApplyCratediggerCanon:
 
 class TestLoadConfigCache:
     def test_same_dirs_return_same_object(self, cd_home: Path):
-        cfg1 = load_config(cd_home / "a.mkv", home_dir=cd_home)
-        cfg2 = load_config(cd_home / "b.mkv", home_dir=cd_home)
+        cfg1 = load_config(cd_home / "a.mkv")
+        cfg2 = load_config(cd_home / "b.mkv")
         assert cfg1 is cfg2
 
     def test_different_home_returns_different_object(
@@ -330,14 +330,14 @@ class TestLoadConfigCache:
     ):
         other_home = tmp_path / "other"
         (other_home / ".cratedigger").mkdir(parents=True)
-        cfg1 = load_config(cd_home / "v.mkv", home_dir=cd_home)
-        cfg2 = load_config(other_home / "v.mkv", home_dir=other_home)
+        cfg1 = load_config(cd_home / "v.mkv")
+        cfg2 = load_config(other_home / "v.mkv")
         assert cfg1 is not cfg2
 
     def test_clear_cache_forces_reload(self, cd_home: Path):
-        cfg1 = load_config(cd_home / "v.mkv", home_dir=cd_home)
+        cfg1 = load_config(cd_home / "v.mkv")
         _clear_config_cache()
-        cfg2 = load_config(cd_home / "v.mkv", home_dir=cd_home)
+        cfg2 = load_config(cd_home / "v.mkv")
         assert cfg1 is not cfg2
         assert cfg1.artist_aliases == cfg2.artist_aliases
 
@@ -349,7 +349,7 @@ class TestLoadJsonNoise:
         home = tmp_path / "home"
         (home / ".cratedigger").mkdir(parents=True)
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
-            load_config(home / "video.mkv", home_dir=home)
+            load_config(home / "video.mkv")
         assert not any(
             "config read failed" in rec.message for rec in caplog.records
         )
@@ -361,7 +361,7 @@ class TestLoadJsonNoise:
         cd.mkdir(parents=True)
         (cd / "festivals.json").write_text("{ not json")
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
-            load_config(home / "video.mkv", home_dir=home)
+            load_config(home / "video.mkv")
         assert any(
             "config read failed" in rec.message and "festivals.json" in rec.message
             for rec in caplog.records

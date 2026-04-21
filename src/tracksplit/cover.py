@@ -607,7 +607,6 @@ def compose_cover(
 def find_dj_artwork(
     input_path: Path,
     artist: str = "",
-    home_dir: Path | None = None,
 ) -> bytes | None:
     """Look up cached DJ artwork from CrateDigger's artist cache.
 
@@ -618,7 +617,7 @@ def find_dj_artwork(
 
     Returns None if no artwork is found.
     """
-    cratedigger_dirs = find_cratedigger_dirs(input_path, home_dir=home_dir)
+    cratedigger_dirs = find_cratedigger_dirs(input_path)
 
     if not artist:
         return None
