@@ -56,6 +56,12 @@ def _load_config() -> dict[str, str]:
         logger.warning("Failed to read config %s: %s", path, exc)
         return {}
     tools_section = data.get("tools", {})
+    if not isinstance(tools_section, dict):
+        logger.warning(
+            "Config %s: [tools] must be a table, got %s. Using defaults.",
+            path, type(tools_section).__name__,
+        )
+        return {}
     resolved = {k: str(v) for k, v in tools_section.items()}
     if resolved:
         logger.info("Loaded tool config from %s: %s", path, sorted(resolved))

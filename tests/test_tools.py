@@ -46,3 +46,21 @@ class TestToolLoading:
             mock_paths.config_file.return_value = config
             assert tools.get_tool("ffmpeg") == "ffmpeg"
         assert any("config" in r.message.lower() for r in caplog.records)
+
+    def test_tools_section_as_list_falls_back_to_defaults(self, tmp_path: Path, caplog):
+        """`tools = [...]` (array instead of table) must not crash the CLI."""
+        config = tmp_path / "config.toml"
+        config.write_text('tools = ["ffmpeg"]\n')
+        with patch("tracksplit.tools.paths") as mock_paths:
+            mock_paths.config_file.return_value = config
+            with caplog.at_level("WARNING"):
+                assert tools.get_tool("ffmpeg") == "ffmpeg"
+        assert any("tools" in r.getMessage().lower() for r in caplog.records)
+
+    def test_tools_section_as_string_falls_back_to_defaults(self, tmp_path: Path, caplog):
+        config = tmp_path / "config.toml"
+        config.write_text('tools = "ffmpeg"\n')
+        with patch("tracksplit.tools.paths") as mock_paths:
+            mock_paths.config_file.return_value = config
+            with caplog.at_level("WARNING"):
+                assert tools.get_tool("ffmpeg") == "ffmpeg"
