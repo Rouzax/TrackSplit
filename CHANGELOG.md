@@ -11,6 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - The release workflow is now triggered manually via `gh workflow run release.yml -f version=X.Y.Z` (or the GitHub UI), replacing the prior commit-message-matched trigger. The workflow still validates `pyproject.toml` and `CHANGELOG.md`, builds, tags, and publishes. The local `scripts/release.sh`, `scripts/git-hooks/pre-push`, and `scripts/setup-hooks.sh` have been removed; they existed to construct and gate a very specific commit-message format that the workflow no longer relies on.
 
+## [0.7.0] - 2026-04-21
+
+### Added
+
+- Rotating log file written on every run to the platform log directory (`~/.local/state/TrackSplit/log/tracksplit.log` on Linux, `%LOCALAPPDATA%\TrackSplit\Logs\tracksplit.log` on Windows). The log rotates at 5 MB with five backups kept. Console output is unchanged; the log supplements it.
+- One-time startup warning when legacy paths from versions before 0.7.0 are detected (`~/.cratedigger/`, `~/.config/tracksplit/config.toml`, `~/.cache/tracksplit/`, `~/tracksplit.toml`, `~/.tracksplit.toml`). The warning lists the offending paths and instructs the user to migrate or delete them; it clears automatically once the paths are gone.
+
+### Changed
+
+- Config file now lives at a single canonical location per platform: `~/TrackSplit/config.toml` on Linux, `Documents\TrackSplit\config.toml` on Windows. The previous search order (current directory, `~/.config/tracksplit/`, home directory) is removed.
+- Update-check cache moved to `~/.cache/TrackSplit/update-check.json` (Linux) and `%LOCALAPPDATA%\TrackSplit\Cache\update-check.json` (Windows), matching the new folder naming convention.
+- CrateDigger data discovery now uses a single-source strategy (first match wins): `CRATEDIGGER_DATA_DIR` environment variable, then walk-up from the input file (max 10 parents), then CrateDigger's own data directory (`~/CrateDigger/` on Linux, `Documents\CrateDigger\` on Windows). No merging across multiple directories.
+
+### Removed
+
+- Config search fallbacks: `./tracksplit.toml`, `./config.toml`, `~/.config/tracksplit/config.toml`, `~/tracksplit.toml`, `~/.tracksplit.toml`. Use the single canonical location instead.
+- `~/.cratedigger/` global CrateDigger fallback. CrateDigger data is now discovered via env var, walk-up, or CrateDigger's own data directory.
+
 ## [0.6.9] - 2026-04-20
 
 ### Added
