@@ -111,6 +111,8 @@ def _setup_logging(verbose: bool, debug: bool) -> None:
         force=True,
     )
 
+    paths.warn_if_legacy_paths_exist()
+
 
 def _live_display_enabled() -> bool:
     """Check whether the live progress display should be active."""

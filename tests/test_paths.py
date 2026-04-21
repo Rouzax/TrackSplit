@@ -196,3 +196,24 @@ class TestLegacyPathDetection:
 
     def test_empty_when_nothing_legacy(self, tmp_path: Path):
         assert paths._legacy_paths_present(home=tmp_path) == []
+
+
+class TestWarnIfLegacyPathsExist:
+    def test_warns_once_when_legacy_present(self, tmp_path: Path, caplog):
+        legacy = tmp_path / ".cache" / "tracksplit"
+        legacy.mkdir(parents=True)
+        (legacy / "update-check.json").write_text("{}")
+        with caplog.at_level("WARNING", logger="tracksplit.paths"):
+            paths.warn_if_legacy_paths_exist(home=tmp_path)
+        messages = [r.getMessage() for r in caplog.records]
+        assert any(
+            "legacy" in m.lower() or "old location" in m.lower()
+            for m in messages
+        )
+
+    def test_silent_when_nothing_legacy(self, tmp_path: Path, caplog):
+        with caplog.at_level("WARNING", logger="tracksplit.paths"):
+            paths.warn_if_legacy_paths_exist(home=tmp_path)
+        # Filter to only our logger's records so unrelated logs from module import don't trip us
+        ours = [r for r in caplog.records if r.name == "tracksplit.paths"]
+        assert ours == []

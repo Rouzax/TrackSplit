@@ -29,6 +29,7 @@ returns the first valid source in this order:
 """
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from pathlib import Path
@@ -130,3 +131,21 @@ def _legacy_paths_present(home: Path | None = None) -> list[Path]:
     if old_cd.is_dir():
         legacy.append(old_cd)
     return legacy
+
+
+def warn_if_legacy_paths_exist(home: Path | None = None) -> None:
+    """Log a single WARNING if legacy TrackSplit/CrateDigger paths are found.
+
+    Called once at CLI startup. No data is moved; this is a nudge to migrate.
+    """
+    legacy = _legacy_paths_present(home=home)
+    if not legacy:
+        return
+    logger = logging.getLogger("tracksplit.paths")
+    pretty = "\n  - ".join(str(p) for p in legacy)
+    logger.warning(
+        "Legacy TrackSplit/CrateDigger files detected at old locations:\n  - %s\n"
+        "These are no longer read. Move contents to the new platformdirs "
+        "locations (see docs/configuration.md) or delete them.",
+        pretty,
+    )
