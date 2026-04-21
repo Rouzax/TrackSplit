@@ -307,7 +307,7 @@ _PACKAGES: list[str] = ["Pillow", "mutagen", "rich", "numpy", "ftfy", "typer"]
 
 def _run_check() -> int:
     """Probe tools, config, and packages. Returns exit code (1 if required check fails)."""
-    from tracksplit.tools import find_active_config, install_hint, verify_tool  # type: ignore[reportAttributeAccessIssue]
+    from tracksplit.tools import find_active_config, install_hint, verify_tool
     from importlib.metadata import PackageNotFoundError, version
 
     out = make_console(file=sys.stdout)
