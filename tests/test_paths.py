@@ -197,6 +197,53 @@ class TestLegacyPathDetection:
     def test_empty_when_nothing_legacy(self, tmp_path: Path):
         assert paths._legacy_paths_present(home=tmp_path) == []
 
+    def test_detects_legacy_windows_appdata_config(self, tmp_path: Path, monkeypatch):
+        appdata = tmp_path / "AppData" / "Roaming"
+        legacy = appdata / "tracksplit" / "config.toml"
+        legacy.parent.mkdir(parents=True)
+        legacy.write_text("")
+        monkeypatch.setenv("APPDATA", str(appdata))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        with patch("tracksplit.paths.sys") as mock_sys:
+            mock_sys.platform = "win32"
+            found = paths._legacy_paths_present(home=tmp_path)
+        assert legacy in found
+
+    def test_detects_legacy_windows_appdata_tracksplit_toml(self, tmp_path: Path, monkeypatch):
+        appdata = tmp_path / "AppData" / "Roaming"
+        legacy = appdata / "tracksplit" / "tracksplit.toml"
+        legacy.parent.mkdir(parents=True)
+        legacy.write_text("")
+        monkeypatch.setenv("APPDATA", str(appdata))
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        with patch("tracksplit.paths.sys") as mock_sys:
+            mock_sys.platform = "win32"
+            found = paths._legacy_paths_present(home=tmp_path)
+        assert legacy in found
+
+    def test_detects_legacy_windows_localappdata_cache(self, tmp_path: Path, monkeypatch):
+        localappdata = tmp_path / "AppData" / "Local"
+        legacy = localappdata / "tracksplit"
+        legacy.mkdir(parents=True)
+        (legacy / "update-check.json").write_text("{}")
+        monkeypatch.delenv("APPDATA", raising=False)
+        monkeypatch.setenv("LOCALAPPDATA", str(localappdata))
+        with patch("tracksplit.paths.sys") as mock_sys:
+            mock_sys.platform = "win32"
+            found = paths._legacy_paths_present(home=tmp_path)
+        assert legacy in found
+
+    def test_windows_paths_not_checked_on_linux(self, tmp_path: Path, monkeypatch):
+        """APPDATA/LOCALAPPDATA env vars on Linux must not be treated as legacy."""
+        monkeypatch.setenv("APPDATA", str(tmp_path / "appdata"))
+        monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "localappdata"))
+        (tmp_path / "appdata" / "tracksplit").mkdir(parents=True)
+        (tmp_path / "appdata" / "tracksplit" / "config.toml").write_text("")
+        with patch("tracksplit.paths.sys") as mock_sys:
+            mock_sys.platform = "linux"
+            found = paths._legacy_paths_present(home=tmp_path)
+        assert not any("appdata" in str(p).lower() for p in found)
+
 
 class TestWarnIfLegacyPathsExist:
     def test_warns_once_when_legacy_present(self, tmp_path: Path, caplog):

@@ -115,7 +115,7 @@ def _legacy_paths_present(home: Path | None = None) -> list[Path]:
     if home is None:
         home = Path.home()
     legacy: list[Path] = []
-    # Old TrackSplit config candidates
+
     for name in ("tracksplit.toml", ".tracksplit.toml"):
         p = home / name
         if p.is_file():
@@ -126,7 +126,25 @@ def _legacy_paths_present(home: Path | None = None) -> list[Path]:
     old_cache = home / ".cache" / "tracksplit"
     if old_cache.is_dir():
         legacy.append(old_cache)
-    # CrateDigger global fallback (TrackSplit used to read this)
+
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            for name in ("config.toml", "tracksplit.toml"):
+                p = Path(appdata) / "tracksplit" / name
+                if p.is_file():
+                    legacy.append(p)
+        localappdata = os.environ.get("LOCALAPPDATA")
+        if localappdata:
+            # Old cache lived directly under %LOCALAPPDATA%\tracksplit (no Cache\ subfolder).
+            # New layout is %LOCALAPPDATA%\TrackSplit\Cache\, so the old dir is only
+            # "legacy" if it contains the pre-0.7.0 cache file directly.
+            old_win_cache = Path(localappdata) / "tracksplit" / "update-check.json"
+            if old_win_cache.is_file():
+                legacy.append(old_win_cache.parent)
+
+    # CrateDigger global fallback (TrackSplit used to read this). Keep last so
+    # the ordering in the warning reads TrackSplit-first.
     old_cd = home / ".cratedigger"
     if old_cd.is_dir():
         legacy.append(old_cd)
