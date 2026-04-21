@@ -76,7 +76,11 @@ def _report_failure(name: str, exc: BaseException) -> str:
 
 
 def _setup_logging(verbose: bool, debug: bool) -> None:
-    """Configure root logger with RichHandler and a rotating file handler."""
+    """Configure root logger with RichHandler and (best-effort) rotating file handler.
+
+    A filesystem failure when creating the log file is demoted to a single
+    WARNING on the console handler; the CLI still starts.
+    """
     if debug:
         level = logging.DEBUG
     elif verbose:
@@ -92,24 +96,36 @@ def _setup_logging(verbose: bool, debug: bool) -> None:
         highlighter=NullHighlighter(),
     )
 
-    log_path = paths.ensure_parent(paths.log_file())
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_path,
-        maxBytes=5 * 1024 * 1024,
-        backupCount=5,
-        encoding="utf-8",
-    )
-    file_handler.setFormatter(logging.Formatter(
-        "%(asctime)s %(levelname)s %(name)s: %(message)s"
-    ))
+    handlers: list[logging.Handler] = [rich_handler]
+    file_handler_error: str | None = None
+    try:
+        log_path = paths.ensure_parent(paths.log_file())
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_path,
+            maxBytes=5 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+        )
+        file_handler.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)s %(name)s: %(message)s"
+        ))
+        handlers.append(file_handler)
+    except OSError as exc:
+        file_handler_error = f"{type(exc).__name__}: {exc}"
 
     logging.basicConfig(
         level=level,
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[rich_handler, file_handler],
+        handlers=handlers,
         force=True,
     )
+
+    if file_handler_error is not None:
+        logging.getLogger("tracksplit.cli").warning(
+            "Could not open log file at %s (%s). Continuing without file logging.",
+            paths.log_file(), file_handler_error,
+        )
 
     paths.warn_if_legacy_paths_exist()
 
