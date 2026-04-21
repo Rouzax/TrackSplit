@@ -248,17 +248,20 @@ class TestLegacyPathDetection:
 
 
 class TestWarnIfLegacyPathsExist:
-    def test_warns_once_when_legacy_present(self, tmp_path: Path, caplog):
+    def test_warns_when_legacy_present_and_reports_every_invocation(
+        self, tmp_path: Path, caplog
+    ):
+        """Emits a WARNING; calling again still warns (warning is not suppressed)."""
         legacy = tmp_path / ".cache" / "tracksplit"
         legacy.mkdir(parents=True)
         (legacy / "update-check.json").write_text("{}")
         with caplog.at_level("WARNING", logger="tracksplit.paths"):
             paths.warn_if_legacy_paths_exist(home=tmp_path)
-        messages = [r.getMessage() for r in caplog.records]
-        assert any(
-            "legacy" in m.lower() or "old location" in m.lower()
-            for m in messages
-        )
+            first_count = len(caplog.records)
+            paths.warn_if_legacy_paths_exist(home=tmp_path)
+            second_count = len(caplog.records)
+        assert first_count >= 1
+        assert second_count == first_count * 2  # each call warns independently
 
     def test_silent_when_nothing_legacy(self, tmp_path: Path, caplog):
         with caplog.at_level("WARNING", logger="tracksplit.paths"):

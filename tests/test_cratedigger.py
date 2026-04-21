@@ -325,9 +325,15 @@ class TestLoadConfigCache:
         cfg2 = load_config(cd_home / "b.mkv")
         assert cfg1 is cfg2
 
-    def test_different_home_returns_different_object(
-        self, cd_home: Path, tmp_path: Path,
+    def test_different_resolved_dirs_return_different_objects(
+        self, cd_home: Path, tmp_path: Path
     ):
+        """Different walk-up resolutions map to different cache entries.
+
+        The old signature took ``home_dir=`` per call; post-refactor, differing
+        inputs resolve to different ``.cratedigger`` dirs via the walk-up, which
+        is what the cache key is built from.
+        """
         other_home = tmp_path / "other"
         (other_home / ".cratedigger").mkdir(parents=True)
         cfg1 = load_config(cd_home / "v.mkv")
