@@ -98,18 +98,35 @@ class TestResolveCrateDiggerDataDir:
         result = paths.resolve_cratedigger_data_dir(input_file)
         assert result == cd_dir
 
-    def test_walk_up_limit_is_ten_parents(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_walk_up_finds_at_exact_limit(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        """`.cratedigger` at the 10th walked directory IS found (inclusive boundary)."""
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
-        # Put .cratedigger 11 levels up from the input; walk-up must NOT find it.
-        root = tmp_path
-        cd_dir = root / ".cratedigger"
-        cd_dir.mkdir()
-        deep = root
-        for i in range(11):
+        # input_file is 10 levels deep: tmp_path/l0/l1/.../l9/file.mkv
+        # input.parent = l9, walk visits l9, l8, l7, ..., l0 = 10 dirs.
+        deep = tmp_path
+        for i in range(10):
             deep = deep / f"l{i}"
         deep.mkdir(parents=True)
         input_file = deep / "file.mkv"
         input_file.touch()
+        # Place .cratedigger at l0 = the 10th (last) directory in the walk.
+        cd_dir = tmp_path / "l0" / ".cratedigger"
+        cd_dir.mkdir()
+        result = paths.resolve_cratedigger_data_dir(input_file)
+        assert result == cd_dir
+
+    def test_walk_up_stops_beyond_limit(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        """`.cratedigger` one level beyond the walk-up limit is NOT found."""
+        monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+        # Same depth as above but .cratedigger is at tmp_path (11th walk position, not visited).
+        deep = tmp_path
+        for i in range(10):
+            deep = deep / f"l{i}"
+        deep.mkdir(parents=True)
+        input_file = deep / "file.mkv"
+        input_file.touch()
+        cd_dir = tmp_path / ".cratedigger"
+        cd_dir.mkdir()
         with patch("tracksplit.paths.sys") as mock_sys, \
              patch.object(Path, "home", return_value=tmp_path / "elsewhere"):
             mock_sys.platform = "linux"
@@ -145,13 +162,37 @@ class TestResolveCrateDiggerDataDir:
 
 
 class TestLegacyPathDetection:
-    def test_detects_legacy_cache_home(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_detects_legacy_cache_home(self, tmp_path: Path):
         legacy = tmp_path / ".cache" / "tracksplit"
         legacy.mkdir(parents=True)
         (legacy / "update-check.json").write_text("{}")
-        monkeypatch.setenv("HOME", str(tmp_path))
-        found = paths._legacy_paths_present(home=Path(tmp_path))
-        assert any("tracksplit" in str(p) for p in found)
+        found = paths._legacy_paths_present(home=tmp_path)
+        assert legacy in found
+
+    def test_detects_legacy_tracksplit_toml_in_home(self, tmp_path: Path):
+        legacy = tmp_path / "tracksplit.toml"
+        legacy.write_text("")
+        found = paths._legacy_paths_present(home=tmp_path)
+        assert legacy in found
+
+    def test_detects_legacy_dot_tracksplit_toml_in_home(self, tmp_path: Path):
+        legacy = tmp_path / ".tracksplit.toml"
+        legacy.write_text("")
+        found = paths._legacy_paths_present(home=tmp_path)
+        assert legacy in found
+
+    def test_detects_legacy_config_tracksplit(self, tmp_path: Path):
+        legacy = tmp_path / ".config" / "tracksplit" / "config.toml"
+        legacy.parent.mkdir(parents=True)
+        legacy.write_text("")
+        found = paths._legacy_paths_present(home=tmp_path)
+        assert legacy in found
+
+    def test_detects_legacy_cratedigger_home(self, tmp_path: Path):
+        legacy = tmp_path / ".cratedigger"
+        legacy.mkdir()
+        found = paths._legacy_paths_present(home=tmp_path)
+        assert legacy in found
 
     def test_empty_when_nothing_legacy(self, tmp_path: Path):
         assert paths._legacy_paths_present(home=tmp_path) == []
