@@ -334,7 +334,11 @@ def _run_check() -> int:
     if cfg:
         out.print(f"  [green]\u2713[/green] {cfg}")
     else:
-        out.print("  [dim]\u007e[/dim] No config file found, using built-in defaults")
+        out.print(
+            f"  [dim]\u007e[/dim] No config file found at {paths.config_file()}, "
+            f"using built-in defaults",
+            soft_wrap=True,
+        )
 
     out.print("\n[bold]Python packages[/bold]")
     for pkg in _PACKAGES:

@@ -111,3 +111,16 @@ def test_check_flag_shows_section_headers(monkeypatch):
     assert "Tools" in result.output
     assert "Config" in result.output
     assert "Python packages" in result.output
+
+
+def test_run_check_missing_config_shows_expected_path(tmp_path, monkeypatch, capsys):
+    """--check must print the canonical config path when the file is absent."""
+    from tracksplit import cli
+    fake_config = tmp_path / "TrackSplit" / "config.toml"
+    monkeypatch.setattr("tracksplit.tools.paths.config_file", lambda: fake_config)
+    # Stub out tool/package probing so we only inspect the Config section.
+    monkeypatch.setattr("tracksplit.tools.verify_tool", lambda name: (True, "stub 1.0"))
+    cli._run_check()
+    out = capsys.readouterr().out
+    assert str(fake_config) in out
+    assert "No config file found" in out
