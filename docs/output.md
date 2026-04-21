@@ -84,6 +84,7 @@ This file is always created.
 | Platform | Path |
 |---|---|
 | Linux | `~/CrateDigger/artists.json` |
+| macOS | `~/CrateDigger/artists.json` |
 | Windows | `Documents\CrateDigger\artists.json` |
 
 Alternatively, place it in a library-local `.cratedigger/artists.json` next to your video files if you want the alias to apply only to that library. The file uses `{canonical: [aliases]}` shape:
@@ -200,6 +201,7 @@ TrackSplit reads CrateDigger's caches directly, not just the tags baked into the
    | Platform | Path |
    |---|---|
    | Linux | `~/CrateDigger/` |
+   | macOS | `~/CrateDigger/` |
    | Windows | `Documents\CrateDigger\` |
 
 The first match wins. TrackSplit does not merge multiple directories. If none of the three locations exists, TrackSplit continues without CrateDigger data (Tier 1 output). No configuration is needed when CrateDigger is installed in its default location.

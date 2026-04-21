@@ -133,6 +133,7 @@ Place your config file at the location for your platform:
 | Platform | Config file location |
 |---|---|
 | Linux | `~/TrackSplit/config.toml` |
+| macOS | `~/TrackSplit/config.toml` |
 | Windows | `Documents\TrackSplit\config.toml` |
 
 ```toml

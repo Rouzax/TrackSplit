@@ -13,9 +13,10 @@ Copy the example file to the config location for your platform:
 | Platform | Config file location |
 |---|---|
 | Linux | `~/TrackSplit/config.toml` |
+| macOS | `~/TrackSplit/config.toml` |
 | Windows | `Documents\TrackSplit\config.toml` |
 
-**Linux:**
+**Linux / macOS:**
 
 ```bash
 mkdir -p ~/TrackSplit
@@ -64,6 +65,7 @@ TrackSplit reads its config from one fixed location per platform:
 | Platform | Config file location |
 |---|---|
 | Linux | `~/TrackSplit/config.toml` |
+| macOS | `~/TrackSplit/config.toml` |
 | Windows | `Documents\TrackSplit\config.toml` |
 
 This location is always checked, regardless of which directory you run TrackSplit from. You do not need to keep a config file in your current directory.

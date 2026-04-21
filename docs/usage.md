@@ -206,6 +206,7 @@ TRACKSPLIT_NO_UPDATE_CHECK=1 tracksplit ~/videos/ --output ~/music/library/
 | Platform | Path |
 |---|---|
 | Linux | `~/.cache/TrackSplit/update-check.json` |
+| macOS | `~/Library/Caches/TrackSplit/update-check.json` |
 | Windows | `%LOCALAPPDATA%\TrackSplit\Cache\update-check.json` |
 
 To force a fresh check, delete the cache file. TrackSplit will check GitHub again on the next run.
