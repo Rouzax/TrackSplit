@@ -193,6 +193,8 @@ The log rotates when it reaches 5 MB, and TrackSplit keeps the five most recent 
 
 The log file contains the same information as `--debug` output, so it is the first place to look if something went wrong during an unattended run. You do not need to re-run with `--debug` to retrieve it.
 
+**Running multiple tracksplit invocations at once.** The log file is shared across concurrent runs. Python's rotating handler is not multi-process safe: two tracksplit processes rotating the file simultaneously can lose recent log lines on Linux, or produce a transient `PermissionError` on Windows. This does not affect processing of your video files; only the log output is at risk. If you regularly run tracksplit in parallel, stagger the runs or use separate `HOME` directories.
+
 ---
 
 ## "Legacy TrackSplit or CrateDigger files detected" warning

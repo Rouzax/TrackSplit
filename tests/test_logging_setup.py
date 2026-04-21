@@ -74,10 +74,24 @@ class TestLoggingSetup:
             f"expected a 'log file' warning, got: {[r.getMessage() for r in captured]}"
         )
 
-    def test_continues_when_file_handler_construction_fails(self, tmp_path: Path):
-        """If RotatingFileHandler raises (path is a directory), same graceful fallback."""
+    def test_rotating_handler_uses_delayed_open(self, tmp_path: Path):
+        """delay=True avoids holding the log file open across the whole run,
+        reducing multi-process contention."""
         log_path = tmp_path / "tracksplit.log"
-        log_path.mkdir()  # path is a directory, so RotatingFileHandler will fail
+        with patch("tracksplit.cli.paths") as mock_paths:
+            mock_paths.log_file.return_value = log_path
+            mock_paths.ensure_parent.side_effect = lambda p: p
+            mock_paths.warn_if_legacy_paths_exist.return_value = None
+            _reset_root_handlers()
+            cli._setup_logging(verbose=False, debug=False)
+            rot = next(h for h in logging.getLogger().handlers
+                       if isinstance(h, logging.handlers.RotatingFileHandler))
+            assert rot.delay is True
+
+    def test_continues_when_file_handler_construction_fails(self, tmp_path: Path):
+        """If RotatingFileHandler construction raises, same graceful fallback.
+        Patches the class to raise directly so the test is independent of delay= semantics."""
+        log_path = tmp_path / "tracksplit.log"
         captured: list[logging.LogRecord] = []
 
         class _ListHandler(logging.Handler):
@@ -87,7 +101,11 @@ class TestLoggingSetup:
         probe = _ListHandler(level=logging.WARNING)
         logging.getLogger("tracksplit.cli").addHandler(probe)
         try:
-            with patch("tracksplit.cli.paths") as mock_paths:
+            with patch("tracksplit.cli.paths") as mock_paths, \
+                 patch(
+                     "tracksplit.cli.logging.handlers.RotatingFileHandler",
+                     side_effect=OSError("mock: construction failure"),
+                 ):
                 mock_paths.log_file.return_value = log_path
                 mock_paths.ensure_parent.side_effect = lambda p: p
                 mock_paths.warn_if_legacy_paths_exist.return_value = None

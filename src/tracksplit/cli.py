@@ -105,6 +105,7 @@ def _setup_logging(verbose: bool, debug: bool) -> None:
             maxBytes=5 * 1024 * 1024,
             backupCount=5,
             encoding="utf-8",
+            delay=True,
         )
         file_handler.setFormatter(logging.Formatter(
             "%(asctime)s %(levelname)s %(name)s: %(message)s"
