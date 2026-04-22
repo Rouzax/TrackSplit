@@ -125,7 +125,10 @@ def resolve_cratedigger_data_dir(input_path: Path) -> Path:
 
 
 def _legacy_paths_present(home: Path | None = None) -> list[Path]:
-    """Return legacy TrackSplit/CrateDigger paths still in use.
+    """Return legacy TrackSplit config paths still in use.
+
+    Only config files are checked; cache directories are transient data
+    and not worth warning about.
 
     Re-evaluated on every CLI invocation; the warning fires on every run
     while any listed path still exists. Callers rely on the returned
@@ -142,9 +145,6 @@ def _legacy_paths_present(home: Path | None = None) -> list[Path]:
     old_config = home / ".config" / "tracksplit" / "config.toml"
     if old_config.is_file():
         legacy.append(old_config)
-    old_cache = home / ".cache" / "tracksplit"
-    if old_cache.is_dir():
-        legacy.append(old_cache)
 
     if sys.platform == "win32":
         appdata = os.environ.get("APPDATA")
@@ -153,14 +153,6 @@ def _legacy_paths_present(home: Path | None = None) -> list[Path]:
                 p = Path(appdata) / "tracksplit" / name
                 if p.is_file():
                     legacy.append(p)
-        localappdata = os.environ.get("LOCALAPPDATA")
-        if localappdata:
-            # Old cache lived directly under %LOCALAPPDATA%\tracksplit (no Cache\ subfolder).
-            # New layout is %LOCALAPPDATA%\TrackSplit\Cache\, so the old dir is only
-            # "legacy" if it contains the pre-0.7.0 cache file directly.
-            old_win_cache = Path(localappdata) / "tracksplit" / "update-check.json"
-            if old_win_cache.is_file():
-                legacy.append(old_win_cache.parent)
 
     return legacy
 

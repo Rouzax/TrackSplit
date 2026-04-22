@@ -64,3 +64,21 @@ class TestToolLoading:
             mock_paths.config_file.return_value = config
             with caplog.at_level("WARNING"):
                 assert tools.get_tool("ffmpeg") == "ffmpeg"
+
+    def test_extra_unknown_sections_silently_ignored(self, tmp_path: Path):
+        """Unknown top-level sections alongside [tools] must not interfere."""
+        config = tmp_path / "config.toml"
+        config.write_text(
+            '[tools]\n'
+            'ffmpeg = "/custom/ffmpeg"\n'
+            '\n'
+            '[logging]\n'
+            'level = "debug"\n'
+            '\n'
+            '[output]\n'
+            'format = "flac"\n'
+        )
+        with patch("tracksplit.tools.paths") as mock_paths:
+            mock_paths.config_file.return_value = config
+            assert tools.get_tool("ffmpeg") == "/custom/ffmpeg"
+            assert tools.get_tool("mkvmerge") == "mkvmerge"

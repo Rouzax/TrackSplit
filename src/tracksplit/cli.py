@@ -487,8 +487,9 @@ def main(
             print_error(f"{name}: {detail}", console=console)
             console.print(f"  [cyan]{install_hint(name)}[/cyan]")
         console.print(
-            "  Or set tool paths in tracksplit.toml "
-            "(see [cyan]tracksplit.toml.example[/cyan]).",
+            "  Or set tool paths in config.toml "
+            "(see [cyan]tracksplit.toml.example[/cyan] and "
+            "[cyan]docs/configuration.md[/cyan]).",
         )
         raise typer.Exit(code=1)
 

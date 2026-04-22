@@ -20,12 +20,8 @@ class TestDataDir:
 
     def test_non_windows_uses_home(self, tmp_path: Path):
         with patch("tracksplit.paths.sys") as mock_sys, \
-             patch("tracksplit.paths.Path") as mock_path_cls:
+             patch.object(Path, "home", return_value=tmp_path):
             mock_sys.platform = "linux"
-            # Path.home() is called only on non-win32
-            mock_path_cls.home.return_value = tmp_path
-            # Path(...) still constructs real Paths
-            mock_path_cls.side_effect = lambda *a, **kw: Path(*a, **kw)
             result = paths.data_dir()
             assert result == tmp_path / "TrackSplit"
 
@@ -192,13 +188,6 @@ class TestResolveCrateDiggerDataDir:
 
 
 class TestLegacyPathDetection:
-    def test_detects_legacy_cache_home(self, tmp_path: Path):
-        legacy = tmp_path / ".cache" / "tracksplit"
-        legacy.mkdir(parents=True)
-        (legacy / "update-check.json").write_text("{}")
-        found = paths._legacy_paths_present(home=tmp_path)
-        assert legacy in found
-
     def test_detects_legacy_tracksplit_toml_in_home(self, tmp_path: Path):
         legacy = tmp_path / "tracksplit.toml"
         legacy.write_text("")
@@ -217,6 +206,14 @@ class TestLegacyPathDetection:
         legacy.write_text("")
         found = paths._legacy_paths_present(home=tmp_path)
         assert legacy in found
+
+    def test_cache_dir_not_flagged(self, tmp_path: Path):
+        """Cache directories are transient and should not trigger legacy warnings."""
+        cache = tmp_path / ".cache" / "tracksplit"
+        cache.mkdir(parents=True)
+        (cache / "update-check.json").write_text("{}")
+        found = paths._legacy_paths_present(home=tmp_path)
+        assert cache not in found
 
     def test_cratedigger_home_not_flagged_yet(self, tmp_path: Path):
         """~/.cratedigger is NOT flagged until CrateDigger ships its own migration.
@@ -253,17 +250,18 @@ class TestLegacyPathDetection:
             found = paths._legacy_paths_present(home=tmp_path)
         assert legacy in found
 
-    def test_detects_legacy_windows_localappdata_cache(self, tmp_path: Path, monkeypatch):
+    def test_windows_localappdata_cache_not_flagged(self, tmp_path: Path, monkeypatch):
+        """Windows cache dirs under LOCALAPPDATA are transient, not legacy."""
         localappdata = tmp_path / "AppData" / "Local"
-        legacy = localappdata / "tracksplit"
-        legacy.mkdir(parents=True)
-        (legacy / "update-check.json").write_text("{}")
+        cache = localappdata / "tracksplit"
+        cache.mkdir(parents=True)
+        (cache / "update-check.json").write_text("{}")
         monkeypatch.delenv("APPDATA", raising=False)
         monkeypatch.setenv("LOCALAPPDATA", str(localappdata))
         with patch("tracksplit.paths.sys") as mock_sys:
             mock_sys.platform = "win32"
             found = paths._legacy_paths_present(home=tmp_path)
-        assert legacy in found
+        assert cache not in found
 
     def test_windows_paths_not_checked_on_linux(self, tmp_path: Path, monkeypatch):
         """APPDATA/LOCALAPPDATA env vars on Linux must not be treated as legacy."""
@@ -282,9 +280,8 @@ class TestWarnIfLegacyPathsExist:
         self, tmp_path: Path, caplog
     ):
         """Emits a WARNING; calling again still warns (warning is not suppressed)."""
-        legacy = tmp_path / ".cache" / "tracksplit"
-        legacy.mkdir(parents=True)
-        (legacy / "update-check.json").write_text("{}")
+        legacy = tmp_path / "tracksplit.toml"
+        legacy.write_text("")
         with caplog.at_level("WARNING", logger="tracksplit.paths"):
             paths.warn_if_legacy_paths_exist(home=tmp_path)
             first_count = len(caplog.records)
