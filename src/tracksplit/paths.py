@@ -90,6 +90,10 @@ def resolve_cratedigger_data_dir(input_path: Path) -> Path:
     ``~/CrateDigger/`` on Linux).
 
     The returned path is not guaranteed to exist; callers must still check.
+    When ``input_path`` refers to an existing file, the walk starts at
+    ``input_path.parent`` (the folder containing the file). Otherwise
+    (a directory or a non-existent path) the walk starts at
+    ``input_path`` itself, so callers can pass library roots directly.
     """
     env = os.environ.get("CRATEDIGGER_DATA_DIR")
     if env:

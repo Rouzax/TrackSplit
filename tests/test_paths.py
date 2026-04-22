@@ -135,6 +135,27 @@ class TestResolveCrateDiggerDataDir:
             assert result != cd_dir  # walk-up limit exceeded
             assert result == tmp_path / "elsewhere" / "CrateDigger"
 
+    def test_walk_up_uses_path_itself_when_not_a_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        """When input_path is a directory (or does not exist), the walk starts
+        FROM the path itself, not from its parent. Pinned so a future refactor
+        of the is_file() branch does not silently change walk depth."""
+        monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+        library = tmp_path / "library"
+        library.mkdir()
+        (library / ".cratedigger").mkdir()
+        result = paths.resolve_cratedigger_data_dir(library)
+        assert result == library / ".cratedigger"
+
+    def test_walk_up_nonexistent_path_uses_path_itself(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        """A non-existent path (dry-run, future library) walks from the path
+        itself. Only existing files back off to the parent."""
+        monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+        ghost = tmp_path / "not_yet" / "library"
+        ghost.parent.mkdir()
+        (tmp_path / "not_yet" / ".cratedigger").mkdir()
+        result = paths.resolve_cratedigger_data_dir(ghost)
+        assert result == tmp_path / "not_yet" / ".cratedigger"
+
     def test_platformdirs_fallback_windows_uses_documents(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         isolated = tmp_path / "isolated"
