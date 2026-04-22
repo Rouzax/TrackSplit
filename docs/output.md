@@ -194,7 +194,7 @@ TrackSplit reads CrateDigger's caches directly, not just the tags baked into the
 
 **Lookup chain.** For each input video, TrackSplit finds the CrateDigger data directory using the first match in this order:
 
-1. **Environment variable:** if `CRATEDIGGER_DATA_DIR` is set and the directory exists, TrackSplit uses it.
+1. **Environment variable:** if `CRATEDIGGER_DATA_DIR` is set and the directory exists, TrackSplit uses it. CrateDigger honours the same variable (as of 0.14.0), so exporting it points both tools at the same folder.
 2. **Walk-up:** starting from the folder containing the input video, TrackSplit walks up to 10 parent directories and uses the first `.cratedigger/` subfolder it finds.
 3. **CrateDigger's own data directory:** the folder where CrateDigger stores its data by default:
 
