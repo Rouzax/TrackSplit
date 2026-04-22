@@ -15,13 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Rotating log file written on every run to the platform log directory (`~/.local/state/TrackSplit/log/tracksplit.log` on Linux, `%LOCALAPPDATA%\TrackSplit\Logs\tracksplit.log` on Windows). The log rotates at 5 MB with five backups kept. Console output is unchanged; the log supplements it.
-- One-time startup warning when legacy paths from versions before 0.7.0 are detected (`~/.config/tracksplit/config.toml`, `~/.cache/tracksplit/`, `~/tracksplit.toml`, `~/.tracksplit.toml`). The warning lists the offending paths and instructs the user to migrate or delete them; it clears automatically once the paths are gone.
+- Rotating log file written on every run to the platform log directory (`~/.local/state/TrackSplit/log/tracksplit.log` on Linux, `$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log` on Windows). The log rotates at 5 MB with five backups kept. Console output is unchanged; the log supplements it.
+- Startup warning on every run while any legacy path from a version before 0.7.0 still exists. Affected paths: `~/.config/tracksplit/config.toml`, `~/.cache/tracksplit/`, `~/tracksplit.toml`, `~/.tracksplit.toml` (Linux/macOS); `$env:APPDATA\tracksplit\config.toml`, `$env:APPDATA\tracksplit\tracksplit.toml`, `$env:LOCALAPPDATA\tracksplit\update-check.json` (Windows). The warning lists the offending paths and instructs the user to migrate or delete them.
 
 ### Changed
 
 - Config file now lives at a single canonical location per platform: `~/TrackSplit/config.toml` on Linux, `Documents\TrackSplit\config.toml` on Windows. The previous search order (current directory, `~/.config/tracksplit/`, home directory) is removed.
-- Update-check cache moved to `~/.cache/TrackSplit/update-check.json` (Linux) and `%LOCALAPPDATA%\TrackSplit\Cache\update-check.json` (Windows), matching the new folder naming convention.
+- Update-check cache moved to `~/.cache/TrackSplit/update-check.json` (Linux) and `$env:LOCALAPPDATA\TrackSplit\Cache\update-check.json` (Windows), matching the new folder naming convention.
 - CrateDigger data discovery now uses a single-source strategy (first match wins): `CRATEDIGGER_DATA_DIR` environment variable, then walk-up from the input file (max 10 parents), then CrateDigger's own data directory (`~/CrateDigger/` on Linux, `Documents\CrateDigger\` on Windows). No merging across multiple directories.
 
 ### Removed

@@ -187,7 +187,7 @@ TrackSplit writes a rotating log file on every run, in addition to what it print
 |---|---|
 | Linux | `~/.local/state/TrackSplit/log/tracksplit.log` |
 | macOS | `~/Library/Logs/TrackSplit/tracksplit.log` |
-| Windows | `%LOCALAPPDATA%\TrackSplit\Logs\tracksplit.log` |
+| Windows | `$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log` |
 
 The log rotates when it reaches 5 MB, and TrackSplit keeps the five most recent files (`tracksplit.log`, `tracksplit.log.1`, up to `tracksplit.log.5`). Older backups are deleted automatically.
 
@@ -203,15 +203,25 @@ The log file contains the same information as `--debug` output, so it is the fir
 
 **What is happening:** TrackSplit found files or directories at locations used by a version before 0.7.0. These paths are no longer read:
 
-- `~/.config/tracksplit/config.toml` (old Linux/macOS config location)
-- `~/.cache/tracksplit/` (old Linux/macOS cache location)
+Linux / macOS:
+
+- `~/.config/tracksplit/config.toml` (old config location)
+- `~/.cache/tracksplit/` (old cache location)
 - `~/tracksplit.toml` or `~/.tracksplit.toml` (old home-directory config locations)
 
-TrackSplit does not migrate them automatically.
+Windows:
+
+- `$env:APPDATA\tracksplit\config.toml` (old config location)
+- `$env:APPDATA\tracksplit\tracksplit.toml` (old config location)
+- `$env:LOCALAPPDATA\tracksplit\update-check.json` (old update-check cache)
+
+TrackSplit does not migrate them automatically. The warning fires on every run while any of these paths still exist.
 
 **Fix:** For each listed path, choose one of:
 
-- **Move it** to the new location. For a config file, copy it to `~/TrackSplit/config.toml` (Linux/macOS) or `Documents\TrackSplit\config.toml` (Windows).
+- **Move it** to the new location. For a config file:
+  - Linux / macOS: copy it to `~/TrackSplit/config.toml`
+  - Windows: copy it to `Documents\TrackSplit\config.toml`
 - **Delete it** if you no longer need it.
 
 The warning disappears on the next run once none of the old paths exist.
