@@ -213,7 +213,7 @@ Windows:
 
 - `$env:APPDATA\tracksplit\config.toml` (old config location)
 - `$env:APPDATA\tracksplit\tracksplit.toml` (old config location)
-- `$env:LOCALAPPDATA\tracksplit\update-check.json` (old update-check cache)
+- `$env:LOCALAPPDATA\tracksplit\` (old update-check cache directory)
 
 TrackSplit does not migrate them automatically. The warning fires on every run while any of these paths still exist.
 

@@ -115,7 +115,12 @@ def resolve_cratedigger_data_dir(input_path: Path) -> Path:
 
 
 def _legacy_paths_present(home: Path | None = None) -> list[Path]:
-    """Return legacy TrackSplit/CrateDigger paths still in use. For the one-time warning."""
+    """Return legacy TrackSplit/CrateDigger paths still in use.
+
+    Re-evaluated on every CLI invocation; the warning fires on every run
+    while any listed path still exists. Callers rely on the returned
+    list being empty when the user has migrated.
+    """
     if home is None:
         home = Path.home()
     legacy: list[Path] = []
