@@ -93,3 +93,14 @@ On Windows, use forward slashes (`C:/ffmpeg/bin/ffmpeg.exe`) or escaped backslas
 **Only some tools are configured:**
 
 That is fine. TrackSplit merges the config with its defaults. Any tool not listed in the config file is looked up on your `PATH` as normal.
+
+## Cache and log directories
+
+Caches (update-check) and logs live in standard platform directories separate from your config file:
+
+| Purpose | Linux | macOS | Windows |
+|---|---|---|---|
+| Cache | `~/.cache/TrackSplit/` | `~/Library/Caches/TrackSplit/` | `$env:LOCALAPPDATA\TrackSplit\Cache\` |
+| Logs | `~/.local/state/TrackSplit/log/` | `~/Library/Logs/TrackSplit/` | `$env:LOCALAPPDATA\TrackSplit\Logs\` |
+
+These paths are managed by [platformdirs](https://pypi.org/project/platformdirs/) and are not affected by your config file location. On Linux, if you need to relocate them, set the standard `XDG_CACHE_HOME` or `XDG_STATE_HOME` environment variables. Note that these apply system-wide to all XDG-aware applications, and platformdirs appends `TrackSplit/` automatically, so `XDG_CACHE_HOME=/data/cache` results in `/data/cache/TrackSplit/`.
