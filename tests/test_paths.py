@@ -45,6 +45,15 @@ class TestCacheDir:
             assert result == Path("/fake/cache/TrackSplit")
 
 
+class TestCrateDiggerCacheDir:
+    def test_uses_platformdirs_user_cache_dir_with_cratedigger_name(self):
+        with patch("tracksplit.paths.platformdirs") as mock_pd:
+            mock_pd.user_cache_dir.return_value = "/fake/cache/CrateDigger"
+            result = paths.cratedigger_cache_dir()
+            mock_pd.user_cache_dir.assert_called_once_with("CrateDigger", appauthor=False)
+            assert result == Path("/fake/cache/CrateDigger")
+
+
 class TestLogFile:
     def test_uses_platformdirs_user_log_dir(self):
         with patch("tracksplit.paths.platformdirs") as mock_pd:

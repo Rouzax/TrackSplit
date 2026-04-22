@@ -1,16 +1,18 @@
 """CrateDigger config reader: festival/artist alias resolution and MBID lookup.
 
 TrackSplit consumes MKVs produced by CrateDigger (sibling project). CrateDigger
-stores canonical naming rules in ``festivals.json`` and ``artists.json`` plus
-an ``mbid_cache.json`` mapping artist names to MusicBrainz IDs. This module
-mirrors the subset of CrateDigger's resolver logic that TrackSplit needs so
-that album folders, vorbis tags, and cover art all use consistent canonical
-names.
+stores canonical naming rules in ``festivals.json`` and ``artists.json`` (curated
+data dir) plus auto-generated ``dj_cache.json`` and ``mbid_cache.json`` (cache
+dir). This module mirrors the subset of CrateDigger's resolver logic that
+TrackSplit needs so that album folders, vorbis tags, and cover art all use
+consistent canonical names.
 
-Discovery uses :func:`tracksplit.paths.resolve_cratedigger_data_dir`: first
-``$CRATEDIGGER_DATA_DIR``, then a walk-up from the input file looking for a
-``.cratedigger/`` directory (max 10 parents), then CrateDigger's visible
+Curated data discovery uses :func:`tracksplit.paths.resolve_cratedigger_data_dir`:
+first ``$CRATEDIGGER_DATA_DIR``, then a walk-up from the input file looking for
+a ``.cratedigger/`` directory (max 10 parents), then CrateDigger's visible
 data dir (``Documents\\CrateDigger\\`` on Windows, ``~/CrateDigger/`` on Linux).
+Cache files are read from :func:`tracksplit.paths.cratedigger_cache_dir`
+(CrateDigger's platformdirs cache directory).
 """
 from __future__ import annotations
 
@@ -273,9 +275,11 @@ def load_config(input_path: Path) -> CrateDiggerConfig:
                 )
         cfg.festival_aliases.update(_invert_alias_map(raw_aliases))
 
-        # dj_cache.json first so manual artists.json overrides auto-derived
-        # aliases from the scrape cache.
-        dj = _load_json(cd_dir / "dj_cache.json")
+        # dj_cache.json lives in CrateDigger's platformdirs cache dir (not
+        # the curated data dir), so read it from there. Load it first so
+        # manual artists.json overrides auto-derived aliases from the scrape.
+        cd_cache = paths.cratedigger_cache_dir()
+        dj = _load_json(cd_cache / "dj_cache.json")
         if isinstance(dj, dict):
             for entry in dj.values():
                 if not isinstance(entry, dict):
@@ -292,7 +296,7 @@ def load_config(input_path: Path) -> CrateDiggerConfig:
         raw_artist_aliases = artists.get("aliases", {}) or {}
         cfg.artist_aliases.update(_invert_alias_map(raw_artist_aliases))
 
-        mbid = _load_json(cd_dir / "mbid_cache.json")
+        mbid = _load_json(cd_cache / "mbid_cache.json")
         if isinstance(mbid, dict):
             cfg.mbid_cache.update(mbid)
 

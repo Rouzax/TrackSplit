@@ -74,6 +74,16 @@ def ensure_parent(path: Path) -> Path:
     return path
 
 
+def cratedigger_cache_dir() -> Path:
+    """Return CrateDigger's platformdirs cache directory.
+
+    CrateDigger stores auto-generated caches (dj_cache.json, mbid_cache.json)
+    here. Curated data (festivals.json, artists.json) lives in the visible
+    data dir instead; see :func:`resolve_cratedigger_data_dir`.
+    """
+    return Path(platformdirs.user_cache_dir(CRATEDIGGER_APP_NAME, appauthor=False))
+
+
 def _cratedigger_visible_data_dir() -> Path:
     """Mirror CrateDigger's ``data_dir()`` without importing it (independent app)."""
     if sys.platform == "win32":

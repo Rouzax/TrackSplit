@@ -16,7 +16,13 @@ from tracksplit.cratedigger import (
 
 
 @pytest.fixture(autouse=True)
-def _reset_cratedigger_cache():
+def _reset_cratedigger_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+    cache = tmp_path / "cd_cache"
+    cache.mkdir(exist_ok=True)
+    monkeypatch.setattr(
+        "tracksplit.paths.cratedigger_cache_dir", lambda: cache,
+    )
     _clear_config_cache()
     yield
     _clear_config_cache()
@@ -51,7 +57,9 @@ def cd_home(tmp_path: Path) -> Path:
         },
         "groups": ["Swedish House Mafia"],
     }))
-    (cd / "dj_cache.json").write_text(json.dumps({
+    cache = tmp_path / "cd_cache"
+    cache.mkdir(exist_ok=True)
+    (cache / "dj_cache.json").write_text(json.dumps({
         "tiesto": {
             "name": "Tiësto",
             "aliases": [
@@ -73,7 +81,7 @@ def cd_home(tmp_path: Path) -> Path:
             "member_of": [],
         },
     }))
-    (cd / "mbid_cache.json").write_text(json.dumps({
+    (cache / "mbid_cache.json").write_text(json.dumps({
         "Deadmau5": "2f9ecbed-27be-40e6-abca-6de49d50299e",
         "David Guetta": {"mbid": "abc-123"},
     }))
@@ -278,6 +286,55 @@ class TestFindCratediggerDirs:
         input_file.touch()
         dirs = find_cratedigger_dirs(input_file)
         assert dirs == [cd_dir]
+
+
+class TestCacheVsDataSplit:
+    """Cache files (dj_cache, mbid_cache) come from CrateDigger's platformdirs
+    cache dir, not from the curated data dir."""
+
+    def test_dj_cache_read_from_cache_dir(self, tmp_path: Path, monkeypatch):
+        data_dir = tmp_path / "data" / ".cratedigger"
+        data_dir.mkdir(parents=True)
+        (data_dir / "festivals.json").write_text("{}")
+        (data_dir / "artists.json").write_text("{}")
+        (data_dir / "dj_cache.json").write_text(json.dumps({
+            "wrong": {"name": "ShouldNotAppear", "aliases": [], "member_of": []},
+        }))
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        (cache_dir / "dj_cache.json").write_text(json.dumps({
+            "right": {"name": "Correct", "aliases": [{"slug": "a", "name": "Alias"}], "member_of": []},
+        }))
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_cache_dir", lambda: cache_dir,
+        )
+        monkeypatch.setattr(
+            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            lambda _: data_dir,
+        )
+        cfg = load_config(tmp_path / "v.mkv")
+        assert cfg.artist_aliases.get("Alias") == "Correct"
+        assert "ShouldNotAppear" not in cfg.artist_aliases.values()
+
+    def test_mbid_cache_read_from_cache_dir(self, tmp_path: Path, monkeypatch):
+        data_dir = tmp_path / "data" / ".cratedigger"
+        data_dir.mkdir(parents=True)
+        (data_dir / "festivals.json").write_text("{}")
+        (data_dir / "artists.json").write_text("{}")
+        (data_dir / "mbid_cache.json").write_text(json.dumps({"Wrong": "wrong-mbid"}))
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        (cache_dir / "mbid_cache.json").write_text(json.dumps({"Right": "correct-mbid"}))
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_cache_dir", lambda: cache_dir,
+        )
+        monkeypatch.setattr(
+            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            lambda _: data_dir,
+        )
+        cfg = load_config(tmp_path / "v.mkv")
+        assert cfg.mbid_cache.get("Right") == "correct-mbid"
+        assert "Wrong" not in cfg.mbid_cache
 
 
 class TestApplyCratediggerCanon:
