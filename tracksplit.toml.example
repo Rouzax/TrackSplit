@@ -3,6 +3,7 @@
 # Copy this file to the TrackSplit config location for your platform:
 #
 #   Linux:   ~/TrackSplit/config.toml
+#   macOS:   ~/TrackSplit/config.toml
 #   Windows: Documents\TrackSplit\config.toml
 #
 # Uncomment the keys for tools that are not on your PATH.

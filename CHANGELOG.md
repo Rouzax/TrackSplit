@@ -13,10 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [0.7.0] - 2026-04-21
 
+Companion release to CrateDigger 0.14.0, which implements the matching storage layout on the CrateDigger side.
+
 ### Added
 
-- Rotating log file written on every run to the platform log directory (`~/.local/state/TrackSplit/log/tracksplit.log` on Linux, `$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log` on Windows). The log rotates at 5 MB with five backups kept. Console output is unchanged; the log supplements it.
-- Startup warning on every run while any legacy path from a version before 0.7.0 still exists. Affected paths: `~/.config/tracksplit/config.toml`, `~/.cache/tracksplit/`, `~/tracksplit.toml`, `~/.tracksplit.toml` (Linux/macOS); `$env:APPDATA\tracksplit\config.toml`, `$env:APPDATA\tracksplit\tracksplit.toml`, `$env:LOCALAPPDATA\tracksplit\` (old update-check cache directory, Windows). The warning lists the offending paths and instructs the user to migrate or delete them.
+- Rotating log file written on every run to the platform log directory (`~/.local/state/TrackSplit/log/tracksplit.log` on Linux, `~/Library/Logs/TrackSplit/tracksplit.log` on macOS, `$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log` on Windows). The log rotates at 5 MB with five backups kept. Console output is unchanged; the log supplements it.
+- Startup warning on every run while any legacy config path from a version before 0.7.0 still exists. Affected paths: `~/.config/tracksplit/config.toml`, `~/tracksplit.toml`, `~/.tracksplit.toml` (Linux/macOS); `$env:APPDATA\tracksplit\config.toml`, `$env:APPDATA\tracksplit\tracksplit.toml` (Windows). The warning lists the offending paths and instructs the user to migrate or delete them.
 
 ### Changed
 
