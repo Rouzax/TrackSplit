@@ -1,4 +1,5 @@
 """Tests for tracksplit.metadata module."""
+from tracksplit.cratedigger import CrateDiggerConfig
 from tracksplit.metadata import (
     strip_label,
     safe_filename,
@@ -397,8 +398,6 @@ def test_probe_to_metadata_to_tagger_contract():
 def test_tier1_solo_synthesizes_albumartists_and_fills_mbid_from_cache():
     """Tier-1 MKV (no CrateDigger file tags) synthesizes a single-element
     ``albumartists`` from ``artist`` and fills the MBID from mbid_cache."""
-    from tracksplit.cratedigger import CrateDiggerConfig
-
     cfg = CrateDiggerConfig(mbid_cache={"deadmau5": "cached-uuid"})
     # Tier-1 derives artist from the filename stem.
     chapters = [Chapter(index=1, title="Strobe", start=0.0, end=60.0)]
@@ -465,8 +464,6 @@ def test_unicode_artist_preserved_through_build_album_meta():
 
 
 # --- Structured chapter tags (multi-artist) ---
-
-from tracksplit.cratedigger import CrateDiggerConfig
 
 
 def _structured_chapter(start, end, title_full, structured):

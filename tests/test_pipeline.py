@@ -1,8 +1,7 @@
 """Tests for the pipeline module."""
 import json
-import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import patch
 
 import pytest
 
@@ -10,7 +9,6 @@ from tracksplit.models import AlbumMeta, Chapter, TrackMeta
 from tracksplit.pipeline import (
     _apply_intro_track,
     build_intro_track,
-    should_regenerate,
     _safe_log_name,
 )
 
@@ -1352,9 +1350,7 @@ class TestSkipBranchCoverRebuild:
         mock_tag, tmp_path,
     ):
         from tracksplit.cover import COVER_SCHEMA_VERSION
-        from tracksplit.manifest import (
-            ALBUM_MANIFEST_FILENAME, load_album_manifest,
-        )
+        from tracksplit.manifest import load_album_manifest
         from tracksplit.pipeline import process_file
 
         mock_probe.return_value = self._probe()

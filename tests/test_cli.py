@@ -37,7 +37,8 @@ def test_version_flag_prints_version_and_exits():
 
 def test_cli_invalid_format_rejected():
     """Invalid --format value should fail with a clean message."""
-    import tempfile, os
+    import tempfile
+    import os
     fd, path = tempfile.mkstemp(suffix=".mkv")
     os.close(fd)
     try:

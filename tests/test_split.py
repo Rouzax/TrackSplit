@@ -247,7 +247,7 @@ class TestSplitTracksOpusPrefix:
 
         audio = tmp_path / "src.mkv"
         audio.touch()
-        mock_run = mocker.patch("tracksplit.split.tracked_run")
+        _mock_run = mocker.patch("tracksplit.split.tracked_run")
         mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
 
         split_tracks(
@@ -263,7 +263,7 @@ class TestSplitTracksOpusPrefix:
 
         audio = tmp_path / "src.mkv"
         audio.touch()
-        mock_run = mocker.patch("tracksplit.split.tracked_run")
+        _mock_run = mocker.patch("tracksplit.split.tracked_run")
         mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
 
         split_tracks(
@@ -279,7 +279,7 @@ class TestSplitTracksOpusPrefix:
 
         audio = tmp_path / "src.flac"
         audio.touch()
-        mock_run = mocker.patch("tracksplit.split.tracked_run")
+        _mock_run = mocker.patch("tracksplit.split.tracked_run")
         mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
 
         split_tracks(

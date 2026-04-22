@@ -2,7 +2,6 @@
 import io
 
 from rich.console import Console
-from rich.text import Text
 
 from tracksplit.console import make_console, status_text, summary_panel
 

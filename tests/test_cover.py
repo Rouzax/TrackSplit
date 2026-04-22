@@ -1,7 +1,6 @@
 """Tests for tracksplit.cover module."""
 
 import io
-import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
