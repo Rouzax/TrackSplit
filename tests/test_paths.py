@@ -187,6 +187,48 @@ class TestResolveCrateDiggerDataDir:
             assert result == tmp_path / "CrateDigger"
 
 
+class TestWalkupCratediggerDir:
+    def test_finds_cratedigger_in_parent(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+        library = tmp_path / "library"
+        cd_dir = library / ".cratedigger"
+        cd_dir.mkdir(parents=True)
+        input_file = library / "videos" / "file.mkv"
+        input_file.parent.mkdir(parents=True)
+        input_file.touch()
+        assert paths.walkup_cratedigger_dir(input_file) == cd_dir
+
+    def test_returns_none_when_not_found(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+        isolated = tmp_path / "isolated"
+        isolated.mkdir()
+        input_file = isolated / "file.mkv"
+        input_file.touch()
+        assert paths.walkup_cratedigger_dir(input_file) is None
+
+    def test_directory_input_starts_from_path_itself(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+        library = tmp_path / "library"
+        library.mkdir()
+        (library / ".cratedigger").mkdir()
+        assert paths.walkup_cratedigger_dir(library) == library / ".cratedigger"
+
+
+class TestCratediggerDataDir:
+    def test_linux_returns_home_cratedigger(self, tmp_path: Path):
+        with patch("tracksplit.paths.sys") as mock_sys, \
+             patch.object(Path, "home", return_value=tmp_path):
+            mock_sys.platform = "linux"
+            assert paths.cratedigger_data_dir() == tmp_path / "CrateDigger"
+
+    def test_windows_returns_documents_cratedigger(self):
+        with patch("tracksplit.paths.sys") as mock_sys, \
+             patch("tracksplit.paths.platformdirs") as mock_pd:
+            mock_sys.platform = "win32"
+            mock_pd.user_documents_dir.return_value = "C:/Users/Name/Documents"
+            assert paths.cratedigger_data_dir() == Path("C:/Users/Name/Documents/CrateDigger")
+
+
 class TestLegacyPathDetection:
     def test_detects_legacy_tracksplit_toml_in_home(self, tmp_path: Path):
         legacy = tmp_path / "tracksplit.toml"
