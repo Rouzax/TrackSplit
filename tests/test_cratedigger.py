@@ -455,3 +455,72 @@ class TestLoadJsonNoise:
             "config read failed" in rec.message and "festivals.json" in rec.message
             for rec in caplog.records
         )
+
+
+class TestPerFileFallback:
+    """Regression tests for the walk-up-shadows-visible-dir bug.
+
+    When a walk-up .cratedigger exists but has no festivals.json,
+    the visible data dir's festivals.json must be used.
+    """
+
+    def test_walkup_without_festivals_falls_through_to_visible(
+        self, tmp_path: Path, monkeypatch,
+    ):
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+
+        visible = tmp_path / "visible"
+        visible.mkdir()
+        (visible / "festivals.json").write_text(json.dumps({
+            "AMF": {"aliases": ["Amsterdam Music Festival"]},
+        }))
+
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        input_file = tmp_path / "library" / "video.mkv"
+        input_file.touch()
+        cfg = load_config(input_file)
+        canon, edition = cfg.resolve_festival("Amsterdam Music Festival")
+        assert canon == "AMF"
+        assert edition == ""
+
+    def test_walkup_without_artists_falls_through_to_visible(
+        self, tmp_path: Path, monkeypatch,
+    ):
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+
+        visible = tmp_path / "visible"
+        visible.mkdir()
+        (visible / "artists.json").write_text(json.dumps({
+            "aliases": {"Tiesto": ["Tiësto"]},
+        }))
+
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        input_file = tmp_path / "library" / "video.mkv"
+        input_file.touch()
+        cfg = load_config(input_file)
+        assert cfg.resolve_artist("Tiësto") == "Tiesto"
+
+    def test_walkup_festivals_shadows_visible_entirely(
+        self, tmp_path: Path, monkeypatch,
+    ):
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+        (walkup / "festivals.json").write_text(json.dumps({
+            "TML": {"aliases": ["Tomorrowland"]},
+        }))
+
+        visible = tmp_path / "visible"
+        visible.mkdir()
+        (visible / "festivals.json").write_text(json.dumps({
+            "AMF": {"aliases": ["Amsterdam Music Festival"]},
+            "TML": {"aliases": ["Tomorrowland"]},
+        }))
+
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        input_file = tmp_path / "library" / "video.mkv"
+        input_file.touch()
+        cfg = load_config(input_file)
+        assert cfg.resolve_festival("Tomorrowland") == ("TML", "")
+        assert cfg.resolve_festival("Amsterdam Music Festival") == ("Amsterdam Music Festival", "")
