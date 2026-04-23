@@ -255,7 +255,7 @@ class TestFindDjArtwork:
         (artist_dir / "dj-artwork.jpg").write_bytes(b"dj-artwork-data")
         (artist_dir / "fanart.jpg").write_bytes(b"fanart-data")
         monkeypatch.setattr(
-            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            "tracksplit.paths.walkup_cratedigger_dir",
             lambda _p: cd_dir,
         )
 
@@ -272,7 +272,7 @@ class TestFindDjArtwork:
         artist_dir.mkdir(parents=True)
         (artist_dir / "fanart.jpg").write_bytes(b"fanart-data")
         monkeypatch.setattr(
-            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            "tracksplit.paths.walkup_cratedigger_dir",
             lambda _p: cd_dir,
         )
 
@@ -294,7 +294,7 @@ class TestFindDjArtwork:
         input_file.parent.mkdir(parents=True)
 
         monkeypatch.setattr(
-            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            "tracksplit.paths.walkup_cratedigger_dir",
             lambda _p: cd_dir,
         )
 
@@ -302,12 +302,16 @@ class TestFindDjArtwork:
         assert result == b"lib-artwork"
 
     def test_returns_none_when_not_found(self, tmp_path, monkeypatch):
-        # Patch the resolver to a guaranteed-missing directory so the real
-        # fallback (``~/CrateDigger/``) cannot accidentally satisfy the
-        # lookup on a dev machine.
+        # Patch the resolver to return None (no walk-up dir) and point the
+        # visible data dir at a non-existent path so the real fallback cannot
+        # accidentally satisfy the lookup on a dev machine.
         monkeypatch.setattr(
-            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
-            lambda _p: tmp_path / "does_not_exist",
+            "tracksplit.paths.walkup_cratedigger_dir",
+            lambda _p: None,
+        )
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty_visible",
         )
         result = find_dj_artwork(
             tmp_path / "file.flac",

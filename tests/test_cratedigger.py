@@ -23,6 +23,11 @@ def _reset_cratedigger_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setattr(
         "tracksplit.paths.cratedigger_cache_dir", lambda: cache,
     )
+    cd_visible = tmp_path / "cd_visible_data"
+    cd_visible.mkdir(exist_ok=True)
+    monkeypatch.setattr(
+        "tracksplit.paths.cratedigger_data_dir", lambda: cd_visible,
+    )
     _clear_config_cache()
     yield
     _clear_config_cache()
@@ -254,29 +259,50 @@ def test_fill_mbids_does_not_overwrite_existing():
 
 
 class TestFindCratediggerDirs:
-    def test_returns_resolved_dir_when_it_exists(self, tmp_path: Path, monkeypatch):
-        cd_dir = tmp_path / ".cratedigger"
-        cd_dir.mkdir()
-        monkeypatch.setattr(
-            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
-            lambda _p: cd_dir,
-        )
-        dirs = find_cratedigger_dirs(tmp_path / "video.mkv")
+    def test_walkup_and_visible_both_returned(self, tmp_path: Path, monkeypatch):
+        walkup_dir = tmp_path / "library" / ".cratedigger"
+        walkup_dir.mkdir(parents=True)
+        visible = tmp_path / "visible_cd"
+        visible.mkdir()
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        input_file = tmp_path / "library" / "videos" / "file.mkv"
+        input_file.parent.mkdir(parents=True)
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
+        assert dirs == [walkup_dir, visible]
+
+    def test_env_var_overrides_all(self, tmp_path: Path, monkeypatch):
+        env_dir = tmp_path / "env_cd"
+        env_dir.mkdir()
+        monkeypatch.setenv("CRATEDIGGER_DATA_DIR", str(env_dir))
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+        input_file = tmp_path / "library" / "file.mkv"
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
+        assert dirs == [env_dir]
+
+    def test_no_walkup_returns_visible_only(self, tmp_path: Path, monkeypatch):
+        visible = tmp_path / "visible_cd"
+        visible.mkdir()
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        isolated = tmp_path / "isolated"
+        isolated.mkdir()
+        input_file = isolated / "file.mkv"
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
+        assert dirs == [visible]
+
+    def test_deduplicates_when_walkup_equals_visible(self, tmp_path: Path, monkeypatch):
+        cd_dir = tmp_path / "library" / ".cratedigger"
+        cd_dir.mkdir(parents=True)
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: cd_dir)
+        input_file = tmp_path / "library" / "file.mkv"
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
         assert dirs == [cd_dir]
 
-    def test_returns_empty_when_resolved_dir_missing(self, tmp_path: Path, monkeypatch):
-        monkeypatch.setattr(
-            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
-            lambda _p: tmp_path / "does_not_exist",
-        )
-        dirs = find_cratedigger_dirs(tmp_path / "video.mkv")
-        assert dirs == []
-
     def test_walk_up_integration(self, tmp_path: Path, monkeypatch):
-        # End-to-end: .cratedigger present at library root, no patching of
-        # the resolver. Exercises the real paths.resolve_cratedigger_data_dir
-        # walk-up. Clear CRATEDIGGER_DATA_DIR so env-var precedence cannot
-        # hijack the lookup in CI or local shells that set it.
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         library = tmp_path / "library"
         cd_dir = library / ".cratedigger"
@@ -285,7 +311,7 @@ class TestFindCratediggerDirs:
         input_file.parent.mkdir(parents=True)
         input_file.touch()
         dirs = find_cratedigger_dirs(input_file)
-        assert dirs == [cd_dir]
+        assert cd_dir in dirs
 
 
 class TestCacheVsDataSplit:
@@ -309,7 +335,7 @@ class TestCacheVsDataSplit:
             "tracksplit.paths.cratedigger_cache_dir", lambda: cache_dir,
         )
         monkeypatch.setattr(
-            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            "tracksplit.paths.walkup_cratedigger_dir",
             lambda _: data_dir,
         )
         cfg = load_config(tmp_path / "v.mkv")
@@ -329,7 +355,7 @@ class TestCacheVsDataSplit:
             "tracksplit.paths.cratedigger_cache_dir", lambda: cache_dir,
         )
         monkeypatch.setattr(
-            "tracksplit.cratedigger.paths.resolve_cratedigger_data_dir",
+            "tracksplit.paths.walkup_cratedigger_dir",
             lambda _: data_dir,
         )
         cfg = load_config(tmp_path / "v.mkv")
