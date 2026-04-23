@@ -17,15 +17,18 @@ teach themselves ``%APPDATA%`` navigation. Caches and logs use the platform
 default because users never touch them, they get big, and backups should be
 able to skip them.
 
-CrateDigger data is looked up via :func:`resolve_cratedigger_data_dir`, which
-returns the first valid source in this order:
+CrateDigger curated data (festivals.json, artists.json) is resolved per-file
+across candidate directories in priority order, matching CrateDigger's own
+``_load_external_config`` semantics:
 
-1. ``$CRATEDIGGER_DATA_DIR`` env var (if set and directory exists)
-2. ``.cratedigger/`` directory found by walking up from the input file
-   (max 10 parents)
-3. CrateDigger's visible data dir: ``Documents\\CrateDigger\\`` on Windows,
-   ``~/CrateDigger/`` on Linux. Mirrors the same visible-folder choice
-   CrateDigger uses for its own writable files.
+1. Walk-up ``.cratedigger/`` from the input file (max 10 parents)
+2. CrateDigger's visible data dir: ``Documents\\CrateDigger\\`` on Windows,
+   ``~/CrateDigger/`` on Linux.
+
+If ``$CRATEDIGGER_DATA_DIR`` is set and exists, it replaces both sources.
+For each curated file, the first directory containing it wins; files not
+present in the walk-up dir fall through to the visible data dir.
+Cache files are read from :func:`cratedigger_cache_dir` (platformdirs cache).
 """
 from __future__ import annotations
 
@@ -84,33 +87,23 @@ def cratedigger_cache_dir() -> Path:
     return Path(platformdirs.user_cache_dir(CRATEDIGGER_APP_NAME, appauthor=False))
 
 
-def _cratedigger_visible_data_dir() -> Path:
-    """Mirror CrateDigger's ``data_dir()`` without importing it (independent app)."""
+def cratedigger_data_dir() -> Path:
+    """Return CrateDigger's visible data directory.
+
+    Windows: ``<Documents>\\CrateDigger``. Linux/other: ``$HOME/CrateDigger``.
+    Mirrors CrateDigger's own ``data_dir()`` without importing it.
+    """
     if sys.platform == "win32":
         return Path(platformdirs.user_documents_dir()) / CRATEDIGGER_APP_NAME
     return Path.home() / CRATEDIGGER_APP_NAME
 
 
-def resolve_cratedigger_data_dir(input_path: Path) -> Path:
-    """Resolve where to look for CrateDigger's shared data.
+def walkup_cratedigger_dir(input_path: Path) -> Path | None:
+    """Walk up from ``input_path`` looking for a ``.cratedigger/`` directory.
 
-    Order: ``$CRATEDIGGER_DATA_DIR`` env (if set and exists) >
-    walk-up from input (max 10 parents looking for ``.cratedigger/``) >
-    CrateDigger's visible ``data_dir()`` (``Documents\\CrateDigger\\`` on Windows,
-    ``~/CrateDigger/`` on Linux).
-
-    The returned path is not guaranteed to exist; callers must still check.
-    When ``input_path`` refers to an existing file, the walk starts at
-    ``input_path.parent`` (the folder containing the file). Otherwise
-    (a directory or a non-existent path) the walk starts at
-    ``input_path`` itself, so callers can pass library roots directly.
+    Returns the first match, or ``None``. When ``input_path`` is an existing
+    file the walk starts at its parent; otherwise at ``input_path`` itself.
     """
-    env = os.environ.get("CRATEDIGGER_DATA_DIR")
-    if env:
-        env_path = Path(env)
-        if env_path.is_dir():
-            return env_path
-
     current = input_path.parent if input_path.is_file() else input_path
     for _ in range(_WALK_UP_LIMIT):
         candidate = current / ".cratedigger"
@@ -120,8 +113,29 @@ def resolve_cratedigger_data_dir(input_path: Path) -> Path:
         if parent == current:
             break
         current = parent
+    return None
 
-    return _cratedigger_visible_data_dir()
+
+def resolve_cratedigger_data_dir(input_path: Path) -> Path:
+    """Resolve a single CrateDigger data directory for ``input_path``.
+
+    Returns the first valid source: ``$CRATEDIGGER_DATA_DIR`` env >
+    walk-up ``.cratedigger/`` > visible data dir. The returned path is
+    not guaranteed to exist; callers must still check.
+
+    Most callers should use
+    :func:`tracksplit.cratedigger.find_cratedigger_dirs` instead, which
+    returns a candidate list for per-file first-found-wins lookup.
+    """
+    env = os.environ.get("CRATEDIGGER_DATA_DIR")
+    if env:
+        env_path = Path(env)
+        if env_path.is_dir():
+            return env_path
+    walkup = walkup_cratedigger_dir(input_path)
+    if walkup is not None:
+        return walkup
+    return cratedigger_data_dir()
 
 
 def _legacy_paths_present(home: Path | None = None) -> list[Path]:
