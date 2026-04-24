@@ -692,6 +692,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#where-are-my-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where are my logs?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#legacy-tracksplit-or-cratedigger-files-detected-warning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Legacy TrackSplit or CrateDigger files detected" warning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#still-stuck" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -885,6 +907,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#where-are-my-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where are my logs?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#legacy-tracksplit-or-cratedigger-files-detected-warning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Legacy TrackSplit or CrateDigger files detected" warning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#still-stuck" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1043,6 +1087,59 @@
 <p><strong>Fix:</strong> Reinstall the package:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span>--force-reinstall
 </code></pre></div>
+<hr />
+<h2 id="where-are-my-logs">Where are my logs?</h2>
+<p>TrackSplit writes a rotating log file on every run, in addition to what it prints in the terminal. The log file is at:</p>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux</td>
+<td><code>~/.local/state/TrackSplit/log/tracksplit.log</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code>~/Library/Logs/TrackSplit/tracksplit.log</code></td>
+</tr>
+<tr>
+<td>Windows</td>
+<td><code>$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log</code></td>
+</tr>
+</tbody>
+</table>
+<p>The log rotates when it reaches 5 MB, and TrackSplit keeps the five most recent files (<code>tracksplit.log</code>, <code>tracksplit.log.1</code>, up to <code>tracksplit.log.5</code>). Older backups are deleted automatically.</p>
+<p>The log file contains the same information as <code>--debug</code> output, so it is the first place to look if something went wrong during an unattended run. You do not need to re-run with <code>--debug</code> to retrieve it.</p>
+<p><strong>Running multiple tracksplit invocations at once.</strong> The log file is shared across concurrent runs. Python's rotating handler is not multi-process safe: two tracksplit processes rotating the file simultaneously can lose recent log lines on Linux, or produce a transient <code>PermissionError</code> on Windows. This does not affect processing of your video files; only the log output is at risk. If you regularly run tracksplit in parallel, stagger the runs or use separate <code>HOME</code> directories.</p>
+<hr />
+<h2 id="legacy-tracksplit-or-cratedigger-files-detected-warning">"Legacy TrackSplit or CrateDigger files detected" warning</h2>
+<p><strong>What you see:</strong> A <code>WARNING</code> line on startup listing one or more old paths.</p>
+<p><strong>What is happening:</strong> TrackSplit found files or directories at locations used by a version before 0.7.0. These paths are no longer read:</p>
+<p>Linux / macOS:</p>
+<ul>
+<li><code>~/.config/tracksplit/config.toml</code> (old config location)</li>
+<li><code>~/.cache/tracksplit/</code> (old cache location)</li>
+<li><code>~/tracksplit.toml</code> or <code>~/.tracksplit.toml</code> (old home-directory config locations)</li>
+</ul>
+<p>Windows:</p>
+<ul>
+<li><code>$env:APPDATA\tracksplit\config.toml</code> (old config location)</li>
+<li><code>$env:APPDATA\tracksplit\tracksplit.toml</code> (old config location)</li>
+<li><code>$env:LOCALAPPDATA\tracksplit\</code> (old update-check cache directory)</li>
+</ul>
+<p>TrackSplit does not migrate them automatically. The warning fires on every run while any of these paths still exist.</p>
+<p><strong>Fix:</strong> For each listed path, choose one of:</p>
+<ul>
+<li><strong>Move it</strong> to the new location. For a config file:</li>
+<li>Linux / macOS: copy it to <code>~/TrackSplit/config.toml</code></li>
+<li>Windows: copy it to <code>Documents\TrackSplit\config.toml</code></li>
+<li><strong>Delete it</strong> if you no longer need it.</li>
+</ul>
+<p>The warning disappears on the next run once none of the old paths exist.</p>
 <hr />
 <h2 id="still-stuck">Still stuck?</h2>
 <p>Re-run with <code>--debug</code> and save the full output. Then open an issue and include:</p>

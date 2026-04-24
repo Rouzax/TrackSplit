@@ -571,6 +571,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cache-and-log-directories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cache and log directories
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -741,6 +752,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cache-and-log-directories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cache and log directories
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -767,87 +789,119 @@
 - your tools are installed somewhere non-standard (a custom path, a portable build, a Windows install not on <code>PATH</code>), or
 - <code>tracksplit --check</code> shows a red <code>✗</code> or yellow <code>!</code> for a tool you know is installed.</p>
 <h2 id="how-to-create-a-config-file">How to create a config file</h2>
-<p>Copy the example file from the TrackSplit directory:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cp<span class="w"> </span>tracksplit.toml.example<span class="w"> </span>tracksplit.toml
+<p>Copy the example file to the config location for your platform:</p>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Config file location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux</td>
+<td><code>~/TrackSplit/config.toml</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code>~/TrackSplit/config.toml</code></td>
+</tr>
+<tr>
+<td>Windows</td>
+<td><code>Documents\TrackSplit\config.toml</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Linux / macOS:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>~/TrackSplit
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>cp<span class="w"> </span>tracksplit.toml.example<span class="w"> </span>~/TrackSplit/config.toml
 </code></pre></div>
-<p>Then open <code>tracksplit.toml</code> and uncomment the keys for the tools you need to configure. You only need to set the keys where your paths differ from the default.</p>
+<p><strong>Windows (PowerShell):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">New-Item</span> <span class="n">-ItemType</span> <span class="n">Directory</span> <span class="n">-Force</span> <span class="s2">&quot;$env:USERPROFILE\Documents\TrackSplit&quot;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">Copy-Item</span> <span class="n">tracksplit</span><span class="p">.</span><span class="n">toml</span><span class="p">.</span><span class="n">example</span> <span class="s2">&quot;$env:USERPROFILE\Documents\TrackSplit\config.toml&quot;</span>
+</code></pre></div>
+<p>Then open the file and uncomment the keys for the tools you need to configure. You only need to set the keys where your paths differ from the default.</p>
 <h2 id="what-goes-in-the-config-file">What goes in the config file</h2>
 <p>The config file has one section: <code>[tools]</code>. Each key is a tool name, and its value is the full path to that tool's executable.</p>
 <p><strong>Linux / macOS:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[tools]</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ffmpeg</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/local/bin/ffmpeg&quot;</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">ffprobe</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/local/bin/ffprobe&quot;</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">mkvextract</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/bin/mkvextract&quot;</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">mkvmerge</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/bin/mkvmerge&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[tools]</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">ffmpeg</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/local/bin/ffmpeg&quot;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">ffprobe</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/local/bin/ffprobe&quot;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">mkvextract</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/bin/mkvextract&quot;</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">mkvmerge</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/bin/mkvmerge&quot;</span>
 </code></pre></div>
 <p><strong>Windows:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[tools]</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">ffmpeg</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;C:/ffmpeg/bin/ffmpeg.exe&quot;</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">ffprobe</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;C:/ffmpeg/bin/ffprobe.exe&quot;</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">mkvextract</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;C:/Program Files/MKVToolNix/mkvextract.exe&quot;</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">mkvmerge</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;C:/Program Files/MKVToolNix/mkvmerge.exe&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">[tools]</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">ffmpeg</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;C:/ffmpeg/bin/ffmpeg.exe&quot;</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">ffprobe</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;C:/ffmpeg/bin/ffprobe.exe&quot;</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">mkvextract</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;C:/Program Files/MKVToolNix/mkvextract.exe&quot;</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">mkvmerge</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;C:/Program Files/MKVToolNix/mkvmerge.exe&quot;</span>
 </code></pre></div>
 <p>You do not need to set all four keys. Any key you leave out falls back to looking for that tool by name on your <code>PATH</code>. For example, if only <code>ffmpeg</code> is in a non-standard location, set just the <code>ffmpeg</code> key and leave the rest out.</p>
 <h2 id="where-to-put-the-config-file">Where to put the config file</h2>
-<p>TrackSplit checks these locations in order and uses the first file it finds:</p>
-<ol>
-<li><code>tracksplit.toml</code> in your current directory</li>
-<li><code>config.toml</code> in your current directory</li>
-<li>Your user config directory:</li>
-</ol>
+<p>TrackSplit reads its config from one fixed location per platform:</p>
 <table>
 <thead>
 <tr>
 <th>Platform</th>
-<th>Path</th>
+<th>Config file location</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Linux / macOS</td>
-<td><code>~/.config/tracksplit/config.toml</code></td>
+<td>Linux</td>
+<td><code>~/TrackSplit/config.toml</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code>~/TrackSplit/config.toml</code></td>
 </tr>
 <tr>
 <td>Windows</td>
-<td><code>C:\Users\YourName\AppData\Roaming\tracksplit\config.toml</code></td>
+<td><code>Documents\TrackSplit\config.toml</code></td>
 </tr>
 </tbody>
 </table>
-<p>On Windows, run <code>$env:APPDATA</code> in PowerShell to see your AppData path.</p>
-<ol>
-<li>Your home directory:</li>
-</ol>
-<table>
-<thead>
-<tr>
-<th>Platform</th>
-<th>Path</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Linux / macOS</td>
-<td><code>~/tracksplit.toml</code> or <code>~/.tracksplit.toml</code></td>
-</tr>
-<tr>
-<td>Windows</td>
-<td><code>$env:USERPROFILE\tracksplit.toml</code> or <code>$env:USERPROFILE\.tracksplit.toml</code></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Which location to use:</strong> If you run TrackSplit from the same directory every time, placing <code>tracksplit.toml</code> there is simplest. If you run it from different directories, use the user config directory (option 3) so the config is always found regardless of where you run the command from.</p>
+<p>This location is always checked, regardless of which directory you run TrackSplit from. You do not need to keep a config file in your current directory.</p>
 <h2 id="verify-your-config">Verify your config</h2>
 <p>After saving your config file, run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tracksplit<span class="w"> </span>--check
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>tracksplit<span class="w"> </span>--check
 </code></pre></div>
 <p>TrackSplit prints each tool's resolved version. A green <code>✓</code> means the path is correct. A red <code>✗</code> or yellow <code>!</code> means something is wrong with the path you set, and the output will include the path it tried.</p>
 <h2 id="common-problems">Common problems</h2>
 <p><strong>Config file is not being picked up:</strong></p>
-<p>TrackSplit uses the first file it finds in the search order above. If you placed the file in option 3 (user config directory) but also have a <code>tracksplit.toml</code> in your current directory, the current-directory file wins. Check all locations.</p>
+<p>Check that the file is at the correct location for your platform (shown in the table above). Run <code>tracksplit --check</code> to see the resolved path TrackSplit found, or to confirm it is using the settings you expect.</p>
 <p><strong>Path set but tool still not found:</strong></p>
 <p>On Windows, use forward slashes (<code>C:/ffmpeg/bin/ffmpeg.exe</code>) or escaped backslashes (<code>C:\\ffmpeg\\bin\\ffmpeg.exe</code>) in the TOML file. Unescaped backslashes are invalid in TOML strings.</p>
 <p><strong>Only some tools are configured:</strong></p>
 <p>That is fine. TrackSplit merges the config with its defaults. Any tool not listed in the config file is looked up on your <code>PATH</code> as normal.</p>
+<h2 id="cache-and-log-directories">Cache and log directories</h2>
+<p>Caches (update-check) and logs live in standard platform directories separate from your config file:</p>
+<table>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>Linux</th>
+<th>macOS</th>
+<th>Windows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cache</td>
+<td><code>~/.cache/TrackSplit/</code></td>
+<td><code>~/Library/Caches/TrackSplit/</code></td>
+<td><code>$env:LOCALAPPDATA\TrackSplit\Cache\</code></td>
+</tr>
+<tr>
+<td>Logs</td>
+<td><code>~/.local/state/TrackSplit/log/</code></td>
+<td><code>~/Library/Logs/TrackSplit/</code></td>
+<td><code>$env:LOCALAPPDATA\TrackSplit\Logs\</code></td>
+</tr>
+</tbody>
+</table>
+<p>These paths are managed by <a href="https://pypi.org/project/platformdirs/">platformdirs</a> and are not affected by your config file location. On Linux, if you need to relocate them, set the standard <code>XDG_CACHE_HOME</code> or <code>XDG_STATE_HOME</code> environment variables. Note that these apply system-wide to all XDG-aware applications, and platformdirs appends <code>TrackSplit/</code> automatically, so <code>XDG_CACHE_HOME=/data/cache</code> results in <code>/data/cache/TrackSplit/</code>.</p>
 
 
 

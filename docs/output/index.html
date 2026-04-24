@@ -1102,7 +1102,30 @@
 <p>This file is always created.</p>
 <p><strong>What's on the cover:</strong> the artist name above an accent rail, with the festival (or closest available location) below the rail, then the date, then the stage. The accent color is sampled from the background image.</p>
 <p><strong>Multi-artist names break across lines.</strong> If the artist field contains <code>&amp;</code>, <code>B2B</code>, <code>VS</code>, or <code>X</code> (with spaces around the connector, case-insensitive), the cover stacks one artist per line with the connector carried to each subsequent line, so a three-way B2B like <code>"Axwell &amp; Sebastian Ingrosso &amp; Steve Angello"</code> renders as three stacked lines. The shared font is sized to fit the longest line so the stack stays visually aligned. A parenthetical credit like <code>"Everything Always (Dom Dolla &amp; John Summit)"</code> splits into the act on the first line and the inner artists on the second.</p>
-<p><strong>Keeping a group name on one line.</strong> Some duos and trios ("Dimitri Vegas &amp; Like Mike", "Swedish House Mafia") read best as a single unit. TrackSplit does not detect these automatically; it splits on any <code>&amp;</code>. To keep a group on one line, add an alias in <code>~/.cratedigger/artists.json</code> that maps the long form to a short canonical form. The file uses <code>{canonical: [aliases]}</code> shape:</p>
+<p><strong>Keeping a group name on one line.</strong> Some duos and trios ("Dimitri Vegas &amp; Like Mike", "Swedish House Mafia") read best as a single unit. TrackSplit does not detect these automatically; it splits on any <code>&amp;</code>. To keep a group on one line, add an alias in the CrateDigger <code>artists.json</code> file that maps the long form to a short canonical form. This file lives in the CrateDigger data directory:</p>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux</td>
+<td><code>~/CrateDigger/artists.json</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code>~/CrateDigger/artists.json</code></td>
+</tr>
+<tr>
+<td>Windows</td>
+<td><code>Documents\CrateDigger\artists.json</code></td>
+</tr>
+</tbody>
+</table>
+<p>Alternatively, place it in a library-local <code>.cratedigger/artists.json</code> next to your video files if you want the alias to apply only to that library. The file uses <code>{canonical: [aliases]}</code> shape:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;aliases&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">&quot;DVLM&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Dimitri Vegas &amp; Like Mike&quot;</span><span class="p">]</span>
@@ -1279,12 +1302,36 @@
 </ul>
 <h3 id="cratedigger-cache-reuse">CrateDigger cache reuse</h3>
 <p>TrackSplit reads CrateDigger's caches directly, not just the tags baked into the MKV. This is how consistent artist spellings, festival aliases, MusicBrainz IDs, and DJ artwork stay in sync between your video library (CrateDigger) and your music library (TrackSplit) without TrackSplit needing any of its own config.</p>
-<p><strong>Lookup chain.</strong> For each input video, TrackSplit searches for <code>.cratedigger</code> directories in this order:</p>
+<p><strong>Lookup chain.</strong> For each curated data file, TrackSplit checks candidate directories in priority order and uses the first file found, matching CrateDigger's own resolution:</p>
 <ol>
-<li>Global: <code>~/.cratedigger/</code> on Linux and macOS, or <code>%USERPROFILE%\.cratedigger\</code> on Windows.</li>
-<li>Walk-up: starting from the folder containing the input video, walk up to 10 parent directories looking for a <code>.cratedigger</code> subfolder. All matches are collected (nearest last).</li>
+<li><strong>Environment variable:</strong> if <code>CRATEDIGGER_DATA_DIR</code> is set and the directory exists, it is the sole source. CrateDigger honours the same variable, so exporting it points both tools at the same folder.</li>
+<li><strong>Walk-up:</strong> starting from the folder containing the input video, TrackSplit walks up to 10 parent directories looking for a <code>.cratedigger/</code> subfolder.</li>
+<li><strong>CrateDigger's own data directory:</strong> the folder where CrateDigger stores its curated data by default:</li>
 </ol>
-<p>Directories closer to the input file override the global cache, so you can keep a per-project override next to a library without disturbing your global setup. Missing files or directories are silently skipped, so TrackSplit keeps working when no CrateDigger config exists.</p>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux</td>
+<td><code>~/CrateDigger/</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code>~/CrateDigger/</code></td>
+</tr>
+<tr>
+<td>Windows</td>
+<td><code>Documents\CrateDigger\</code></td>
+</tr>
+</tbody>
+</table>
+<p>Each file is resolved independently. A library-local <code>.cratedigger/festivals.json</code> replaces the user-level one entirely, but if the walk-up directory has no <code>festivals.json</code>, the user-level file is used. The same applies to <code>artists.json</code>. This means you can have a <code>.cratedigger</code> directory for folder layout config without needing to duplicate your festival and artist definitions there.</p>
+<p>If none of the locations has the file, TrackSplit continues without it (raw tag values pass through unchanged). No configuration is needed when CrateDigger is installed in its default location.</p>
 <p><strong>Cache files TrackSplit reads:</strong></p>
 <table>
 <thead>
@@ -1320,7 +1367,6 @@
 </tr>
 </tbody>
 </table>
-<p>The resolver merges all discovered <code>.cratedigger</code> directories into one config view before any tag is written. If you have CrateDigger installed and its caches populated, TrackSplit picks them up automatically. No TrackSplit-side configuration is required.</p>
 <h3 id="re-run-manifest-details">Re-run manifest details</h3>
 <p><code>.tracksplit_manifest.json</code> records:</p>
 <ul>
