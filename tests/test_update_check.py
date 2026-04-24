@@ -416,7 +416,10 @@ class TestRefreshUpdateCache:
 
 
 class TestDebugLogging:
-    """Tier 2: every silent-on-failure path in update_check leaves a DEBUG trail."""
+    """Tier 2: every silent-on-failure path in update_check leaves a DEBUG trail.
+
+    Hand-synced with CrateDigger's festival_organizer tests of the same name.
+    """
 
     def test_fetch_latest_release_logs_debug_on_http_failure(self, caplog):
         import logging as _logging
