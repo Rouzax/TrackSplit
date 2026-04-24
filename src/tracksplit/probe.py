@@ -194,8 +194,20 @@ def get_opus_packet_duration_ms(path: Path) -> int | None:
         try:
             seconds = float(line.split("=", 1)[1])
         except ValueError:
+            logger.debug(
+                "Opus packet duration parse failed for %s: %r", path.name, line,
+            )
             return None
         durations_ms.add(int(round(seconds * 1000)))
+    if not durations_ms:
+        logger.debug(
+            "No Opus packets found for %s, skipping prefix fix", path.name,
+        )
+        return None
     if len(durations_ms) != 1:
+        logger.debug(
+            "Opus packet durations disagree for %s: %s ms, skipping prefix fix",
+            path.name, sorted(durations_ms),
+        )
         return None
     return next(iter(durations_ms))
