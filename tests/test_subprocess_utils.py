@@ -60,11 +60,43 @@ def test_tracked_run_logs_cancel(caplog):
 
 
 def test_tracked_run_logs_command_with_args_quoted(caplog):
-    """Argv with spaces renders as a shell-quoted single line in the log."""
+    """Argv with spaces renders as a shell-quoted single line, not a Python
+    list repr, so the log reads like a shell command."""
     cmd = [sys.executable, "-c", "import sys; print(sys.argv)"]
     with caplog.at_level(logging.DEBUG, logger="tracksplit.subprocess"):
         tracked_run(cmd, timeout=10)
     joined = "\n".join(r.message for r in caplog.records)
-    # The argv list formats as shell-quoted string, not as a Python list repr
     assert "import sys; print(sys.argv)" in joined or "'import sys" in joined
-    assert "[" not in joined.split("subprocess:")[1].split("\n")[0] if "subprocess:" in joined else True
+    # The "subprocess: " prefix line must not contain Python list-repr brackets.
+    subprocess_lines = [r.message for r in caplog.records
+                        if r.message.startswith("subprocess: ")]
+    assert subprocess_lines, "no 'subprocess: ...' DEBUG line found"
+    assert "[" not in subprocess_lines[0]
+
+
+def test_tracked_run_logs_non_timeout_exception_during_communicate(caplog):
+    """When communicate() raises a non-Timeout, non-Cancelled exception
+    (e.g. OSError on a broken pipe), the BaseException branch must log
+    with a descriptive, non-misleading message naming the exception
+    class, and the exception must propagate."""
+    from unittest.mock import patch as _patch
+
+    cmd = [sys.executable, "-c", "import time; time.sleep(5)"]
+
+    # Patch Popen.communicate to raise OSError, simulating a non-Timeout
+    # failure of the wait (not the spawn). The outer tracked_run must log
+    # and re-raise, and the log must not claim the process was "cancelled"
+    # when it was actually just an exception during I/O.
+    def _raise_oserror(self, *args, **kwargs):
+        raise OSError("simulated pipe failure")
+
+    with caplog.at_level(logging.DEBUG, logger="tracksplit.subprocess"):
+        with _patch("subprocess.Popen.communicate", _raise_oserror):
+            with pytest.raises(OSError, match="simulated pipe failure"):
+                tracked_run(cmd, timeout=10)
+    joined = "\n".join(r.message for r in caplog.records)
+    # The message must not claim "cancelled" for a non-cancel exception.
+    assert "cancelled (exception)" not in joined
+    # It must name the exception class so the log reader knows what hit.
+    assert "OSError" in joined
+    assert "interrupted" in joined.lower()

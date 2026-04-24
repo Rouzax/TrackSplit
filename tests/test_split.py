@@ -437,3 +437,29 @@ class TestSplitTracksDebugLogging:
         joined = "\n".join(r.message for r in caplog.records)
         # Track 2 gets the prefix (i > 0 AND start - OPUS_PREFIX_SECONDS >= 0)
         assert "Opus prefix applied" in joined or "opus prefix applied" in joined.lower()
+
+    def test_debug_opus_prefix_skipped(self, tmp_path, mocker, caplog):
+        """When a non-first track's start is less than OPUS_PREFIX_SECONDS,
+        the prefix cannot be applied without a negative seek, and DEBUG
+        names the reason."""
+        import logging
+        full_audio = tmp_path / "full.opus"
+        full_audio.touch()
+        output_dir = tmp_path / "output" / "album"
+
+        # Track 2 starts at 0.02s, which is less than OPUS_PREFIX_SECONDS
+        # (0.04s), so the prefix shift would go negative. Code skips it.
+        tracks = [
+            TrackMeta(number=1, title="First", start=0.0, end=0.01),
+            TrackMeta(number=2, title="Second", start=0.02, end=60.0),
+        ]
+        mocker.patch("tracksplit.split.tracked_run")
+        mocker.patch("tracksplit.split.patch_opus_pre_skip")
+        with caplog.at_level(logging.DEBUG, logger="tracksplit.split"):
+            split_tracks(
+                full_audio, tracks, output_dir,
+                ext=".opus", codec_mode="copy", opus_packet_ms=20,
+            )
+        joined = "\n".join(r.message for r in caplog.records)
+        assert "Opus prefix skipped" in joined
+        assert "track 2" in joined.lower()

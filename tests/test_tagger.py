@@ -482,3 +482,79 @@ def test_tag_all_logs_warning_on_mutagen_error(tmp_path, caplog):
             tag_all([broken], album)
     joined = "\n".join(r.message for r in caplog.records if r.levelno >= logging.WARNING)
     assert "broken.flac" in joined
+
+
+def test_count_tag_deltas_none_existing():
+    """_count_tag_deltas with existing=None counts every new tag as added."""
+    from tracksplit.tagger import _count_tag_deltas
+    new_tags = {"ARTIST": ["X"], "TITLE": ["Y"], "ALBUM": ["Z"]}
+    assert _count_tag_deltas(None, new_tags) == (3, 0, 0)
+
+
+def test_count_tag_deltas_empty_existing_dict():
+    """_count_tag_deltas with an empty dict (not None) also counts all as added."""
+    from tracksplit.tagger import _count_tag_deltas
+    new_tags = {"ARTIST": ["X"], "TITLE": ["Y"]}
+    assert _count_tag_deltas({}, new_tags) == (2, 0, 0)
+
+
+def test_count_tag_deltas_case_insensitive():
+    """Vorbis key comparison folds case, so 'artist' in existing and
+    'ARTIST' in new with equal values is a no-op."""
+    from tracksplit.tagger import _count_tag_deltas
+    existing = {"artist": ["X"], "title": ["Y"]}
+    new_tags = {"ARTIST": ["X"], "TITLE": ["Y"]}
+    assert _count_tag_deltas(existing, new_tags) == (0, 0, 0)
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg required")
+def test_tag_flac_no_debug_on_no_op_retag(tmp_path, caplog):
+    """Retagging a file with the exact same album+track emits no diff DEBUG
+    line, keeping the rotating log quiet on idempotent re-runs."""
+    import logging
+    flac_path = tmp_path / "test.flac"
+    _make_silent_flac(flac_path)
+
+    album = _full_album()
+    track = album.tracks[0]
+    # First tag-write: pre-existing encoder tags, expect a DEBUG.
+    tag_flac(flac_path, album, track)
+    # Second tag-write with the same metadata: should be a no-op diff.
+    caplog.clear()
+    with caplog.at_level(logging.DEBUG, logger="tracksplit.tagger"):
+        tag_flac(flac_path, album, track)
+    joined = "\n".join(r.message for r in caplog.records)
+    assert "Tags for test.flac" not in joined
+
+
+def _make_silent_opus(path: Path, duration: float = 0.2) -> None:
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-f", "lavfi",
+            "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
+            "-t", str(duration), "-c:a", "libopus", "-b:a", "64k",
+            str(path),
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg required")
+def test_tag_ogg_logs_diff(tmp_path, caplog):
+    """tag_ogg emits the same 'Tags for X: +N -M ~K' DEBUG line as tag_flac."""
+    import logging
+    opus_path = tmp_path / "test.opus"
+    _make_silent_opus(opus_path)
+
+    album = _full_album()
+    track = album.tracks[0]
+    with caplog.at_level(logging.DEBUG, logger="tracksplit.tagger"):
+        tag_ogg(opus_path, album, track)
+    joined = "\n".join(r.message for r in caplog.records)
+    assert "Tags for test.opus" in joined
+    import re
+    m = re.search(r"Tags for test\.opus: \+(\d+) -(\d+) ~(\d+)", joined)
+    assert m is not None, joined
+    added = int(m.group(1))
+    assert added >= 5

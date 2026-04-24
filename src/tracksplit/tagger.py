@@ -29,10 +29,7 @@ def _count_tag_deltas(
     existing_map: dict[str, list[str]] = {}
     if existing:
         for key in existing.keys():
-            try:
-                existing_map[key.upper()] = list(existing[key])
-            except Exception:
-                existing_map[key.upper()] = []
+            existing_map[key.upper()] = list(existing[key])
     new_map = {k.upper(): list(v) for k, v in new_tags.items()}
     existing_keys = set(existing_map.keys())
     new_keys = set(new_map.keys())

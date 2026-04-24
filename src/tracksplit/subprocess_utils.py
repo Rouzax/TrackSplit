@@ -78,7 +78,13 @@ def tracked_run(
       - On non-zero exit: ``subprocess exit <n>: <argv>; stderr tail: <tail>``
         before raising CalledProcessError.
       - On timeout: ``subprocess timed out: <argv>``.
-      - On cancel: ``subprocess cancelled: <argv>``.
+      - On cancel_event set before start:
+        ``subprocess cancelled before start: <argv>``.
+      - On cancel_event set during execution:
+        ``subprocess cancelled during execution: <argv>``.
+      - On any other exception during communicate() (including
+        KeyboardInterrupt): ``subprocess interrupted: <argv>: <exc_type>``
+        before re-raising.
     """
     cmd_str = _fmt_cmd(cmd)
     logger.debug("subprocess: %s", cmd_str)
@@ -97,8 +103,11 @@ def tracked_run(
         proc.kill()
         proc.wait()
         raise
-    except BaseException:
-        logger.debug("subprocess cancelled (exception): %s", cmd_str)
+    except BaseException as exc:
+        logger.debug(
+            "subprocess interrupted: %s: %s",
+            cmd_str, type(exc).__name__,
+        )
         proc.kill()
         proc.wait()
         raise
