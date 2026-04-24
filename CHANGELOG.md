@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-04-24
+
 ### Changed
 
+- The rotating log file introduced in 0.7.0 now captures a complete post-mortem trail. Every subprocess invocation (ffmpeg, mkvextract, mkvmerge) routed through `tracked_run` logs its command line and, on non-zero exit, a tail of stderr. Per-track progress (`splitting N/M: <title>`) and Opus-prefix decisions (applied vs skipped, with reason) are logged in `split.py`. Per-file tag-writes in `tagger.py` log a one-line diff (`Tags for X: +added -removed ~changed`) and wrap Mutagen exceptions with a WARNING that names the failing file before re-raising. `extract.decide_codec` logs an INFO line explaining the copy-vs-reencode decision (visible at `--verbose`). `probe.get_opus_packet_duration_ms` distinguishes three reasons for returning None (no packets, duration parse failure, packet-duration disagreement). `update_check` silent-exception paths now log their failure mode. Companion to [CrateDigger 0.14.1](https://github.com/Rouzax/CrateDigger/releases/tag/v0.14.1); the two rotating logs read symmetrically. No behaviour change; console output is unchanged.
 - The release workflow is now triggered manually via `gh workflow run release.yml -f version=X.Y.Z` (or the GitHub UI), replacing the prior commit-message-matched trigger. The workflow still validates `pyproject.toml` and `CHANGELOG.md`, builds, tags, and publishes. The local `scripts/release.sh`, `scripts/git-hooks/pre-push`, and `scripts/setup-hooks.sh` have been removed; they existed to construct and gate a very specific commit-message format that the workflow no longer relies on.
 - README now has a dedicated `Update Notifications` section covering the startup notice, automatic suppression in non-interactive contexts, and `TRACKSPLIT_NO_UPDATE_CHECK`. The Features list entry is trimmed to a short pointer into that section. No behaviour change.
 
