@@ -1,6 +1,7 @@
 """Tests for tracksplit.paths platform-path resolution."""
 from __future__ import annotations
 
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -318,23 +319,111 @@ class TestLegacyPathDetection:
 
 
 class TestWarnIfLegacyPathsExist:
-    def test_warns_when_legacy_present_and_reports_every_invocation(
-        self, tmp_path: Path, caplog
-    ):
-        """Emits a WARNING; calling again still warns (warning is not suppressed)."""
+    def test_warns_once_when_legacy_present(self, tmp_path: Path, caplog):
+        """First call emits a single WARNING; repeat the same day stays silent."""
         legacy = tmp_path / "tracksplit.toml"
         legacy.write_text("")
-        with caplog.at_level("WARNING", logger="tracksplit.paths"):
-            paths.warn_if_legacy_paths_exist(home=tmp_path)
-            first_count = len(caplog.records)
-            paths.warn_if_legacy_paths_exist(home=tmp_path)
-            second_count = len(caplog.records)
-        assert first_count >= 1
-        assert second_count == first_count * 2  # each call warns independently
+        state = tmp_path / "state"
+        with patch("tracksplit.paths.state_dir", return_value=state):
+            with caplog.at_level("WARNING", logger="tracksplit.paths"):
+                paths.warn_if_legacy_paths_exist(home=tmp_path)
+                first_count = sum(
+                    1 for r in caplog.records if r.name == "tracksplit.paths"
+                )
+                paths.warn_if_legacy_paths_exist(home=tmp_path)
+                second_count = sum(
+                    1 for r in caplog.records if r.name == "tracksplit.paths"
+                )
+        assert first_count == 1
+        assert second_count == 1  # stamp suppresses the second call
 
     def test_silent_when_nothing_legacy(self, tmp_path: Path, caplog):
-        with caplog.at_level("WARNING", logger="tracksplit.paths"):
-            paths.warn_if_legacy_paths_exist(home=tmp_path)
-        # Filter to only our logger's records so unrelated logs from module import don't trip us
+        state = tmp_path / "state"
+        with patch("tracksplit.paths.state_dir", return_value=state):
+            with caplog.at_level("WARNING", logger="tracksplit.paths"):
+                paths.warn_if_legacy_paths_exist(home=tmp_path)
         ours = [r for r in caplog.records if r.name == "tracksplit.paths"]
         assert ours == []
+
+
+class TestWarnIfLegacyPathsExistDedup:
+    """Stamp-file suppression: at most one legacy WARNING per day."""
+
+    def _make_legacy(self, home: Path) -> Path:
+        legacy = home / "tracksplit.toml"
+        legacy.write_text("")
+        return legacy
+
+    def _count_warnings(self, caplog) -> int:
+        return sum(
+            1 for r in caplog.records
+            if r.name == "tracksplit.paths" and r.levelname == "WARNING"
+        )
+
+    def test_first_call_warns_and_writes_stamp(self, tmp_path: Path, caplog):
+        self._make_legacy(tmp_path)
+        state = tmp_path / "state"
+        with patch("tracksplit.paths.state_dir", return_value=state), \
+             caplog.at_level("WARNING", logger="tracksplit.paths"):
+            paths.warn_if_legacy_paths_exist(home=tmp_path)
+        assert self._count_warnings(caplog) == 1
+        stamp = state / "legacy-warning.stamp"
+        assert stamp.is_file()
+        assert stamp.read_text().strip() == date.today().isoformat()
+
+    def test_second_call_same_day_silent(self, tmp_path: Path, caplog):
+        self._make_legacy(tmp_path)
+        state = tmp_path / "state"
+        with patch("tracksplit.paths.state_dir", return_value=state):
+            with caplog.at_level("WARNING", logger="tracksplit.paths"):
+                paths.warn_if_legacy_paths_exist(home=tmp_path)
+            caplog.clear()
+            with caplog.at_level("WARNING", logger="tracksplit.paths"):
+                paths.warn_if_legacy_paths_exist(home=tmp_path)
+        assert self._count_warnings(caplog) == 0
+
+    def test_stale_stamp_triggers_rewarn(self, tmp_path: Path, caplog):
+        self._make_legacy(tmp_path)
+        state = tmp_path / "state"
+        state.mkdir()
+        stamp = state / "legacy-warning.stamp"
+        stamp.write_text("2020-01-01")
+        with patch("tracksplit.paths.state_dir", return_value=state), \
+             caplog.at_level("WARNING", logger="tracksplit.paths"):
+            paths.warn_if_legacy_paths_exist(home=tmp_path)
+        assert self._count_warnings(caplog) == 1
+        assert stamp.read_text().strip() == date.today().isoformat()
+
+    def test_corrupt_stamp_recovers(self, tmp_path: Path, caplog):
+        self._make_legacy(tmp_path)
+        state = tmp_path / "state"
+        state.mkdir()
+        stamp = state / "legacy-warning.stamp"
+        stamp.write_text("not a date, garbage \x00\x01")
+        with patch("tracksplit.paths.state_dir", return_value=state), \
+             caplog.at_level("WARNING", logger="tracksplit.paths"):
+            paths.warn_if_legacy_paths_exist(home=tmp_path)
+        assert self._count_warnings(caplog) == 1
+        assert stamp.read_text().strip() == date.today().isoformat()
+
+    def test_tomorrow_stamp_suppresses(self, tmp_path: Path, caplog):
+        """A stamp dated in the future (clock skew, manual edit) still suppresses."""
+        self._make_legacy(tmp_path)
+        state = tmp_path / "state"
+        state.mkdir()
+        stamp = state / "legacy-warning.stamp"
+        future = (date.today() + timedelta(days=1)).isoformat()
+        stamp.write_text(future)
+        with patch("tracksplit.paths.state_dir", return_value=state), \
+             caplog.at_level("WARNING", logger="tracksplit.paths"):
+            paths.warn_if_legacy_paths_exist(home=tmp_path)
+        assert self._count_warnings(caplog) == 0
+
+
+class TestStateDir:
+    def test_uses_platformdirs_user_state_dir(self):
+        with patch("tracksplit.paths.platformdirs") as mock_pd:
+            mock_pd.user_state_dir.return_value = "/fake/state/TrackSplit"
+            result = paths.state_dir()
+            mock_pd.user_state_dir.assert_called_once_with("TrackSplit", appauthor=False)
+            assert result == Path("/fake/state/TrackSplit")

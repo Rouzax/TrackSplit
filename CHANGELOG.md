@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The legacy-path warning (added in 0.7.0) now fires at most once per calendar day. A stamp file at `~/.local/state/TrackSplit/legacy-warning.stamp` (or the platform equivalent) records the date of the last warning; subsequent runs on the same day stay silent. Users running several TrackSplit commands in a single session will no longer see the same warning block repeated on every invocation. The warning text, the set of paths that trigger it, and all other behaviour are unchanged. Mirrors the identical change in CrateDigger (PR #24).
+
 ## [0.7.1] - 2026-04-24
 
 ### Changed
