@@ -103,3 +103,16 @@ class TestReadAndPatchPreSkip:
 
         with pytest.raises(ValueError, match="channel mapping family"):
             patch_opus_pre_skip(f, 960)
+
+
+class TestPatchOpusPreSkipDebugLogging:
+    def test_debug_on_success(self, tmp_path, caplog):
+        """Successful patch logs DEBUG naming path and new pre_skip value."""
+        import logging
+        f = _make_tiny_opus(tmp_path)
+        with caplog.at_level(logging.DEBUG, logger="tracksplit.opus_patch"):
+            patch_opus_pre_skip(f, 960)
+        joined = "\n".join(r.message for r in caplog.records)
+        assert f.name in joined
+        assert "960" in joined
+        assert "pre_skip" in joined
