@@ -1,6 +1,7 @@
 """Split a full FLAC into individual tracks at chapter boundaries."""
 from __future__ import annotations
 
+import logging
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -10,6 +11,8 @@ from tracksplit.models import TrackMeta
 from tracksplit.opus_patch import patch_opus_pre_skip
 from tracksplit.subprocess_utils import CancelledError, tracked_run
 from tracksplit.tools import get_tool
+
+logger = logging.getLogger(__name__)
 
 OPUS_FRAME_SECONDS = 0.020
 OPUS_FRAME_SAMPLES = 960  # OPUS_FRAME_SECONDS * 48000 Hz
@@ -115,6 +118,8 @@ def split_tracks(
         if on_progress:
             on_progress("Splitting tracks", i + 1, total)
 
+        logger.debug("splitting %d/%d: %s", i + 1, total, track.title)
+
         filename = build_track_filename(track, ext=ext)
         output_path = output_dir / filename
 
@@ -129,6 +134,18 @@ def split_tracks(
             and track.start - OPUS_PREFIX_SECONDS >= 0.0
         )
         start = track.start - OPUS_PREFIX_SECONDS if use_prefix else track.start
+
+        if apply_opus_prefix and i > 0:
+            if use_prefix:
+                logger.debug(
+                    "Opus prefix applied to track %d: shift %.3fs, pre_skip %d samples",
+                    i + 1, OPUS_PREFIX_SECONDS, OPUS_PREFIX_SAMPLES,
+                )
+            else:
+                logger.debug(
+                    "Opus prefix skipped for track %d: start %.3fs below prefix %.3fs",
+                    i + 1, track.start, OPUS_PREFIX_SECONDS,
+                )
 
         cmd = build_split_command(
             full_flac, output_path, start, end,

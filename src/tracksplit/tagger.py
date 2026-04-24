@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import logging
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -9,6 +10,36 @@ from mutagen.flac import FLAC, Picture
 from mutagen.oggopus import OggOpus
 
 from tracksplit.models import AlbumMeta, TrackMeta
+
+logger = logging.getLogger(__name__)
+
+
+def _count_tag_deltas(
+    existing: dict | None,
+    new_tags: dict[str, list[str]],
+) -> tuple[int, int, int]:
+    """Return (added, removed, changed) between existing tags (a Mutagen
+    tag dict or None) and the new tag dict that build_tag_dict produced.
+
+    Keys are compared case-insensitively since Vorbis comments fold case
+    on disk. A key in ``new_tags`` but not in ``existing`` is ``added``;
+    a key in ``existing`` but not in ``new_tags`` is ``removed``; a key
+    in both whose list-of-values differs is ``changed``.
+    """
+    existing_map: dict[str, list[str]] = {}
+    if existing:
+        for key in existing.keys():
+            existing_map[key.upper()] = list(existing[key])
+    new_map = {k.upper(): list(v) for k, v in new_tags.items()}
+    existing_keys = set(existing_map.keys())
+    new_keys = set(new_map.keys())
+    added = len(new_keys - existing_keys)
+    removed = len(existing_keys - new_keys)
+    changed = sum(
+        1 for k in existing_keys & new_keys
+        if existing_map[k] != new_map[k]
+    )
+    return added, removed, changed
 
 
 def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
@@ -93,10 +124,16 @@ def tag_flac(
     optionally embed front cover art. Saves the file in place.
     """
     audio = FLAC(path)
+    tag_dict = build_tag_dict(album, track)
+    added, removed, changed = _count_tag_deltas(audio.tags, tag_dict)
+    if added or removed or changed:
+        logger.debug(
+            "Tags for %s: +%d -%d ~%d",
+            Path(path).name, added, removed, changed,
+        )
     audio.clear()
     audio.clear_pictures()
 
-    tag_dict = build_tag_dict(album, track)
     for key, values in tag_dict.items():
         audio[key] = values
 
@@ -118,9 +155,15 @@ def tag_ogg(
 ) -> None:
     """Write Vorbis comments to an OGG/Opus file."""
     audio = OggOpus(str(path))
+    tag_dict = build_tag_dict(album, track)
+    added, removed, changed = _count_tag_deltas(audio.tags, tag_dict)
+    if added or removed or changed:
+        logger.debug(
+            "Tags for %s: +%d -%d ~%d",
+            Path(path).name, added, removed, changed,
+        )
     audio.delete()
 
-    tag_dict = build_tag_dict(album, track)
     for key, values in tag_dict.items():
         audio[key] = values
 
@@ -152,10 +195,17 @@ def tag_all(
         if on_progress:
             on_progress("Tagging tracks", i + 1, total)
         p = Path(path)
-        if p.suffix.lower() in (".ogg", ".opus"):
-            tag_ogg(p, album, track, cover_data=cover_data)
-        else:
-            tag_flac(p, album, track, cover_data=cover_data)
+        try:
+            if p.suffix.lower() in (".ogg", ".opus"):
+                tag_ogg(p, album, track, cover_data=cover_data)
+            else:
+                tag_flac(p, album, track, cover_data=cover_data)
+        except Exception as exc:
+            logger.warning(
+                "Failed to tag %s: %s: %s",
+                p.name, type(exc).__name__, exc,
+            )
+            raise
 
 
 def replace_cover_only(path: str | Path, cover_data: bytes) -> None:

@@ -530,3 +530,36 @@ class TestGetOpusPacketDurationMs:
             return_value=mocker.Mock(stdout=fake_stdout, returncode=0),
         )
         assert get_opus_packet_duration_ms(Path("/tmp/x.mkv")) == 60
+
+    def test_debug_on_packet_disagreement(self, mocker, caplog):
+        """When packets disagree, a DEBUG line names the set of observed
+        durations so 'why did TrackSplit skip the Opus prefix fix?' can
+        be answered from the log alone."""
+        import logging
+        fake_stdout = (
+            "[PACKET]\nduration_time=0.020000\n[/PACKET]\n"
+            "[PACKET]\nduration_time=0.060000\n[/PACKET]\n"
+        )
+        mocker.patch(
+            "tracksplit.probe.subprocess.run",
+            return_value=mocker.Mock(stdout=fake_stdout, returncode=0),
+        )
+        with caplog.at_level(logging.DEBUG, logger="tracksplit.probe"):
+            assert get_opus_packet_duration_ms(Path("/tmp/x.mkv")) is None
+        joined = "\n".join(r.message for r in caplog.records)
+        assert "disagree" in joined.lower() or "disagreed" in joined.lower()
+        # Both observed ms values should appear in the log
+        assert "20" in joined and "60" in joined
+
+    def test_debug_on_empty_packet_output(self, mocker, caplog):
+        """When ffprobe returns no packets, a DEBUG line names the reason.
+        Distinct from the disagreement case so log readers can tell them apart."""
+        import logging
+        mocker.patch(
+            "tracksplit.probe.subprocess.run",
+            return_value=mocker.Mock(stdout="", returncode=0),
+        )
+        with caplog.at_level(logging.DEBUG, logger="tracksplit.probe"):
+            assert get_opus_packet_duration_ms(Path("/tmp/x.mkv")) is None
+        joined = "\n".join(r.message for r in caplog.records)
+        assert "no packet" in joined.lower() or "no opus packet" in joined.lower()

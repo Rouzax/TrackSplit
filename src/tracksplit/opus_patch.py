@@ -1,7 +1,10 @@
 """In-place patcher for the OpusHead pre_skip field in Ogg Opus files."""
 from __future__ import annotations
 
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def _build_table() -> list[int]:
@@ -87,3 +90,4 @@ def patch_opus_pre_skip(path: Path, new_pre_skip: int) -> None:
     data[_CRC_FIELD_OFFSET:_CRC_FIELD_OFFSET + 4] = new_crc.to_bytes(4, "little")
 
     path.write_bytes(bytes(data))
+    logger.debug("Opus pre_skip patched for %s -> %d samples", path.name, new_pre_skip)

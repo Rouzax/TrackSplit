@@ -201,3 +201,33 @@ class TestDecideCodec:
         import pytest
         with pytest.raises(ValueError):
             decide_codec(self._data("aac"), "wav")
+
+
+class TestDecideCodecInfoLog:
+    def _data(self, codec: str) -> dict:
+        return {"streams": [{"codec_type": "audio", "codec_name": codec}]}
+
+    def test_info_logs_decision_copy_path(self, caplog):
+        """decide_codec emits INFO naming input codec, output ext, and codec_mode.
+        Users running --verbose should see this since it explains run time
+        (stream copy is fast; libopus re-encode is slow)."""
+        import logging
+        from tracksplit.extract import decide_codec
+        with caplog.at_level(logging.INFO, logger="tracksplit.extract"):
+            ext, mode = decide_codec(self._data("flac"), "auto")
+        assert (ext, mode) == (".flac", "copy")
+        joined = "\n".join(r.message for r in caplog.records)
+        assert "flac" in joined.lower()
+        assert ".flac" in joined
+        assert "copy" in joined
+
+    def test_info_logs_decision_reencode_path(self, caplog):
+        """AAC source with auto -> libopus re-encode. INFO should name both
+        the input codec and that the output requires re-encode."""
+        import logging
+        from tracksplit.extract import decide_codec
+        with caplog.at_level(logging.INFO, logger="tracksplit.extract"):
+            decide_codec(self._data("aac"), "auto")
+        joined = "\n".join(r.message for r in caplog.records)
+        assert "aac" in joined.lower()
+        assert "libopus" in joined

@@ -55,7 +55,6 @@ def extract_audio(
     cmd = build_extract_command(input_path, output_path)
 
     logger.info("Extracting audio from %s", input_path.name)
-    logger.debug("Running command: %s", " ".join(cmd))
 
     tracked_run(cmd, cancel_event=cancel_event)
 
@@ -67,21 +66,34 @@ def decide_codec(ffprobe_data: dict, output_format: str) -> tuple[str, str]:
     """Decide output extension and codec_mode without performing extraction.
 
     Returns (ext, codec_mode) where codec_mode is 'copy' or 'libopus'.
+
+    Logs the decision at INFO so --verbose users can see why a given run
+    is fast (stream copy) or slow (libopus re-encode).
     """
-    codec = get_audio_codec(ffprobe_data)
+    codec = get_audio_codec(ffprobe_data) or "unknown"
     if output_format == "auto":
         if codec == "opus":
-            return (".opus", "copy")
-        if is_lossless_codec(codec):
-            return (".flac", "copy")
-        return (".opus", "libopus")
-    if output_format == "flac":
-        return (".flac", "copy")
-    if output_format == "opus":
+            result = (".opus", "copy")
+        elif is_lossless_codec(codec):
+            result = (".flac", "copy")
+        else:
+            result = (".opus", "libopus")
+    elif output_format == "flac":
+        result = (".flac", "copy")
+    elif output_format == "opus":
         if codec == "opus":
-            return (".opus", "copy")
-        return (".opus", "libopus")
-    raise ValueError(f"Unknown output format: {output_format}")
+            result = (".opus", "copy")
+        else:
+            result = (".opus", "libopus")
+    else:
+        raise ValueError(f"Unknown output format: {output_format}")
+
+    ext, codec_mode = result
+    logger.info(
+        "Codec decision: input=%s, format=%s, output=%s (%s)",
+        codec, output_format, ext, codec_mode,
+    )
+    return result
 
 
 def prepare_audio(
