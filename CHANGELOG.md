@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - The release workflow is now triggered manually via `gh workflow run release.yml -f version=X.Y.Z` (or the GitHub UI), replacing the prior commit-message-matched trigger. The workflow still validates `pyproject.toml` and `CHANGELOG.md`, builds, tags, and publishes. The local `scripts/release.sh`, `scripts/git-hooks/pre-push`, and `scripts/setup-hooks.sh` have been removed; they existed to construct and gate a very specific commit-message format that the workflow no longer relies on.
+- README now has a dedicated `Update Notifications` section covering the startup notice, automatic suppression in non-interactive contexts, and `TRACKSPLIT_NO_UPDATE_CHECK`. The Features list entry is trimmed to a short pointer into that section. No behaviour change.
 
 ## [0.7.0] - 2026-04-21
 
