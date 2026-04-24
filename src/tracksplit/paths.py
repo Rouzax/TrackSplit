@@ -35,6 +35,8 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import tempfile
+from datetime import date
 from pathlib import Path
 
 import platformdirs
@@ -42,6 +44,8 @@ import platformdirs
 APP_NAME = "TrackSplit"
 CRATEDIGGER_APP_NAME = "CrateDigger"
 _WALK_UP_LIMIT = 10
+
+_LEGACY_STAMP_NAME = "legacy-warning.stamp"
 
 
 def data_dir() -> Path:
@@ -64,6 +68,11 @@ def config_file() -> Path:
 def cache_dir() -> Path:
     """Return the user cache directory."""
     return Path(platformdirs.user_cache_dir(APP_NAME, appauthor=False))
+
+
+def state_dir() -> Path:
+    """Return the user state directory (non-disposable per-user state)."""
+    return Path(platformdirs.user_state_dir(APP_NAME, appauthor=False))
 
 
 def log_file() -> Path:
@@ -172,12 +181,20 @@ def _legacy_paths_present(home: Path | None = None) -> list[Path]:
 
 
 def warn_if_legacy_paths_exist(home: Path | None = None) -> None:
-    """Log a single WARNING if legacy TrackSplit/CrateDigger paths are found.
+    """Log a WARNING at most once per day if legacy TrackSplit paths are found.
 
-    Called once at CLI startup. No data is moved; this is a nudge to migrate.
+    Called at CLI startup. No data is moved; this is a nudge to migrate.
+
+    Suppression uses an ISO-date stamp file at
+    ``state_dir() / "legacy-warning.stamp"``. First call on a given day emits
+    the WARNING and writes today's date. Subsequent calls the same day stay
+    silent. A stamp dated today or later (clock skew, manual edit) suppresses;
+    a corrupt or unparseable stamp behaves as if absent and is overwritten.
     """
     legacy = _legacy_paths_present(home=home)
     if not legacy:
+        return
+    if _legacy_stamp_is_fresh():
         return
     logger = logging.getLogger("tracksplit.paths")
     pretty = "\n  - ".join(str(p) for p in legacy)
@@ -187,3 +204,46 @@ def warn_if_legacy_paths_exist(home: Path | None = None) -> None:
         "locations (see docs/configuration.md) or delete them.",
         pretty,
     )
+    _write_legacy_stamp()
+
+
+def _legacy_stamp_path() -> Path:
+    return state_dir() / _LEGACY_STAMP_NAME
+
+
+def _legacy_stamp_is_fresh() -> bool:
+    """Return True iff the stamp file contains today's ISO date or a later one."""
+    try:
+        content = _legacy_stamp_path().read_text(encoding="utf-8").strip()
+    except (OSError, ValueError):
+        return False
+    try:
+        stamped = date.fromisoformat(content)
+    except ValueError:
+        return False
+    return stamped >= date.today()
+
+
+def _write_legacy_stamp() -> None:
+    """Atomically write today's ISO date to the stamp file. Silent on failure."""
+    logger = logging.getLogger("tracksplit.paths")
+    target = _legacy_stamp_path()
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(
+            dir=str(target.parent),
+            prefix=target.name + ".",
+            suffix=".tmp",
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(date.today().isoformat())
+            os.replace(tmp_path, target)
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+    except OSError as e:
+        logger.debug("Failed to write legacy-warning stamp at %s: %s", target, e)
