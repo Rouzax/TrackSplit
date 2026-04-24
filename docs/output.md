@@ -79,7 +79,15 @@ This file is always created.
 
 **Multi-artist names break across lines.** If the artist field contains ` & `, ` B2B `, ` VS `, or ` X ` (with spaces around the connector, case-insensitive), the cover stacks one artist per line with the connector carried to each subsequent line, so a three-way B2B like `"Axwell & Sebastian Ingrosso & Steve Angello"` renders as three stacked lines. The shared font is sized to fit the longest line so the stack stays visually aligned. A parenthetical credit like `"Everything Always (Dom Dolla & John Summit)"` splits into the act on the first line and the inner artists on the second.
 
-**Keeping a group name on one line.** Some duos and trios ("Dimitri Vegas & Like Mike", "Swedish House Mafia") read best as a single unit. TrackSplit does not detect these automatically; it splits on any ` & `. To keep a group on one line, add an alias in `~/.cratedigger/artists.json` that maps the long form to a short canonical form. The file uses `{canonical: [aliases]}` shape:
+**Keeping a group name on one line.** Some duos and trios ("Dimitri Vegas & Like Mike", "Swedish House Mafia") read best as a single unit. TrackSplit does not detect these automatically; it splits on any ` & `. To keep a group on one line, add an alias in the CrateDigger `artists.json` file that maps the long form to a short canonical form. This file lives in the CrateDigger data directory:
+
+| Platform | Path |
+|---|---|
+| Linux | `~/CrateDigger/artists.json` |
+| macOS | `~/CrateDigger/artists.json` |
+| Windows | `Documents\CrateDigger\artists.json` |
+
+Alternatively, place it in a library-local `.cratedigger/artists.json` next to your video files if you want the alias to apply only to that library. The file uses `{canonical: [aliases]}` shape:
 
 ```json
 {
@@ -184,12 +192,21 @@ TrackSplit only reads your source video files. It never modifies, moves, or dele
 
 TrackSplit reads CrateDigger's caches directly, not just the tags baked into the MKV. This is how consistent artist spellings, festival aliases, MusicBrainz IDs, and DJ artwork stay in sync between your video library (CrateDigger) and your music library (TrackSplit) without TrackSplit needing any of its own config.
 
-**Lookup chain.** For each input video, TrackSplit searches for `.cratedigger` directories in this order:
+**Lookup chain.** For each curated data file, TrackSplit checks candidate directories in priority order and uses the first file found, matching CrateDigger's own resolution:
 
-1. Global: `~/.cratedigger/` on Linux and macOS, or `%USERPROFILE%\.cratedigger\` on Windows.
-2. Walk-up: starting from the folder containing the input video, walk up to 10 parent directories looking for a `.cratedigger` subfolder. All matches are collected (nearest last).
+1. **Environment variable:** if `CRATEDIGGER_DATA_DIR` is set and the directory exists, it is the sole source. CrateDigger honours the same variable, so exporting it points both tools at the same folder.
+2. **Walk-up:** starting from the folder containing the input video, TrackSplit walks up to 10 parent directories looking for a `.cratedigger/` subfolder.
+3. **CrateDigger's own data directory:** the folder where CrateDigger stores its curated data by default:
 
-Directories closer to the input file override the global cache, so you can keep a per-project override next to a library without disturbing your global setup. Missing files or directories are silently skipped, so TrackSplit keeps working when no CrateDigger config exists.
+   | Platform | Path |
+   |---|---|
+   | Linux | `~/CrateDigger/` |
+   | macOS | `~/CrateDigger/` |
+   | Windows | `Documents\CrateDigger\` |
+
+Each file is resolved independently. A library-local `.cratedigger/festivals.json` replaces the user-level one entirely, but if the walk-up directory has no `festivals.json`, the user-level file is used. The same applies to `artists.json`. This means you can have a `.cratedigger` directory for folder layout config without needing to duplicate your festival and artist definitions there.
+
+If none of the locations has the file, TrackSplit continues without it (raw tag values pass through unchanged). No configuration is needed when CrateDigger is installed in its default location.
 
 **Cache files TrackSplit reads:**
 
@@ -201,8 +218,6 @@ Directories closer to the input file override the global cache, so you can keep 
 | `mbid_cache.json` | Fills missing MusicBrainz artist IDs. For Tier-1 sources (no CrateDigger tags) the `ALBUMARTIST` is looked up here to populate `MUSICBRAINZ_ALBUMARTISTID`. For Tier-2 sources, any empty slot in the positional MBID list (per-track `MUSICBRAINZ_ARTISTID` and album-level `MUSICBRAINZ_ALBUMARTISTID`) is backfilled from this cache. Unknown names stay empty. |
 | `artists/{Artist}/dj-artwork.jpg` | DJ portrait used to compose the artist cover (`folder.jpg` / `artist.jpg`). Looked up by the canonical artist name. |
 | `artists/{Artist}/fanart.jpg` | Fallback portrait used when `dj-artwork.jpg` is not present. |
-
-The resolver merges all discovered `.cratedigger` directories into one config view before any tag is written. If you have CrateDigger installed and its caches populated, TrackSplit picks them up automatically. No TrackSplit-side configuration is required.
 
 ### Re-run manifest details
 

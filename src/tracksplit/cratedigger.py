@@ -1,28 +1,33 @@
 """CrateDigger config reader: festival/artist alias resolution and MBID lookup.
 
 TrackSplit consumes MKVs produced by CrateDigger (sibling project). CrateDigger
-stores canonical naming rules in ``~/.cratedigger/festivals.json`` and
-``~/.cratedigger/artists.json`` plus an ``mbid_cache.json`` mapping artist
-names to MusicBrainz IDs. This module mirrors the subset of CrateDigger's
-resolver logic that TrackSplit needs so that album folders, vorbis tags, and
-cover art all use consistent canonical names.
+stores canonical naming rules in ``festivals.json`` and ``artists.json`` (curated
+data dir) plus auto-generated ``dj_cache.json`` and ``mbid_cache.json`` (cache
+dir). This module mirrors the subset of CrateDigger's resolver logic that
+TrackSplit needs so that album folders, vorbis tags, and cover art all use
+consistent canonical names.
 
-The lookup chain matches ``find_dj_artwork`` in cover.py: ``~/.cratedigger``
-first, then any ``.cratedigger`` directory found by walking up from the input
-file (up to 10 parent levels).
+Curated data (festivals.json, artists.json) is resolved per-file across
+candidate directories, matching CrateDigger's own ``_load_external_config``
+semantics. For each file the walk-up ``.cratedigger/`` directory is checked
+first; if the file is not there, the visible data dir
+(``Documents\\CrateDigger\\`` on Windows, ``~/CrateDigger/`` on Linux) is
+tried. ``$CRATEDIGGER_DATA_DIR`` overrides both when set.
+Cache files are read from :func:`tracksplit.paths.cratedigger_cache_dir`.
 """
 from __future__ import annotations
 
 import json
 import logging
+import os
 import threading
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+from tracksplit import paths
 
-_WALK_UP_LIMIT = 10
+logger = logging.getLogger(__name__)
 
 _config_cache: dict[tuple[str, ...], "CrateDiggerConfig"] = {}
 _config_cache_lock = threading.Lock()
@@ -34,33 +39,37 @@ def _clear_config_cache() -> None:
         _config_cache.clear()
 
 
-def find_cratedigger_dirs(
-    input_path: Path, home_dir: Path | None = None
-) -> list[Path]:
-    """Return existing ``.cratedigger`` directories relevant to ``input_path``.
+def find_cratedigger_dirs(input_path: Path) -> list[Path]:
+    """Return CrateDigger data directories in priority order (highest first).
 
-    Order: global (``~/.cratedigger``) first, then local directories found by
-    walking up from ``input_path`` (nearest last). Callers should read
-    later-found dirs with higher priority for per-project overrides.
+    Used by :func:`load_config` and :func:`~tracksplit.cover.find_dj_artwork`
+    for per-file first-found-wins lookup, matching CrateDigger's own
+    ``_load_external_config`` resolution.
+
+    When ``$CRATEDIGGER_DATA_DIR`` is set and exists, it is the sole source.
+    Otherwise the walk-up ``.cratedigger`` (if any) comes first, then the
+    visible data dir. Deduplicated by resolved path.
     """
-    if home_dir is None:
-        home_dir = Path.home()
+    env = os.environ.get("CRATEDIGGER_DATA_DIR")
+    if env:
+        env_path = Path(env)
+        if env_path.is_dir():
+            logger.debug("CrateDigger data: $CRATEDIGGER_DATA_DIR -> %s", env_path)
+            return [env_path]
 
     dirs: list[Path] = []
-    global_cd = home_dir / ".cratedigger"
-    if global_cd.is_dir():
-        dirs.append(global_cd)
+    seen: set[Path] = set()
 
-    current = input_path.parent if input_path.is_file() else input_path
-    for _ in range(_WALK_UP_LIMIT):
-        candidate = current / ".cratedigger"
-        if candidate.is_dir() and candidate != global_cd:
-            dirs.append(candidate)
-        parent = current.parent
-        if parent == current:
-            break
-        current = parent
+    walkup = paths.walkup_cratedigger_dir(input_path)
+    if walkup is not None:
+        dirs.append(walkup)
+        seen.add(walkup.resolve())
 
+    visible = paths.cratedigger_data_dir()
+    if visible.resolve() not in seen:
+        dirs.append(visible)
+
+    logger.debug("CrateDigger candidate dirs: %s", [str(d) for d in dirs])
     return dirs
 
 
@@ -72,6 +81,16 @@ def _load_json(path: Path) -> dict:
     except (OSError, json.JSONDecodeError) as exc:
         logger.debug("CrateDigger config read failed: %s (%s)", path, exc)
         return {}
+
+
+def _find_json(dirs: list[Path], filename: str) -> dict:
+    """First-found-wins JSON lookup across candidate directories."""
+    for d in dirs:
+        path = d / filename
+        if path.is_file():
+            logger.debug("Loading %s from %s", filename, d)
+            return _load_json(path)
+    return {}
 
 
 def _strip_diacritics(s: str) -> str:
@@ -95,10 +114,12 @@ def _ci_get(mapping: dict, key: str):
 
 @dataclass
 class CrateDiggerConfig:
-    """Parsed CrateDigger config merged from one or more ``.cratedigger`` dirs.
+    """Parsed CrateDigger config from per-file first-found-wins lookup.
 
-    Later sources (local, closer to the input file) override earlier ones
-    (global ``~/.cratedigger``).
+    Each curated file (festivals.json, artists.json) is resolved
+    independently across candidate directories. A library-local
+    ``.cratedigger/festivals.json`` replaces the global one entirely;
+    missing files fall through to the visible data dir.
     """
 
     festival_config: dict = field(default_factory=dict)
@@ -249,21 +270,21 @@ def _invert_alias_map(raw: dict[str, list[str]]) -> dict[str, str]:
     return flat
 
 
-def load_config(
-    input_path: Path, home_dir: Path | None = None
-) -> CrateDiggerConfig:
-    """Build a merged config view from all relevant CrateDigger directories.
+def load_config(input_path: Path) -> CrateDiggerConfig:
+    """Load CrateDigger config using per-file first-found-wins.
 
-    Later directories (local, near the input file) override earlier ones.
-    Missing or malformed files are silently skipped: TrackSplit must keep
-    working when no CrateDigger config exists.
+    For each curated file (festivals.json, artists.json), candidate
+    directories are checked in priority order and the first file found
+    wins entirely, matching CrateDigger's ``_load_external_config``.
 
-    Results are memoized by the resolved directory list so batch runs read
-    each ``.cratedigger`` config only once. Callers must treat the returned
-    config as read-only. Use ``_clear_config_cache()`` if config files may
-    have changed mid-run (e.g. tests that rewrite fixtures).
+    Cache files (dj_cache.json, mbid_cache.json) are always read from
+    :func:`tracksplit.paths.cratedigger_cache_dir`.
+
+    Results are memoized by the candidate directory list. Callers must
+    treat the returned config as read-only. Use ``_clear_config_cache()``
+    to force a reload (tests).
     """
-    dirs = find_cratedigger_dirs(input_path, home_dir=home_dir)
+    dirs = find_cratedigger_dirs(input_path)
     key = tuple(str(d) for d in dirs)
     with _config_cache_lock:
         cached = _config_cache.get(key)
@@ -271,46 +292,48 @@ def load_config(
         return cached
 
     cfg = CrateDiggerConfig()
-    for cd_dir in dirs:
-        fest = _load_json(cd_dir / "festivals.json")
-        fest = {
-            k: v for k, v in fest.items()
-            if not k.startswith("_") and isinstance(v, dict)
-        }
-        cfg.festival_config.update(fest)
 
-        # Build festival alias map: top-level aliases + per-edition aliases.
-        raw_aliases: dict[str, list[str]] = {}
-        for canon, fc in fest.items():
-            raw_aliases.setdefault(canon, []).extend(fc.get("aliases", []))
-            for ed_conf in fc.get("editions", {}).values():
-                raw_aliases.setdefault(canon, []).extend(
-                    ed_conf.get("aliases", [])
-                )
-        cfg.festival_aliases.update(_invert_alias_map(raw_aliases))
+    # -- Curated data: per-file first-found-wins across candidate dirs --
 
-        # dj_cache.json first so manual artists.json overrides auto-derived
-        # aliases from the scrape cache.
-        dj = _load_json(cd_dir / "dj_cache.json")
-        if isinstance(dj, dict):
-            for entry in dj.values():
-                if not isinstance(entry, dict):
-                    continue
-                canonical = entry.get("name", "")
-                if not canonical:
-                    continue
-                for alias in entry.get("aliases", []) or []:
-                    alias_name = alias.get("name", "") if isinstance(alias, dict) else ""
-                    if alias_name:
-                        cfg.artist_aliases[alias_name] = canonical
+    fest = _find_json(dirs, "festivals.json")
+    fest = {
+        k: v for k, v in fest.items()
+        if not k.startswith("_") and isinstance(v, dict)
+    }
+    cfg.festival_config = fest
 
-        artists = _load_json(cd_dir / "artists.json")
-        raw_artist_aliases = artists.get("aliases", {}) or {}
-        cfg.artist_aliases.update(_invert_alias_map(raw_artist_aliases))
+    raw_aliases: dict[str, list[str]] = {}
+    for canon, fc in fest.items():
+        raw_aliases.setdefault(canon, []).extend(fc.get("aliases", []))
+        for ed_conf in fc.get("editions", {}).values():
+            raw_aliases.setdefault(canon, []).extend(
+                ed_conf.get("aliases", [])
+            )
+    cfg.festival_aliases = _invert_alias_map(raw_aliases)
 
-        mbid = _load_json(cd_dir / "mbid_cache.json")
-        if isinstance(mbid, dict):
-            cfg.mbid_cache.update(mbid)
+    # -- Cache files: always from CrateDigger's platformdirs cache dir --
+    # Load dj_cache first so manual artists.json overrides auto-derived aliases.
+    cd_cache = paths.cratedigger_cache_dir()
+    dj = _load_json(cd_cache / "dj_cache.json")
+    if isinstance(dj, dict):
+        for entry in dj.values():
+            if not isinstance(entry, dict):
+                continue
+            canonical = entry.get("name", "")
+            if not canonical:
+                continue
+            for alias in entry.get("aliases", []) or []:
+                alias_name = alias.get("name", "") if isinstance(alias, dict) else ""
+                if alias_name:
+                    cfg.artist_aliases[alias_name] = canonical
+
+    artists = _find_json(dirs, "artists.json")
+    raw_artist_aliases = artists.get("aliases", {}) or {}
+    cfg.artist_aliases.update(_invert_alias_map(raw_artist_aliases))
+
+    mbid = _load_json(cd_cache / "mbid_cache.json")
+    if isinstance(mbid, dict):
+        cfg.mbid_cache.update(mbid)
 
     with _config_cache_lock:
         _config_cache.setdefault(key, cfg)
@@ -322,14 +345,22 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
     raw_festival = tags.get("festival", "")
     if raw_festival:
         canon, edition = cfg.resolve_festival(raw_festival)
-        tags["festival"] = cfg.festival_display(canon, edition) or raw_festival
+        display = cfg.festival_display(canon, edition) or raw_festival
+        if display != raw_festival:
+            logger.debug(
+                "Festival: %r -> %r (edition=%r)", raw_festival, display, edition,
+            )
+        tags["festival"] = display
         tags["edition"] = edition
     else:
         tags.setdefault("edition", "")
 
     raw_artist = tags.get("artist", "")
     if raw_artist:
-        tags["artist"] = cfg.resolve_artist(raw_artist)
+        resolved = cfg.resolve_artist(raw_artist)
+        if resolved != raw_artist:
+            logger.debug("Artist: %r -> %r", raw_artist, resolved)
+        tags["artist"] = resolved
 
     return tags
 

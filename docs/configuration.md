@@ -8,13 +8,29 @@ You only need a config file if:
 
 ## How to create a config file
 
-Copy the example file from the TrackSplit directory:
+Copy the example file to the config location for your platform:
+
+| Platform | Config file location |
+|---|---|
+| Linux | `~/TrackSplit/config.toml` |
+| macOS | `~/TrackSplit/config.toml` |
+| Windows | `Documents\TrackSplit\config.toml` |
+
+**Linux / macOS:**
 
 ```bash
-cp tracksplit.toml.example tracksplit.toml
+mkdir -p ~/TrackSplit
+cp tracksplit.toml.example ~/TrackSplit/config.toml
 ```
 
-Then open `tracksplit.toml` and uncomment the keys for the tools you need to configure. You only need to set the keys where your paths differ from the default.
+**Windows (PowerShell):**
+
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\Documents\TrackSplit"
+Copy-Item tracksplit.toml.example "$env:USERPROFILE\Documents\TrackSplit\config.toml"
+```
+
+Then open the file and uncomment the keys for the tools you need to configure. You only need to set the keys where your paths differ from the default.
 
 ## What goes in the config file
 
@@ -44,27 +60,15 @@ You do not need to set all four keys. Any key you leave out falls back to lookin
 
 ## Where to put the config file
 
-TrackSplit checks these locations in order and uses the first file it finds:
+TrackSplit reads its config from one fixed location per platform:
 
-1. `tracksplit.toml` in your current directory
-2. `config.toml` in your current directory
-3. Your user config directory:
+| Platform | Config file location |
+|---|---|
+| Linux | `~/TrackSplit/config.toml` |
+| macOS | `~/TrackSplit/config.toml` |
+| Windows | `Documents\TrackSplit\config.toml` |
 
-   | Platform | Path |
-   |---|---|
-   | Linux / macOS | `~/.config/tracksplit/config.toml` |
-   | Windows | `C:\Users\YourName\AppData\Roaming\tracksplit\config.toml` |
-
-   On Windows, run `$env:APPDATA` in PowerShell to see your AppData path.
-
-4. Your home directory:
-
-   | Platform | Path |
-   |---|---|
-   | Linux / macOS | `~/tracksplit.toml` or `~/.tracksplit.toml` |
-   | Windows | `$env:USERPROFILE\tracksplit.toml` or `$env:USERPROFILE\.tracksplit.toml` |
-
-**Which location to use:** If you run TrackSplit from the same directory every time, placing `tracksplit.toml` there is simplest. If you run it from different directories, use the user config directory (option 3) so the config is always found regardless of where you run the command from.
+This location is always checked, regardless of which directory you run TrackSplit from. You do not need to keep a config file in your current directory.
 
 ## Verify your config
 
@@ -80,7 +84,7 @@ TrackSplit prints each tool's resolved version. A green `✓` means the path is 
 
 **Config file is not being picked up:**
 
-TrackSplit uses the first file it finds in the search order above. If you placed the file in option 3 (user config directory) but also have a `tracksplit.toml` in your current directory, the current-directory file wins. Check all locations.
+Check that the file is at the correct location for your platform (shown in the table above). Run `tracksplit --check` to see the resolved path TrackSplit found, or to confirm it is using the settings you expect.
 
 **Path set but tool still not found:**
 
@@ -89,3 +93,14 @@ On Windows, use forward slashes (`C:/ffmpeg/bin/ffmpeg.exe`) or escaped backslas
 **Only some tools are configured:**
 
 That is fine. TrackSplit merges the config with its defaults. Any tool not listed in the config file is looked up on your `PATH` as normal.
+
+## Cache and log directories
+
+Caches (update-check) and logs live in standard platform directories separate from your config file:
+
+| Purpose | Linux | macOS | Windows |
+|---|---|---|---|
+| Cache | `~/.cache/TrackSplit/` | `~/Library/Caches/TrackSplit/` | `$env:LOCALAPPDATA\TrackSplit\Cache\` |
+| Logs | `~/.local/state/TrackSplit/log/` | `~/Library/Logs/TrackSplit/` | `$env:LOCALAPPDATA\TrackSplit\Logs\` |
+
+These paths are managed by [platformdirs](https://pypi.org/project/platformdirs/) and are not affected by your config file location. On Linux, if you need to relocate them, set the standard `XDG_CACHE_HOME` or `XDG_STATE_HOME` environment variables. Note that these apply system-wide to all XDG-aware applications, and platformdirs appends `TrackSplit/` automatically, so `XDG_CACHE_HOME=/data/cache` results in `/data/cache/TrackSplit/`.

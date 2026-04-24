@@ -16,7 +16,18 @@ from tracksplit.cratedigger import (
 
 
 @pytest.fixture(autouse=True)
-def _reset_cratedigger_cache():
+def _reset_cratedigger_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+    cache = tmp_path / "cd_cache"
+    cache.mkdir(exist_ok=True)
+    monkeypatch.setattr(
+        "tracksplit.paths.cratedigger_cache_dir", lambda: cache,
+    )
+    cd_visible = tmp_path / "cd_visible_data"
+    cd_visible.mkdir(exist_ok=True)
+    monkeypatch.setattr(
+        "tracksplit.paths.cratedigger_data_dir", lambda: cd_visible,
+    )
     _clear_config_cache()
     yield
     _clear_config_cache()
@@ -51,7 +62,9 @@ def cd_home(tmp_path: Path) -> Path:
         },
         "groups": ["Swedish House Mafia"],
     }))
-    (cd / "dj_cache.json").write_text(json.dumps({
+    cache = tmp_path / "cd_cache"
+    cache.mkdir(exist_ok=True)
+    (cache / "dj_cache.json").write_text(json.dumps({
         "tiesto": {
             "name": "Tiësto",
             "aliases": [
@@ -73,7 +86,7 @@ def cd_home(tmp_path: Path) -> Path:
             "member_of": [],
         },
     }))
-    (cd / "mbid_cache.json").write_text(json.dumps({
+    (cache / "mbid_cache.json").write_text(json.dumps({
         "Deadmau5": "2f9ecbed-27be-40e6-abca-6de49d50299e",
         "David Guetta": {"mbid": "abc-123"},
     }))
@@ -82,7 +95,7 @@ def cd_home(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def cfg(cd_home: Path) -> CrateDiggerConfig:
-    return load_config(cd_home / "video.mkv", home_dir=cd_home)
+    return load_config(cd_home / "video.mkv")
 
 
 class TestResolveFestival:
@@ -246,22 +259,108 @@ def test_fill_mbids_does_not_overwrite_existing():
 
 
 class TestFindCratediggerDirs:
-    def test_finds_global(self, cd_home: Path):
-        dirs = find_cratedigger_dirs(cd_home / "video.mkv", home_dir=cd_home)
-        assert dirs == [cd_home / ".cratedigger"]
+    def test_walkup_and_visible_both_returned(self, tmp_path: Path, monkeypatch):
+        walkup_dir = tmp_path / "library" / ".cratedigger"
+        walkup_dir.mkdir(parents=True)
+        visible = tmp_path / "visible_cd"
+        visible.mkdir()
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        input_file = tmp_path / "library" / "videos" / "file.mkv"
+        input_file.parent.mkdir(parents=True)
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
+        assert dirs == [walkup_dir, visible]
 
-    def test_walks_up_to_local(self, tmp_path: Path, cd_home: Path):
-        project = tmp_path / "proj"
-        local = project / ".cratedigger"
-        local.mkdir(parents=True)
-        dirs = find_cratedigger_dirs(project / "sub" / "video.mkv", home_dir=cd_home)
-        # Global first, then local found by walk-up.
-        assert dirs[0] == cd_home / ".cratedigger"
-        assert local in dirs
+    def test_env_var_overrides_all(self, tmp_path: Path, monkeypatch):
+        env_dir = tmp_path / "env_cd"
+        env_dir.mkdir()
+        monkeypatch.setenv("CRATEDIGGER_DATA_DIR", str(env_dir))
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+        input_file = tmp_path / "library" / "file.mkv"
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
+        assert dirs == [env_dir]
 
-    def test_missing_home_no_crash(self, tmp_path: Path):
-        dirs = find_cratedigger_dirs(tmp_path / "video.mkv", home_dir=tmp_path)
-        assert dirs == []
+    def test_no_walkup_returns_visible_only(self, tmp_path: Path, monkeypatch):
+        visible = tmp_path / "visible_cd"
+        visible.mkdir()
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        isolated = tmp_path / "isolated"
+        isolated.mkdir()
+        input_file = isolated / "file.mkv"
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
+        assert dirs == [visible]
+
+    def test_deduplicates_when_walkup_equals_visible(self, tmp_path: Path, monkeypatch):
+        cd_dir = tmp_path / "library" / ".cratedigger"
+        cd_dir.mkdir(parents=True)
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: cd_dir)
+        input_file = tmp_path / "library" / "file.mkv"
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
+        assert dirs == [cd_dir]
+
+    def test_walk_up_integration(self, tmp_path: Path, monkeypatch):
+        monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
+        library = tmp_path / "library"
+        cd_dir = library / ".cratedigger"
+        cd_dir.mkdir(parents=True)
+        input_file = library / "videos" / "file.mkv"
+        input_file.parent.mkdir(parents=True)
+        input_file.touch()
+        dirs = find_cratedigger_dirs(input_file)
+        assert cd_dir in dirs
+
+
+class TestCacheVsDataSplit:
+    """Cache files (dj_cache, mbid_cache) come from CrateDigger's platformdirs
+    cache dir, not from the curated data dir."""
+
+    def test_dj_cache_read_from_cache_dir(self, tmp_path: Path, monkeypatch):
+        data_dir = tmp_path / "data" / ".cratedigger"
+        data_dir.mkdir(parents=True)
+        (data_dir / "festivals.json").write_text("{}")
+        (data_dir / "artists.json").write_text("{}")
+        (data_dir / "dj_cache.json").write_text(json.dumps({
+            "wrong": {"name": "ShouldNotAppear", "aliases": [], "member_of": []},
+        }))
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        (cache_dir / "dj_cache.json").write_text(json.dumps({
+            "right": {"name": "Correct", "aliases": [{"slug": "a", "name": "Alias"}], "member_of": []},
+        }))
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_cache_dir", lambda: cache_dir,
+        )
+        monkeypatch.setattr(
+            "tracksplit.paths.walkup_cratedigger_dir",
+            lambda _: data_dir,
+        )
+        cfg = load_config(tmp_path / "v.mkv")
+        assert cfg.artist_aliases.get("Alias") == "Correct"
+        assert "ShouldNotAppear" not in cfg.artist_aliases.values()
+
+    def test_mbid_cache_read_from_cache_dir(self, tmp_path: Path, monkeypatch):
+        data_dir = tmp_path / "data" / ".cratedigger"
+        data_dir.mkdir(parents=True)
+        (data_dir / "festivals.json").write_text("{}")
+        (data_dir / "artists.json").write_text("{}")
+        (data_dir / "mbid_cache.json").write_text(json.dumps({"Wrong": "wrong-mbid"}))
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        (cache_dir / "mbid_cache.json").write_text(json.dumps({"Right": "correct-mbid"}))
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_cache_dir", lambda: cache_dir,
+        )
+        monkeypatch.setattr(
+            "tracksplit.paths.walkup_cratedigger_dir",
+            lambda _: data_dir,
+        )
+        cfg = load_config(tmp_path / "v.mkv")
+        assert cfg.mbid_cache.get("Right") == "correct-mbid"
+        assert "Wrong" not in cfg.mbid_cache
 
 
 class TestApplyCratediggerCanon:
@@ -305,23 +404,29 @@ class TestApplyCratediggerCanon:
 
 class TestLoadConfigCache:
     def test_same_dirs_return_same_object(self, cd_home: Path):
-        cfg1 = load_config(cd_home / "a.mkv", home_dir=cd_home)
-        cfg2 = load_config(cd_home / "b.mkv", home_dir=cd_home)
+        cfg1 = load_config(cd_home / "a.mkv")
+        cfg2 = load_config(cd_home / "b.mkv")
         assert cfg1 is cfg2
 
-    def test_different_home_returns_different_object(
-        self, cd_home: Path, tmp_path: Path,
+    def test_different_resolved_dirs_return_different_objects(
+        self, cd_home: Path, tmp_path: Path
     ):
+        """Different walk-up resolutions map to different cache entries.
+
+        The old signature took ``home_dir=`` per call; post-refactor, differing
+        inputs resolve to different ``.cratedigger`` dirs via the walk-up, which
+        is what the cache key is built from.
+        """
         other_home = tmp_path / "other"
         (other_home / ".cratedigger").mkdir(parents=True)
-        cfg1 = load_config(cd_home / "v.mkv", home_dir=cd_home)
-        cfg2 = load_config(other_home / "v.mkv", home_dir=other_home)
+        cfg1 = load_config(cd_home / "v.mkv")
+        cfg2 = load_config(other_home / "v.mkv")
         assert cfg1 is not cfg2
 
     def test_clear_cache_forces_reload(self, cd_home: Path):
-        cfg1 = load_config(cd_home / "v.mkv", home_dir=cd_home)
+        cfg1 = load_config(cd_home / "v.mkv")
         _clear_config_cache()
-        cfg2 = load_config(cd_home / "v.mkv", home_dir=cd_home)
+        cfg2 = load_config(cd_home / "v.mkv")
         assert cfg1 is not cfg2
         assert cfg1.artist_aliases == cfg2.artist_aliases
 
@@ -333,7 +438,7 @@ class TestLoadJsonNoise:
         home = tmp_path / "home"
         (home / ".cratedigger").mkdir(parents=True)
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
-            load_config(home / "video.mkv", home_dir=home)
+            load_config(home / "video.mkv")
         assert not any(
             "config read failed" in rec.message for rec in caplog.records
         )
@@ -345,8 +450,77 @@ class TestLoadJsonNoise:
         cd.mkdir(parents=True)
         (cd / "festivals.json").write_text("{ not json")
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
-            load_config(home / "video.mkv", home_dir=home)
+            load_config(home / "video.mkv")
         assert any(
             "config read failed" in rec.message and "festivals.json" in rec.message
             for rec in caplog.records
         )
+
+
+class TestPerFileFallback:
+    """Regression tests for the walk-up-shadows-visible-dir bug.
+
+    When a walk-up .cratedigger exists but has no festivals.json,
+    the visible data dir's festivals.json must be used.
+    """
+
+    def test_walkup_without_festivals_falls_through_to_visible(
+        self, tmp_path: Path, monkeypatch,
+    ):
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+
+        visible = tmp_path / "visible"
+        visible.mkdir()
+        (visible / "festivals.json").write_text(json.dumps({
+            "AMF": {"aliases": ["Amsterdam Music Festival"]},
+        }))
+
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        input_file = tmp_path / "library" / "video.mkv"
+        input_file.touch()
+        cfg = load_config(input_file)
+        canon, edition = cfg.resolve_festival("Amsterdam Music Festival")
+        assert canon == "AMF"
+        assert edition == ""
+
+    def test_walkup_without_artists_falls_through_to_visible(
+        self, tmp_path: Path, monkeypatch,
+    ):
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+
+        visible = tmp_path / "visible"
+        visible.mkdir()
+        (visible / "artists.json").write_text(json.dumps({
+            "aliases": {"Tiesto": ["Tiësto"]},
+        }))
+
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        input_file = tmp_path / "library" / "video.mkv"
+        input_file.touch()
+        cfg = load_config(input_file)
+        assert cfg.resolve_artist("Tiësto") == "Tiesto"
+
+    def test_walkup_festivals_shadows_visible_entirely(
+        self, tmp_path: Path, monkeypatch,
+    ):
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+        (walkup / "festivals.json").write_text(json.dumps({
+            "TML": {"aliases": ["Tomorrowland"]},
+        }))
+
+        visible = tmp_path / "visible"
+        visible.mkdir()
+        (visible / "festivals.json").write_text(json.dumps({
+            "AMF": {"aliases": ["Amsterdam Music Festival"]},
+            "TML": {"aliases": ["Tomorrowland"]},
+        }))
+
+        monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        input_file = tmp_path / "library" / "video.mkv"
+        input_file.touch()
+        cfg = load_config(input_file)
+        assert cfg.resolve_festival("Tomorrowland") == ("TML", "")
+        assert cfg.resolve_festival("Amsterdam Music Festival") == ("Amsterdam Music Festival", "")

@@ -607,27 +607,28 @@ def compose_cover(
 def find_dj_artwork(
     input_path: Path,
     artist: str = "",
-    home_dir: Path | None = None,
 ) -> bytes | None:
     """Look up cached DJ artwork from CrateDigger's artist cache.
 
-    Lookup chain:
-    1. ~/.cratedigger/artists/{artist}/dj-artwork.jpg (global)
-    2. Walk up from input_path for .cratedigger/artists/{artist}/dj-artwork.jpg
-    3. Same for fanart.jpg as fallback
-    4. Return None if not found.
-    """
-    cratedigger_dirs = find_cratedigger_dirs(input_path, home_dir=home_dir)
+    Lookup uses :func:`tracksplit.cratedigger.find_cratedigger_dirs` which
+    resolves to a single directory (env var, walk-up, or visible data dir).
+    Within that directory, checks ``artists/{artist}/dj-artwork.jpg`` first,
+    then ``artists/{artist}/fanart.jpg`` as fallback.
 
-    # 1. Look for artists/{name}/dj-artwork.jpg then fanart.jpg
-    if artist:
-        for cd in cratedigger_dirs:
-            artist_dir = cd / "artists" / artist
-            for name in ("dj-artwork.jpg", "fanart.jpg"):
-                candidate = artist_dir / name
-                if candidate.is_file():
-                    logger.debug("DJ artwork found: %s", candidate)
-                    return candidate.read_bytes()
+    Returns None if no artwork is found.
+    """
+    cratedigger_dirs = find_cratedigger_dirs(input_path)
+
+    if not artist:
+        return None
+
+    for cd in cratedigger_dirs:
+        artist_dir = cd / "artists" / artist
+        for name in ("dj-artwork.jpg", "fanart.jpg"):
+            candidate = artist_dir / name
+            if candidate.is_file():
+                logger.debug("DJ artwork found: %s", candidate)
+                return candidate.read_bytes()
 
     return None
 

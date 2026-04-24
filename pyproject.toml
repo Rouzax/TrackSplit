@@ -1,6 +1,6 @@
 [project]
 name = "tracksplit"
-version = "0.6.9"
+version = "0.7.0"
 description = "Extract audio from video chapters into FLAC music albums"
 readme = "README.md"
 license = { text = "GPL-3.0-only" }
@@ -12,6 +12,7 @@ dependencies = [
     "rich>=13.0",
     "numpy>=1.24",
     "ftfy>=6.0",
+    "platformdirs>=4.0",
 ]
 
 [project.urls]

@@ -16,8 +16,6 @@ from tracksplit.probe import (
     get_audio_codec,
     is_lossless_codec,
     get_opus_packet_duration_ms,
-    LOSSLESS_CODECS,
-    VIDEO_EXTENSIONS,
 )
 from tracksplit.models import Chapter
 

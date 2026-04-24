@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import errno
 import logging
+import logging.handlers
 import os
 import signal
 import subprocess
@@ -16,6 +17,7 @@ import typer
 from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
 
+from tracksplit import paths
 from tracksplit.console import (
     BatchProgress,
     FileProgress,
@@ -74,34 +76,80 @@ def _report_failure(name: str, exc: BaseException) -> str:
 
 
 def _setup_logging(verbose: bool, debug: bool) -> None:
-    """Configure root logger with RichHandler."""
-    if debug:
-        level = logging.DEBUG
-    elif verbose:
-        level = logging.INFO
-    else:
-        level = logging.WARNING
+    """Configure the tracksplit logger with Rich console + rotating file handler.
 
-    logging.basicConfig(
-        level=level,
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[
-            RichHandler(
-                console=console,
-                rich_tracebacks=True,
-                show_path=False,
-                markup=False,
-                highlighter=NullHighlighter(),
-            ),
-        ],
-        force=True,
+    Mirrors festival_organizer.log.setup_logging so both CLIs share a policy:
+    the rotating file handler always logs at DEBUG so the file is a full
+    post-mortem trail, while the console handler follows --verbose/--debug.
+
+    A filesystem failure when creating the log file is demoted to a single
+    WARNING on the console handler; the CLI still starts.
+    """
+    console_level = logging.DEBUG if debug else logging.INFO if verbose else logging.WARNING
+
+    logger = logging.getLogger("tracksplit")
+
+    for handler in list(logger.handlers):
+        try:
+            handler.close()
+        except Exception:
+            pass
+    logger.handlers.clear()
+
+    logger.setLevel(logging.DEBUG)
+
+    rich_handler = RichHandler(
+        console=console,
+        rich_tracebacks=True,
+        show_path=False,
+        markup=False,
+        highlighter=NullHighlighter(),
     )
+    rich_handler.setLevel(console_level)
+    logger.addHandler(rich_handler)
+
+    file_handler_error: str | None = None
+    try:
+        log_path = paths.ensure_parent(paths.log_file())
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_path,
+            maxBytes=5 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+            delay=True,
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)s %(name)s: %(message)s"
+        ))
+        logger.addHandler(file_handler)
+    except OSError as exc:
+        file_handler_error = f"{type(exc).__name__}: {exc}"
+
+    if file_handler_error is not None:
+        logger.warning(
+            "Could not open log file at %s (%s). Continuing without file logging.",
+            paths.log_file(), file_handler_error,
+        )
+
+    paths.warn_if_legacy_paths_exist()
 
 
 def _live_display_enabled() -> bool:
-    """Check whether the live progress display should be active."""
-    return logging.getLogger().level > logging.INFO
+    """Check whether the live progress display should be active.
+
+    The spinner would overwrite INFO/DEBUG console lines, so it only runs
+    when the console handler is at WARNING or stricter. We inspect the
+    tracksplit logger's RichHandler level rather than the root logger
+    because the file handler is always at DEBUG.
+    """
+    logger = logging.getLogger("tracksplit")
+    for handler in logger.handlers:
+        if isinstance(handler, RichHandler):
+            return handler.level > logging.INFO
+    # No console handler configured (e.g. tests that skip _setup_logging);
+    # err on the side of showing the spinner, matching prior default.
+    return True
 
 
 def _process_single_file(
@@ -276,7 +324,7 @@ _PACKAGES: list[str] = ["Pillow", "mutagen", "rich", "numpy", "ftfy", "typer"]
 
 def _run_check() -> int:
     """Probe tools, config, and packages. Returns exit code (1 if required check fails)."""
-    from tracksplit.tools import find_active_config, install_hint, verify_tool  # type: ignore[reportAttributeAccessIssue]
+    from tracksplit.tools import find_active_config, install_hint, verify_tool
     from importlib.metadata import PackageNotFoundError, version
 
     out = make_console(file=sys.stdout)
@@ -303,7 +351,11 @@ def _run_check() -> int:
     if cfg:
         out.print(f"  [green]\u2713[/green] {cfg}")
     else:
-        out.print("  [dim]\u007e[/dim] No config file found, using built-in defaults")
+        out.print(
+            f"  [dim]\u007e[/dim] No config file found at {paths.config_file()}, "
+            f"using built-in defaults",
+            soft_wrap=True,
+        )
 
     out.print("\n[bold]Python packages[/bold]")
     for pkg in _PACKAGES:
@@ -435,8 +487,9 @@ def main(
             print_error(f"{name}: {detail}", console=console)
             console.print(f"  [cyan]{install_hint(name)}[/cyan]")
         console.print(
-            "  Or set tool paths in tracksplit.toml "
-            "(see [cyan]tracksplit.toml.example[/cyan]).",
+            "  Or set tool paths in config.toml "
+            "(see [cyan]tracksplit.toml.example[/cyan] and "
+            "[cyan]docs/configuration.md[/cyan]).",
         )
         raise typer.Exit(code=1)
 
