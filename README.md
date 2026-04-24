@@ -50,7 +50,7 @@ It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), wh
 - **Two metadata tiers.** Basic tagging for any chaptered video. Full enrichment when CrateDigger-style tags are present.
 - **Re-run detection.** A manifest in each album folder tracks chapter hashes and source mtime, so repeat runs on the same library are near-instant.
 - **Parallel batch mode.** Process a directory of videos with multiple workers and a live progress display.
-- **Update notifications.** On interactive runs, if a newer GitHub release is available, TrackSplit prints a one-line notice at startup with the new version number and the correct upgrade command for your install method. The notice is silent when output is not a terminal (pipes, redirects, CI, cron) and can be suppressed entirely with `TRACKSPLIT_NO_UPDATE_CHECK=1`.
+- **Update notifications.** Interactive runs check GitHub for newer releases and show a one-line upgrade hint. See [Update Notifications](#update-notifications).
 
 ## Quick Start
 
@@ -145,6 +145,22 @@ mkvmerge   = "/usr/bin/mkvmerge"
 ```
 
 See [`docs/troubleshooting.md`](docs/troubleshooting.md) if something goes wrong on first run.
+
+## Update Notifications
+
+When you run TrackSplit interactively and a newer stable release is available on GitHub, it prints a one-line notice showing the new version and the upgrade command for your install method:
+
+```
+! TrackSplit 0.6.9 is available. Run: pipx upgrade tracksplit
+```
+
+The check runs in the background with a 2-second timeout, never delays your run, and is silent on any network failure. Results are cached locally for 24 hours.
+
+**Automatic suppression.** The notice is suppressed whenever stdout is not a terminal, including pipes, redirects, cron jobs, and CI environments.
+
+**Disable explicitly.** Set `TRACKSPLIT_NO_UPDATE_CHECK=1` before running. The values `true` and `yes` are also accepted, case-insensitively.
+
+No telemetry: the check is a read-only request to the GitHub Releases API. See [`docs/usage.md#update-notifications`](docs/usage.md#update-notifications) for the full reference, including cache location and the failed-check interval.
 
 ## Output Structure
 
