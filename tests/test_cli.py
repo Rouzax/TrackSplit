@@ -196,3 +196,51 @@ def test_version_honours_env_suppression(monkeypatch):
     assert result.exit_code == 0
     assert fetch_calls == []
     assert "newer" not in result.stdout
+
+
+def test_check_update_status_row_current(monkeypatch):
+    """Update status: current version reports (latest) and does not warn."""
+    from importlib.metadata import version
+    from typer.testing import CliRunner
+    from tracksplit import cli, update_check
+
+    monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+    installed = version("tracksplit")
+    monkeypatch.setattr(update_check, "_fetch_latest_release", lambda: installed)
+
+    runner = CliRunner()
+    result = runner.invoke(cli.app, ["--check"])
+    assert "Update status" in result.stdout
+    assert "(latest)" in result.stdout
+
+
+def test_check_update_status_row_stale(monkeypatch):
+    """Update status: newer release counts as a warning."""
+    from importlib.metadata import version
+    from typer.testing import CliRunner
+    from tracksplit import cli, update_check
+
+    monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+    installed = version("tracksplit")
+    parts = installed.split(".")
+    bumped = f"{parts[0]}.{parts[1]}.{int(parts[2]) + 1}"
+    monkeypatch.setattr(update_check, "_fetch_latest_release", lambda: bumped)
+
+    runner = CliRunner()
+    result = runner.invoke(cli.app, ["--check"])
+    assert "Update status" in result.stdout
+    assert f"newer: {bumped}" in result.stdout
+    assert "warning" in result.stdout.lower()
+
+
+def test_check_update_status_row_suppressed(monkeypatch):
+    """Update status: env-suppressed shows informational ~ row."""
+    from typer.testing import CliRunner
+    from tracksplit import cli
+
+    monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
+
+    runner = CliRunner()
+    result = runner.invoke(cli.app, ["--check"])
+    assert "Update status" in result.stdout
+    assert "suppressed" in result.stdout

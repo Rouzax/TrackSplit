@@ -357,6 +357,50 @@ def _run_check() -> int:
             soft_wrap=True,
         )
 
+    # --- Update status ---
+    out.print("\n[bold]Update status[/bold]")
+    from tracksplit.update_check import (
+        PACKAGE_NAME,
+        _is_suppressed_explicit,
+        _is_newer,
+        _read_cache,
+        format_freshness_line,
+        refresh_update_cache,
+    )
+    try:
+        update_installed = version(PACKAGE_NAME)
+    except PackageNotFoundError:
+        update_installed = "unknown"
+
+    if update_installed == "unknown":
+        out.print(f"  [dim]~[/dim] {PACKAGE_NAME:<14} version not detected")
+    elif _is_suppressed_explicit():
+        out.print(
+            f"  [dim]~[/dim] {PACKAGE_NAME:<14} {update_installed} "
+            f"(update check suppressed)"
+        )
+    else:
+        refresh_update_cache(force=True)
+        update_entry = _read_cache()
+        update_latest = update_entry.get("latest_version") if update_entry else None
+        annotation = format_freshness_line(
+            update_installed, update_latest, package_name=PACKAGE_NAME,
+        )
+        if update_latest is None:
+            out.print(
+                f"  [dim]~[/dim] {PACKAGE_NAME:<14} {update_installed} {annotation}"
+            )
+        elif _is_newer(installed=update_installed, candidate=update_latest):
+            out.print(
+                f"  [yellow]![/yellow] {PACKAGE_NAME:<14} {update_installed} "
+                f"{annotation}"
+            )
+            warnings += 1
+        else:
+            out.print(
+                f"  [green]✓[/green] {PACKAGE_NAME:<14} {update_installed} {annotation}"
+            )
+
     out.print("\n[bold]Python packages[/bold]")
     for pkg in _PACKAGES:
         try:
