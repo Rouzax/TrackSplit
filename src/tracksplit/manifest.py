@@ -18,13 +18,27 @@ logger = logging.getLogger(__name__)
 ALBUM_MANIFEST_FILENAME = ".tracksplit_manifest.json"
 ARTIST_MANIFEST_FILENAME = ".tracksplit_artist.json"
 LEGACY_CHAPTER_CACHE_FILENAME = ".tracksplit_chapters.json"
-MANIFEST_SCHEMA = 2
+MANIFEST_SCHEMA = 3
 
 
 TAG_KEYS = (
-    "artist", "album", "festival", "date", "stage", "venue",
-    "mbid", "enriched_at",
+    "artist",
+    "festival",
+    "date",
+    "stage",
+    "venue",
+    "genres",
+    "comment",
+    "albumartist_display",
+    "albumartists",
+    "albumartist_mbids",
 )
+
+_LIST_TAG_KEYS = frozenset({"genres", "albumartists", "albumartist_mbids"})
+
+
+def tag_default(key: str):
+    return [] if key in _LIST_TAG_KEYS else ""
 
 
 def _sha256(data: bytes) -> str:
@@ -32,20 +46,61 @@ def _sha256(data: bytes) -> str:
 
 
 @dataclass(frozen=True)
-class SourceFingerprint:
-    path: str
-    mtime_ns: int
-    size: int
-    enriched_at: str
+class AudioFingerprint:
+    """Fingerprint of the source file's audio stream.
+
+    Pulled from the ffprobe dict that the pipeline already builds. Stable
+    across container rewrites (mkvpropedit tag edits) but moves on any
+    real audio change: re-encode, re-mux to a different codec, trim,
+    channel-layout change.
+
+    ``duration_ts`` and ``time_base`` together describe the stream's
+    duration in the codec's native integer timebase. Float ``duration``
+    is deliberately not used: it varies subtly across mux operations.
+    """
+    codec_name: str
+    sample_rate: int
+    channels: int
+    duration_ts: int
+    time_base: str
+    bit_rate: int
 
     @classmethod
-    def from_path(cls, path: Path, enriched_at: str = "") -> "SourceFingerprint":
-        st = path.stat()
+    def from_ffprobe(cls, ffprobe_data: dict) -> "AudioFingerprint":
+        for stream in ffprobe_data.get("streams", []):
+            if stream.get("codec_type") == "audio":
+                return cls(
+                    codec_name=stream.get("codec_name", ""),
+                    sample_rate=int(stream.get("sample_rate", 0) or 0),
+                    channels=int(stream.get("channels", 0) or 0),
+                    duration_ts=int(stream.get("duration_ts", 0) or 0),
+                    time_base=stream.get("time_base", ""),
+                    bit_rate=int(stream.get("bit_rate", 0) or 0),
+                )
+        raise ValueError("ffprobe data has no audio stream")
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "AudioFingerprint":
+        return cls(
+            codec_name=d.get("codec_name", ""),
+            sample_rate=int(d.get("sample_rate", 0) or 0),
+            channels=int(d.get("channels", 0) or 0),
+            duration_ts=int(d.get("duration_ts", 0) or 0),
+            time_base=d.get("time_base", ""),
+            bit_rate=int(d.get("bit_rate", 0) or 0),
+        )
+
+
+@dataclass(frozen=True)
+class SourceFingerprint:
+    path: str
+    audio: AudioFingerprint
+
+    @classmethod
+    def from_ffprobe(cls, path: Path, ffprobe_data: dict) -> "SourceFingerprint":
         return cls(
             path=str(path),
-            mtime_ns=st.st_mtime_ns,
-            size=st.st_size,
-            enriched_at=enriched_at,
+            audio=AudioFingerprint.from_ffprobe(ffprobe_data),
         )
 
 
@@ -80,9 +135,7 @@ class AlbumManifest:
             schema=d["schema"],
             source=SourceFingerprint(
                 path=src["path"],
-                mtime_ns=src["mtime_ns"],
-                size=src["size"],
-                enriched_at=src.get("enriched_at", ""),
+                audio=AudioFingerprint.from_dict(src["audio"]),
             ),
             resolved_artist_folder=d["resolved_artist_folder"],
             resolved_album_folder=d["resolved_album_folder"],
@@ -98,12 +151,13 @@ class AlbumManifest:
 
 
 def _filter_tags(tags: dict) -> dict:
-    return {k: tags.get(k, "") for k in TAG_KEYS}
+    return {k: tags.get(k, tag_default(k)) for k in TAG_KEYS}
 
 
 def build_album_manifest(
     *,
     source_path: Path,
+    ffprobe_data: dict,
     chapters: list[dict],
     tags: dict,
     artist_folder: str,
@@ -117,9 +171,7 @@ def build_album_manifest(
     from tracksplit.cover import COVER_SCHEMA_VERSION  # local import avoids cycle
     return AlbumManifest(
         schema=MANIFEST_SCHEMA,
-        source=SourceFingerprint.from_path(
-            source_path, enriched_at=tags.get("enriched_at", ""),
-        ),
+        source=SourceFingerprint.from_ffprobe(source_path, ffprobe_data),
         resolved_artist_folder=artist_folder,
         resolved_album_folder=album_folder,
         output_format=output_format,

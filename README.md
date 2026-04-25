@@ -10,7 +10,7 @@
 
 ## What is TrackSplit?
 
-TrackSplit is a Python CLI that reads chapter markers from video files (MKV, MP4, WebM, and more), splits the audio into individual tracks at sample-accurate boundaries, and writes a fully tagged music album with embedded cover art and an artist folder picture. FLAC sources stay lossless; Opus and other lossy sources are stream-copied when possible. Re-runs are skipped automatically unless the chapters actually changed.
+TrackSplit is a Python CLI that reads chapter markers from video files (MKV, MP4, WebM, and more), splits the audio into individual tracks at sample-accurate boundaries, and writes a fully tagged music album with embedded cover art and an artist folder picture. FLAC sources stay lossless; Opus and other lossy sources are stream-copied when possible. Re-runs are skipped automatically unless the audio, chapters, or embedded tags actually changed.
 
 It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), which embeds chapter markers, canonical metadata, and DJ artwork into your MKV library. Together the two tools keep artist names, festival spellings, and MusicBrainz IDs consistent across your video and music libraries. TrackSplit also works on any chaptered video without CrateDigger.
 
@@ -48,7 +48,7 @@ It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), wh
 - **Multi-artist aware.** Writes Picard-standard `ARTISTS` and aligned per-artist `MUSICBRAINZ_ARTISTID` so Lyrion and Jellyfin link every collaborator and remixer, not just the headliner.
 - **Album and artist artwork.** Generates 1:1 cover art (embedded in every track and written to `cover.jpg` / `folder.jpg`) and an artist folder image.
 - **Two metadata tiers.** Basic tagging for any chaptered video. Full enrichment when CrateDigger-style tags are present.
-- **Re-run detection.** A manifest in each album folder tracks chapter hashes and source mtime, so repeat runs on the same library are near-instant.
+- **Re-run detection.** A manifest in each album folder records a fingerprint of the audio stream and the embedded tag set, so repeat runs are near-instant unless the audio or embedded tags actually changed.
 - **Parallel batch mode.** Process a directory of videos with multiple workers and a live progress display.
 - **Update notifications.** Interactive runs check GitHub for newer releases and show a one-line upgrade hint. See [Update Notifications](#update-notifications).
 
@@ -178,7 +178,7 @@ Artist/
 
 (Tier 2, CrateDigger-tagged source.) Tier 1 sources without festival metadata get `Artist/<filename-stem>/` instead.
 
-`.tracksplit_manifest.json` is a record TrackSplit uses to detect whether a source file has changed since the last run. Safe to delete if you want to force one album to rebuild; safe to ignore in version control.
+`.tracksplit_manifest.json` is a record TrackSplit uses to detect whether the audio or embedded tags have changed since the last run. Safe to delete if you want to force one album to rebuild; safe to ignore in version control.
 
 ## Related projects
 

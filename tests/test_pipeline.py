@@ -127,30 +127,9 @@ class TestApplyIntroTrack:
 
 class TestShouldRegenerate:
     def _write_manifest(self, album_dir, **overrides):
-        from tracksplit.manifest import (
-            ALBUM_MANIFEST_FILENAME, MANIFEST_SCHEMA,
-        )
-        data = {
-            "schema": MANIFEST_SCHEMA,
-            "source": {"path": overrides.get("source_path", "/x.mkv"),
-                       "mtime_ns": overrides.get("mtime_ns", 1),
-                       "size": overrides.get("size", 10),
-                       "enriched_at": overrides.get("enriched_at", "")},
-            "resolved_artist_folder": overrides.get("artist_folder", "A"),
-            "resolved_album_folder": overrides.get("album_folder", "B"),
-            "output_format": overrides.get("output_format", "flac"),
-            "codec_mode": overrides.get("codec_mode", "copy"),
-            "chapters": overrides.get("chapters",
-                [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}]),
-            "tags": overrides.get("tags",
-                {"artist": "A", "album": "", "festival": "", "date": "",
-                 "stage": "", "venue": "", "mbid": "",
-                 "enriched_at": ""}),
-            "track_filenames": overrides.get("track_filenames", ["01 - T.flac"]),
-            "cover_sha256": overrides.get("cover_sha256", "a" * 64),
-        }
-        if "intro_min_seconds" in overrides:
-            data["intro_min_seconds"] = overrides["intro_min_seconds"]
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tests._manifest_helpers import make_manifest_dict
+        data = make_manifest_dict(**overrides)
         (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
 
     def _mk_source(self, tmp_path, size=10):
@@ -158,16 +137,16 @@ class TestShouldRegenerate:
         p.write_bytes(b"x" * size)
         return p
 
-    def _fingerprint(self, src):
-        return {"source_path": str(src), "mtime_ns": src.stat().st_mtime_ns,
-                "size": src.stat().st_size}
+    def _ffprobe(self, **audio_overrides):
+        from tests._manifest_helpers import make_audio_fp, make_ffprobe
+        return make_ffprobe(make_audio_fp(**audio_overrides))
 
     def test_no_existing_dir(self, tmp_path):
         from tracksplit.pipeline import should_regenerate
         src = self._mk_source(tmp_path)
         assert should_regenerate(
-            tmp_path / "nope", src, {}, [], "A", "B", "flac", "copy",
-            force=False,
+            tmp_path / "nope", src, self._ffprobe(), {}, [],
+            "A", "B", "flac", "copy", force=False,
         ) is True
 
     def test_force_always_true(self, tmp_path):
@@ -175,66 +154,210 @@ class TestShouldRegenerate:
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        self._write_manifest(album, **self._fingerprint(src))
+        self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
-            album, src, {}, [], "A", "B", "flac", "copy", force=True,
+            album, src, self._ffprobe(), {}, [],
+            "A", "B", "flac", "copy", force=True,
         ) is True
 
     def test_unchanged_everything(self, tmp_path):
         from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        fp = self._fingerprint(src)
-        self._write_manifest(album, **fp)
-        tags = {"artist": "A", "album": "", "festival": "", "date": "",
-                "stage": "", "venue": "", "mbid": "",
-                "enriched_at": ""}
+        self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
-            album, src, tags,
+            album, src, self._ffprobe(), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
             "A", "B", "flac", "copy", force=False,
         ) is False
 
-    def test_chapter_change_regenerates(self, tmp_path):
+    def test_source_mtime_change_does_not_regenerate(self, tmp_path):
+        """Regression test: mtime bump from a tag-only mkvpropedit must not invalidate."""
         from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        import os
+        import time
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        self._write_manifest(album, **self._fingerprint(src))
-        new_chapters = [{"index": 1, "title": "T2", "start": 0.0, "end": 90.0}]
+        self._write_manifest(album, source_path=str(src))
+        future = time.time() + 100
+        os.utime(src, (future, future))
         assert should_regenerate(
-            album, src, {}, new_chapters, "A", "B", "flac", "copy",
-            force=False,
-        ) is True
+            album, src, self._ffprobe(), default_tags(),
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is False
 
-    def test_metadata_only_change_regenerates(self, tmp_path):
+    def test_audio_codec_change_regenerates(self, tmp_path):
         from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        fp = self._fingerprint(src)
-        self._write_manifest(album, **fp)
-        tags = {"artist": "A", "album": "", "festival": "NEW-FESTIVAL",
-                "date": "", "stage": "", "venue": "", "mbid": "",
-                "enriched_at": ""}
+        self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
-            album, src, tags,
+            album, src, self._ffprobe(codec_name="aac"), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
-    def test_source_mtime_change_regenerates(self, tmp_path):
+    def test_audio_sample_rate_change_regenerates(self, tmp_path):
         from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        self._write_manifest(
-            album, source_path=str(src), mtime_ns=1, size=src.stat().st_size,
-        )
+        self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
-            album, src, {}, [], "A", "B", "flac", "copy", force=False,
+            album, src, self._ffprobe(sample_rate=44100), default_tags(),
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
         ) is True
+
+    def test_audio_channels_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        assert should_regenerate(
+            album, src, self._ffprobe(channels=1), default_tags(),
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_audio_duration_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        assert should_regenerate(
+            album, src, self._ffprobe(duration_ts=99999), default_tags(),
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_chapter_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        new_chapters = [{"index": 1, "title": "T2", "start": 0.0, "end": 90.0}]
+        assert should_regenerate(
+            album, src, self._ffprobe(), default_tags(), new_chapters,
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_allowlisted_tag_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        tags = {**default_tags(), "festival": "NEW"}
+        assert should_regenerate(
+            album, src, self._ffprobe(), tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_genres_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        tags = {**default_tags(), "genres": ["House"]}
+        assert should_regenerate(
+            album, src, self._ffprobe(), tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_comment_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        tags = {**default_tags(), "comment": "https://1001.tl/x"}
+        assert should_regenerate(
+            album, src, self._ffprobe(), tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_albumartists_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        tags = {**default_tags(), "albumartists": ["A", "B"]}
+        assert should_regenerate(
+            album, src, self._ffprobe(), tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_albumartist_display_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        tags = {**default_tags(), "albumartist_display": "DJ X"}
+        assert should_regenerate(
+            album, src, self._ffprobe(), tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_albumartist_mbids_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        tags = {**default_tags(), "albumartist_mbids": ["mbid-1"]}
+        assert should_regenerate(
+            album, src, self._ffprobe(), tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_non_allowlisted_tag_change_does_not_regenerate(self, tmp_path):
+        """dj_artwork and enriched_at must NOT trigger regen."""
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        tags = {
+            **default_tags(),
+            "dj_artwork": "https://example.com/new.jpg",
+            "enriched_at": "2026-04-25T12:00:00",
+        }
+        assert should_regenerate(
+            album, src, self._ffprobe(), tags,
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            "A", "B", "flac", "copy", force=False,
+        ) is False
 
     def test_format_change_regenerates(self, tmp_path):
         from tracksplit.pipeline import should_regenerate
@@ -242,10 +365,11 @@ class TestShouldRegenerate:
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(
-            album, **self._fingerprint(src), output_format="flac",
+            album, source_path=str(src), output_format="flac",
         )
         assert should_regenerate(
-            album, src, {}, [], "A", "B", "opus", "libopus", force=False,
+            album, src, self._ffprobe(), {}, [], "A", "B", "opus", "libopus",
+            force=False,
         ) is True
 
     def test_missing_manifest_triggers_regenerate_even_with_legacy_cache(self, tmp_path):
@@ -257,7 +381,8 @@ class TestShouldRegenerate:
             {"index": 1, "title": "T", "start": 0.0, "end": 60.0}
         ]))
         assert should_regenerate(
-            album, src, {}, [], "A", "B", "flac", "copy", force=False,
+            album, src, self._ffprobe(), {}, [],
+            "A", "B", "flac", "copy", force=False,
         ) is True
 
     def test_corrupt_manifest_regenerates(self, tmp_path):
@@ -268,101 +393,96 @@ class TestShouldRegenerate:
         album.mkdir()
         (album / ALBUM_MANIFEST_FILENAME).write_text("{not json")
         assert should_regenerate(
-            album, src, {}, [], "A", "B", "flac", "copy", force=False,
+            album, src, self._ffprobe(), {}, [],
+            "A", "B", "flac", "copy", force=False,
         ) is True
 
-    def test_should_regenerate_skips_when_intro_policy_matches(self, tmp_path):
-        """Current manifest with matching intro_min_seconds returns False."""
-        from tracksplit.pipeline import should_regenerate, INTRO_MIN_SECONDS
+    def test_schema_2_manifest_triggers_regenerate(self, tmp_path):
+        """Schema-2 manifests on disk after upgrade must force regen."""
+        from tracksplit.pipeline import should_regenerate
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        fp = self._fingerprint(src)
-        self._write_manifest(
-            album, intro_min_seconds=INTRO_MIN_SECONDS, **fp,
-        )
-        tags = {"artist": "A", "album": "", "festival": "", "date": "",
-                "stage": "", "venue": "", "mbid": "",
-                "enriched_at": ""}
+        (album / ALBUM_MANIFEST_FILENAME).write_text(json.dumps({
+            "schema": 2,
+            "source": {"path": str(src), "mtime_ns": 1, "size": 10, "enriched_at": ""},
+            "resolved_artist_folder": "A", "resolved_album_folder": "B",
+            "output_format": "flac", "codec_mode": "copy",
+            "chapters": [], "tags": {}, "track_filenames": [], "cover_sha256": "",
+        }))
         assert should_regenerate(
-            album, src, tags,
+            album, src, self._ffprobe(), {}, [],
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_should_regenerate_skips_when_intro_policy_matches(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate, INTRO_MIN_SECONDS
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(
+            album, source_path=str(src), intro_min_seconds=INTRO_MIN_SECONDS,
+        )
+        assert should_regenerate(
+            album, src, self._ffprobe(), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
             "A", "B", "flac", "copy", force=False,
         ) is False
 
     def test_should_regenerate_skips_legacy_manifest_with_zero_gap(self, tmp_path):
-        """Old manifest (intro_min_seconds=None) with first chapter at 0 returns False."""
         from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        fp = self._fingerprint(src)
-        # No intro_min_seconds key: simulates a pre-policy manifest on disk.
-        self._write_manifest(album, **fp)
-        tags = {"artist": "A", "album": "", "festival": "", "date": "",
-                "stage": "", "venue": "", "mbid": "",
-                "enriched_at": ""}
+        self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
-            album, src, tags,
+            album, src, self._ffprobe(), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
             "A", "B", "flac", "copy", force=False,
         ) is False
 
     def test_should_regenerate_rebuilds_legacy_manifest_with_short_gap(self, tmp_path):
-        """Old manifest, first chapter gap 2.0s (under threshold) returns True."""
         from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        fp = self._fingerprint(src)
         chapters = [{"index": 1, "title": "T", "start": 2.0, "end": 60.0}]
-        # Stored chapters match observed chapters, so the plain chapter check
-        # does not fire; only the legacy intro-policy upgrade can trigger.
-        self._write_manifest(album, chapters=chapters, **fp)
-        tags = {"artist": "A", "album": "", "festival": "", "date": "",
-                "stage": "", "venue": "", "mbid": "",
-                "enriched_at": ""}
+        self._write_manifest(album, source_path=str(src), chapters=chapters)
         assert should_regenerate(
-            album, src, tags, chapters,
+            album, src, self._ffprobe(), default_tags(), chapters,
             "A", "B", "flac", "copy", force=False,
         ) is True
 
     def test_should_regenerate_skips_legacy_manifest_with_long_intro(self, tmp_path):
-        """Old manifest, first chapter gap 15.0s (above threshold) returns False."""
         from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        fp = self._fingerprint(src)
         chapters = [{"index": 1, "title": "T", "start": 15.0, "end": 60.0}]
-        self._write_manifest(album, chapters=chapters, **fp)
-        tags = {"artist": "A", "album": "", "festival": "", "date": "",
-                "stage": "", "venue": "", "mbid": "",
-                "enriched_at": ""}
+        self._write_manifest(album, source_path=str(src), chapters=chapters)
         assert should_regenerate(
-            album, src, tags, chapters,
+            album, src, self._ffprobe(), default_tags(), chapters,
             "A", "B", "flac", "copy", force=False,
         ) is False
 
     def test_should_regenerate_rebuilds_when_stored_threshold_differs(self, tmp_path):
-        """Manifest records a different intro_min_seconds than the current constant."""
         from tracksplit.pipeline import should_regenerate, INTRO_MIN_SECONDS
+        from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        fp = self._fingerprint(src)
         chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}]
-        # Stored threshold (3.0) disagrees with the current INTRO_MIN_SECONDS,
-        # so only the stored-threshold-mismatch branch can trigger.
         assert INTRO_MIN_SECONDS != 3.0
         self._write_manifest(
-            album, chapters=chapters, intro_min_seconds=3.0, **fp,
+            album, source_path=str(src), chapters=chapters, intro_min_seconds=3.0,
         )
-        tags = {"artist": "A", "album": "", "festival": "", "date": "",
-                "stage": "", "venue": "", "mbid": "",
-                "enriched_at": ""}
         assert should_regenerate(
-            album, src, tags, chapters,
+            album, src, self._ffprobe(), default_tags(), chapters,
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -454,7 +574,8 @@ class TestProcessFileManifest:
         assert process_file(src, out) is True
         m = load_album_manifest(album_dir)
         assert m is not None
-        assert m.source.size == src.stat().st_size
+        assert m.source.path == str(src)
+        assert m.source.audio.codec_name == "flac"
         assert m.output_format == "flac"
         assert m.codec_mode == "copy"
         assert len(m.chapters) == 2
@@ -474,7 +595,7 @@ class TestProcessFileManifest:
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"data" * 64)
-        mock_probe.return_value = {
+        ffprobe_data = {
             "streams": [{"codec_type": "audio", "codec_name": "flac"}],
             "format": {"tags": {"ARTIST": "DJ X",
                                  "CRATEDIGGER_1001TL_FESTIVAL": "Show",
@@ -485,15 +606,15 @@ class TestProcessFileManifest:
                  "tags": {"title": "Track 1"}},
             ],
         }
+        mock_probe.return_value = ffprobe_data
         album_dir = tmp_path / "out" / "DJ X" / "Show 2025"
         album_dir.mkdir(parents=True)
-        from tracksplit.manifest import TAG_KEYS
-        tags = {k: "" for k in TAG_KEYS}
-        tags["artist"] = "DJ X"
-        tags["festival"] = "Show"
-        tags["date"] = "2025"
+        from tests._manifest_helpers import default_tags
+        tags = {**default_tags(), "artist": "DJ X",
+                "festival": "Show", "date": "2025"}
         manifest = build_album_manifest(
             source_path=src,
+            ffprobe_data=ffprobe_data,
             chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0}],
             tags=tags,
             artist_folder="DJ X",
@@ -593,10 +714,9 @@ class TestProcessFileManifest:
         mock_artist_cover, mock_compose, mock_prepare, mock_split, mock_tag,
         tmp_path,
     ):
-        from tracksplit.manifest import (
-            ALBUM_MANIFEST_FILENAME, MANIFEST_SCHEMA,
-        )
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tracksplit.pipeline import process_file
+        from tests._manifest_helpers import make_manifest_dict
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 100)
@@ -604,23 +724,17 @@ class TestProcessFileManifest:
         old_album = out / "DJ X" / "Old Name"
         old_album.mkdir(parents=True)
         (old_album / "01 - stale.flac").write_bytes(b"stale")
-        (old_album / ALBUM_MANIFEST_FILENAME).write_text(json.dumps({
-            "schema": MANIFEST_SCHEMA,
-            "source": {
-                "path": str(src),
-                "mtime_ns": src.stat().st_mtime_ns,
-                "size": src.stat().st_size,
-                "enriched_at": "",
-            },
-            "resolved_artist_folder": "DJ X",
-            "resolved_album_folder": "Old Name",
-            "output_format": "flac",
-            "codec_mode": "copy",
-            "chapters": [],
-            "tags": {},
-            "track_filenames": ["01 - stale.flac"],
-            "cover_sha256": "",
-        }))
+        (old_album / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(
+            make_manifest_dict(
+                source_path=str(src),
+                artist_folder="DJ X",
+                album_folder="Old Name",
+                chapters=[],
+                tags={},
+                track_filenames=["01 - stale.flac"],
+                cover_sha256="",
+            )
+        ))
 
         # Probe yields CrateDigger tags that resolve album_folder to "New Name 2025".
         mock_probe.return_value = {
@@ -670,17 +784,16 @@ class TestProcessFileManifest:
         artist_dir = out / "DJ X"
         album_dir = artist_dir / "Show 2025"
         album_dir.mkdir(parents=True)
-        from tracksplit.manifest import TAG_KEYS
-        tags = {k: "" for k in TAG_KEYS}
-        tags["artist"] = "DJ X"
-        tags["festival"] = "Show"
-        tags["date"] = "2025"
+        from tests._manifest_helpers import default_tags
+        tags = {**default_tags(), "artist": "DJ X",
+                "festival": "Show", "date": "2025"}
         chapter_dicts = [
             {"index": 1, "title": "Track 1", "start": 0.0, "end": 300.0},
             {"index": 2, "title": "Track 2", "start": 300.0, "end": 600.0},
         ]
         save_album_manifest(album_dir, build_album_manifest(
-            source_path=src, chapters=chapter_dicts, tags=tags,
+            source_path=src, ffprobe_data=self._probe(),
+            chapters=chapter_dicts, tags=tags,
             artist_folder="DJ X", album_folder="Show 2025",
             output_format="flac", codec_mode="copy",
             track_filenames=["01 - DJ X - Track 1.flac",
@@ -775,39 +888,30 @@ class TestPruneOrphans:
 
 
 class TestFindPriorAlbumDirs:
-    def _write_manifest(self, album_dir, source_path, size, mtime_ns,
+    def _write_manifest(self, album_dir, source_path,
                          artist_folder=None, album_folder=None):
-        from tracksplit.manifest import (
-            ALBUM_MANIFEST_FILENAME, MANIFEST_SCHEMA,
-        )
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tests._manifest_helpers import make_manifest_dict
         album_dir.mkdir(parents=True, exist_ok=True)
-        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps({
-            "schema": MANIFEST_SCHEMA,
-            "source": {
-                "path": str(source_path),
-                "mtime_ns": mtime_ns,
-                "size": size,
-                "enriched_at": "",
-            },
-            "resolved_artist_folder": artist_folder or album_dir.parent.name,
-            "resolved_album_folder": album_folder or album_dir.name,
-            "output_format": "flac",
-            "codec_mode": "copy",
-            "chapters": [],
-            "tags": {},
-            "track_filenames": [],
-            "cover_sha256": "",
-        }))
+        data = make_manifest_dict(
+            source_path=str(source_path),
+            artist_folder=artist_folder or album_dir.parent.name,
+            album_folder=album_folder or album_dir.name,
+            chapters=[],
+            tags={},
+            track_filenames=[],
+            cover_sha256="",
+        )
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
 
     def test_finds_prior_album_dir_same_source(self, tmp_path):
         from tracksplit.pipeline import find_prior_album_dirs
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 10)
         out = tmp_path / "out"
-        self._write_manifest(out / "ArtistA" / "Old Name", src,
-                             src.stat().st_size, src.stat().st_mtime_ns)
+        self._write_manifest(out / "ArtistA" / "Old Name", src)
         self._write_manifest(out / "ArtistA" / "Other Album",
-                             tmp_path / "other.mkv", 99, 99)
+                             tmp_path / "other.mkv")
 
         found = find_prior_album_dirs(
             out, src, new_album_dir=out / "ArtistA" / "New Name",
@@ -820,8 +924,7 @@ class TestFindPriorAlbumDirs:
         src.write_bytes(b"x" * 10)
         out = tmp_path / "out"
         album = out / "ArtistA" / "Same Name"
-        self._write_manifest(album, src, src.stat().st_size,
-                             src.stat().st_mtime_ns)
+        self._write_manifest(album, src)
 
         assert find_prior_album_dirs(out, src, new_album_dir=album) == []
 
@@ -831,8 +934,7 @@ class TestFindPriorAlbumDirs:
         src.write_bytes(b"x" * 10)
         out = tmp_path / "out"
         old = out / "OldArtist" / "Album"
-        self._write_manifest(old, src, src.stat().st_size,
-                             src.stat().st_mtime_ns)
+        self._write_manifest(old, src)
 
         found = find_prior_album_dirs(
             out, src, new_album_dir=out / "NewArtist" / "Album",
@@ -847,20 +949,6 @@ class TestFindPriorAlbumDirs:
             tmp_path / "nope", src, new_album_dir=tmp_path / "whatever",
         ) == []
 
-    def test_ignores_manifest_with_different_size(self, tmp_path):
-        from tracksplit.pipeline import find_prior_album_dirs
-        src = tmp_path / "src.mkv"
-        src.write_bytes(b"x" * 10)
-        out = tmp_path / "out"
-        other = out / "Artist" / "Album"
-        # Same path, different size, should not match.
-        self._write_manifest(other, src, size=999,
-                             mtime_ns=src.stat().st_mtime_ns)
-
-        assert find_prior_album_dirs(
-            out, src, new_album_dir=out / "Artist" / "Other",
-        ) == []
-
     def test_does_not_match_different_path_same_size(self, tmp_path):
         from tracksplit.pipeline import find_prior_album_dirs
         srcA = tmp_path / "a.mkv"
@@ -868,14 +956,8 @@ class TestFindPriorAlbumDirs:
         srcB = tmp_path / "b.mkv"
         srcB.write_bytes(b"y" * 10)  # same size as srcA, different content/path
         out = tmp_path / "out"
-        self._write_manifest(
-            out / "ArtistA" / "AlbA", srcA,
-            srcA.stat().st_size, srcA.stat().st_mtime_ns,
-        )
-        self._write_manifest(
-            out / "ArtistB" / "AlbB", srcB,
-            srcB.stat().st_size, srcB.stat().st_mtime_ns,
-        )
+        self._write_manifest(out / "ArtistA" / "AlbA", srcA)
+        self._write_manifest(out / "ArtistB" / "AlbB", srcB)
 
         found = find_prior_album_dirs(
             out, srcA, new_album_dir=out / "Something" / "Else",
@@ -888,9 +970,7 @@ class TestFindPriorAlbumDirs:
         src.write_bytes(b"x" * 10)
         # Real album dir outside the output tree.
         real = tmp_path / "outside" / "Artist" / "Album"
-        self._write_manifest(
-            real, src, src.stat().st_size, src.stat().st_mtime_ns,
-        )
+        self._write_manifest(real, src)
         # Symlink under the output root pointing at the real dir.
         out = tmp_path / "out"
         (out / "Artist").mkdir(parents=True)
@@ -1136,19 +1216,24 @@ class TestRebuildCoverOnly:
         cover_sha: str, schema_version: int = 0,
     ):
         from tracksplit.manifest import (
-            AlbumManifest, SourceFingerprint, save_album_manifest,
+            AlbumManifest, AudioFingerprint, MANIFEST_SCHEMA,
+            SourceFingerprint, save_album_manifest,
         )
         manifest = AlbumManifest(
-            schema=2,
+            schema=MANIFEST_SCHEMA,
             source=SourceFingerprint(
-                path="/fake.mkv", mtime_ns=1, size=1, enriched_at="",
+                path="/fake.mkv",
+                audio=AudioFingerprint(
+                    codec_name="flac", sample_rate=44100, channels=2,
+                    duration_ts=0, time_base="1/44100", bit_rate=0,
+                ),
             ),
             resolved_artist_folder="Artist",
             resolved_album_folder="Album",
             output_format="flac",
             codec_mode="copy",
             chapters=[],
-            tags={"artist": "A", "album": "B", "festival": "F"},
+            tags={"artist": "A", "festival": "F"},
             track_filenames=[track_filename],
             cover_sha256=cover_sha,
             cover_schema_version=schema_version,
@@ -1286,16 +1371,14 @@ class TestSkipBranchCoverRebuild:
         }
 
     def _write_manifest_with_stale_cover_version(self, src, album_dir):
-        from tracksplit.manifest import (
-            TAG_KEYS, build_album_manifest, save_album_manifest,
-        )
+        from tracksplit.manifest import build_album_manifest, save_album_manifest
+        from tests._manifest_helpers import default_tags
         from dataclasses import replace as _replace
-        tags = {k: "" for k in TAG_KEYS}
-        tags["artist"] = "DJ X"
-        tags["festival"] = "Show"
-        tags["date"] = "2025"
+        tags = {**default_tags(), "artist": "DJ X",
+                "festival": "Show", "date": "2025"}
         m = build_album_manifest(
             source_path=src,
+            ffprobe_data=self._probe(),
             chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0}],
             tags=tags,
             artist_folder="DJ X",
@@ -1391,15 +1474,13 @@ class TestSkipBranchCoverRebuild:
         src.write_bytes(b"data" * 64)
         album_dir = tmp_path / "out" / "DJ X" / "Show 2025"
         album_dir.mkdir(parents=True)
-        from tracksplit.manifest import (
-            TAG_KEYS, build_album_manifest, save_album_manifest,
-        )
-        tags = {k: "" for k in TAG_KEYS}
-        tags["artist"] = "DJ X"
-        tags["festival"] = "Show"
-        tags["date"] = "2025"
+        from tracksplit.manifest import build_album_manifest, save_album_manifest
+        from tests._manifest_helpers import default_tags
+        tags = {**default_tags(), "artist": "DJ X",
+                "festival": "Show", "date": "2025"}
         m = build_album_manifest(
             source_path=src,
+            ffprobe_data=self._probe(),
             chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0}],
             tags=tags,
             artist_folder="DJ X",

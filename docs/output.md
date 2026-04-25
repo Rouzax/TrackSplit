@@ -118,7 +118,7 @@ Players that do not support gapless playback, such as the Jellyfin mobile app, w
 
 ### `.tracksplit_manifest.json`
 
-A small record file TrackSplit uses internally. It stores a fingerprint of the source file and the settings used, so TrackSplit can detect on the next run whether anything changed and skip the album if not.
+A small record file TrackSplit uses internally. It stores a fingerprint covering the audio stream metadata (codec, sample rate, channels, duration) and the set of tags embedded into the output tracks, along with the settings used, so TrackSplit can detect on the next run whether anything meaningful changed and skip the album if not.
 
 **This file is only for TrackSplit, not for your music server.** Your server will ignore it. You can delete it at any time to force TrackSplit to rebuild that album. You do not need to back it up.
 
@@ -223,9 +223,11 @@ If none of the locations has the file, TrackSplit continues without it (raw tag 
 
 `.tracksplit_manifest.json` records:
 
-- The source file path, size, and modification time.
-- A hash of the chapter list and the metadata that affects output.
+- The source file path.
+- An audio-stream fingerprint from ffprobe: codec, sample rate, channels, duration, and bit rate.
+- The chapter list (timestamps and titles).
+- The set of tags embedded into the per-track output files: artist, festival, date, stage, venue, genres, comment, album artist display name, individual album artists, and their MusicBrainz IDs.
 - The output format and codec mode used.
 - The list of track filenames written.
 
-On a subsequent run, TrackSplit loads the manifest and compares it against the current source file and settings. If nothing meaningful changed, the album is skipped. Deleting the manifest forces a full rebuild for that one album. Passing `--force` on the command line rebuilds everything regardless of manifests.
+On a subsequent run, TrackSplit loads the manifest and compares it against these fields. If nothing in that list changed, the album is skipped. Re-extraction is triggered by changes to the audio stream, chapters, or any of the embedded tags listed above. Container-level edits that do not touch the audio stream or embedded tags (such as a sibling tool rewriting MKV metadata) no longer cause spurious re-extracts. Deleting the manifest forces a full rebuild for that one album. Passing `--force` on the command line rebuilds everything regardless of manifests.

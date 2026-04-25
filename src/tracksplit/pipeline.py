@@ -33,6 +33,7 @@ from tracksplit.manifest import (
     TAG_KEYS,
     SourceFingerprint,
     artwork_sha256,
+    tag_default,
     atomic_write_bytes,
     build_album_manifest,
     load_album_manifest,
@@ -165,16 +166,15 @@ def find_prior_album_dirs(
     new_album_dir: Path,
 ) -> list[Path]:
     """Return album dirs under output_root whose manifest matches source_path
-    (by resolved path AND size) but whose directory differs from new_album_dir.
+    by resolved path, but whose directory differs from new_album_dir.
 
-    Matches are keyed on source identity, not heuristic name similarity, so
-    this is safe to call whenever ``should_regenerate`` returns True.
+    Matches are keyed on source path identity, not heuristic name similarity,
+    so this is safe to call whenever ``should_regenerate`` returns True.
     """
     if not output_root.exists():
         return []
     try:
         src_resolved = source_path.resolve()
-        src_size = source_path.stat().st_size
     except OSError:
         return []
 
@@ -196,8 +196,6 @@ def find_prior_album_dirs(
         except OSError:
             continue
         if stored_resolved != src_resolved:
-            continue
-        if manifest.source.size != src_size:
             continue
         matches.append(album_dir)
     return matches
@@ -346,6 +344,7 @@ def rebuild_cover_only(
 def should_regenerate(
     album_dir: Path,
     source_path: Path,
+    ffprobe_data: dict,
     tags: dict,
     chapter_dicts: list[dict],
     artist_folder: str,
@@ -378,20 +377,25 @@ def should_regenerate(
         return True
 
     try:
-        current_source = SourceFingerprint.from_path(
-            source_path, enriched_at=tags.get("enriched_at", ""),
-        )
-    except OSError as exc:
-        logger.debug("regenerate %s: stat failed: %s", name, exc)
+        current_source = SourceFingerprint.from_ffprobe(source_path, ffprobe_data)
+    except ValueError as exc:
+        logger.debug("regenerate %s: source fingerprint failed: %s", name, exc)
         return True
 
-    if manifest.source != current_source:
-        for field in ("path", "mtime_ns", "size", "enriched_at"):
-            old = getattr(manifest.source, field)
-            new = getattr(current_source, field)
+    if manifest.source.path != current_source.path:
+        logger.debug(
+            "regenerate %s: source.path changed (%r -> %r)",
+            name, manifest.source.path, current_source.path,
+        )
+        return True
+    if manifest.source.audio != current_source.audio:
+        for field in ("codec_name", "sample_rate", "channels",
+                      "duration_ts", "time_base", "bit_rate"):
+            old = getattr(manifest.source.audio, field)
+            new = getattr(current_source.audio, field)
             if old != new:
                 logger.debug(
-                    "regenerate %s: source.%s changed (%r -> %r)",
+                    "regenerate %s: source.audio.%s changed (%r -> %r)",
                     name, field, old, new,
                 )
         return True
@@ -448,10 +452,12 @@ def should_regenerate(
         return True
 
     for k in TAG_KEYS:
-        if manifest.tags.get(k, "") != tags.get(k, ""):
+        old = manifest.tags.get(k, tag_default(k))
+        new = tags.get(k, tag_default(k))
+        if old != new:
             logger.debug(
                 "regenerate %s: tag %r changed (%r -> %r)",
-                name, k, manifest.tags.get(k, ""), tags.get(k, ""),
+                name, k, old, new,
             )
             return True
     return False
@@ -554,7 +560,7 @@ def process_file(
 
     skip_manifest = load_album_manifest(album_dir)
     skip = not should_regenerate(
-        album_dir, input_path, tags, chapter_dicts,
+        album_dir, input_path, ffprobe_data, tags, chapter_dicts,
         artist_folder, album_folder, ext.lstrip("."), codec_mode,
         force=force, manifest=skip_manifest,
     )
@@ -674,6 +680,7 @@ def process_file(
 
         manifest = build_album_manifest(
             source_path=input_path,
+            ffprobe_data=ffprobe_data,
             chapters=chapter_dicts,
             tags=tags,
             artist_folder=artist_folder,

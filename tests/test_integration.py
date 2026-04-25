@@ -83,3 +83,35 @@ def test_rerun_force_regenerates(video_path, tmp_path):
     process_file(video_path, tmp_path)
     result = process_file(video_path, tmp_path, force=True)
     assert result is True
+
+
+def test_mtime_bump_without_content_change_skips_rerun(video_path, tmp_path):
+    """Bumping the source mtime (e.g. CrateDigger mkvpropedit tag rewrite)
+    must not trigger re-extraction when the audio stream is unchanged.
+    """
+    import shutil
+    import time
+
+    # Copy the fixture to a writable location so we can poke its mtime.
+    src = tmp_path / "src.mkv"
+    shutil.copy2(video_path, src)
+
+    assert process_file(src, tmp_path / "out") is True
+
+    track_files = sorted((tmp_path / "out").rglob("*.flac")) + sorted(
+        (tmp_path / "out").rglob("*.opus")
+    )
+    assert track_files, "first run should produce track files"
+    track_mtimes_before = {p: p.stat().st_mtime_ns for p in track_files}
+
+    old_src_mtime = src.stat().st_mtime
+    future = time.time() + 100
+    os.utime(src, (future, future))
+    assert src.stat().st_mtime > old_src_mtime, "mtime did not advance"
+
+    assert process_file(src, tmp_path / "out") is False
+
+    track_mtimes_after = {p: p.stat().st_mtime_ns for p in track_files}
+    assert track_mtimes_before == track_mtimes_after, (
+        "track files were rewritten; expected skip"
+    )

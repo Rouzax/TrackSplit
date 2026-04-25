@@ -166,7 +166,7 @@ Cancelled   0
 
 ## What it means when a file is skipped
 
-TrackSplit keeps a small record file (`.tracksplit_manifest.json`) in each album folder. On subsequent runs it compares the source file and its settings against that record. If nothing meaningful has changed (same chapters, same metadata, same format), it skips the album without redoing any work.
+TrackSplit keeps a small record file (`.tracksplit_manifest.json`) in each album folder. On subsequent runs it compares the source file and its settings against that record. If nothing meaningful has changed (same audio stream, same chapters, same embedded tags, same output format), it skips the album without redoing any work. Surface-level file edits that do not touch the audio or embedded tags, such as a `touch` command or a re-import that only updates the file's modification time, do not cause a rebuild.
 
 A skipped file is not an error. It means the output is already up to date.
 
