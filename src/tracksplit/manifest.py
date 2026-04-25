@@ -22,9 +22,23 @@ MANIFEST_SCHEMA = 3
 
 
 TAG_KEYS = (
-    "artist", "album", "festival", "date", "stage", "venue",
-    "mbid", "enriched_at",
+    "artist",
+    "festival",
+    "date",
+    "stage",
+    "venue",
+    "genres",
+    "comment",
+    "albumartist_display",
+    "albumartists",
+    "albumartist_mbids",
 )
+
+_LIST_TAG_KEYS = frozenset({"genres", "albumartists", "albumartist_mbids"})
+
+
+def _tag_default(key: str):
+    return [] if key in _LIST_TAG_KEYS else ""
 
 
 def _sha256(data: bytes) -> str:
@@ -137,7 +151,7 @@ class AlbumManifest:
 
 
 def _filter_tags(tags: dict) -> dict:
-    return {k: tags.get(k, "") for k in TAG_KEYS}
+    return {k: tags.get(k, _tag_default(k)) for k in TAG_KEYS}
 
 
 def build_album_manifest(

@@ -311,3 +311,37 @@ def test_audio_fingerprint_equality():
     c = AudioFingerprint("opus", 48000, 2, 100, "1/48000", 256000)
     assert a == b
     assert a != c
+
+
+def test_tag_keys_match_build_tag_dict_inputs():
+    """Allowlist must include every parse_tags key that build_tag_dict consumes."""
+    from tracksplit.manifest import TAG_KEYS
+    expected = {
+        "artist", "festival", "date", "stage", "venue",
+        "genres", "comment",
+        "albumartist_display", "albumartists", "albumartist_mbids",
+    }
+    assert set(TAG_KEYS) == expected
+
+
+def test_filter_tags_uses_list_default_for_list_keys():
+    """List-valued allowlist entries must default to [], not ''."""
+    from tracksplit.manifest import _filter_tags
+    out = _filter_tags({})
+    assert out["genres"] == []
+    assert out["albumartists"] == []
+    assert out["albumartist_mbids"] == []
+    assert out["artist"] == ""
+    assert out["festival"] == ""
+
+
+def test_filter_tags_preserves_provided_lists():
+    from tracksplit.manifest import _filter_tags
+    out = _filter_tags({
+        "genres": ["House", "Trance"],
+        "albumartists": ["A", "B"],
+        "albumartist_mbids": ["mbid-a", ""],
+    })
+    assert out["genres"] == ["House", "Trance"]
+    assert out["albumartists"] == ["A", "B"]
+    assert out["albumartist_mbids"] == ["mbid-a", ""]
