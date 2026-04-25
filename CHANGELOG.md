@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-04-25
+
 ### Changed
 
+- `tracksplit --version` now performs a live check against GitHub Releases on every invocation, ignoring the cached freshness window. Output is one of three states: a single `tracksplit X.Y.Z` line followed by `(latest)` when current; the stale notice when a newer release is available; or just the version line when the network call fails or the check is suppressed via `TRACKSPLIT_NO_UPDATE_CHECK=1`. Suppression by non-TTY output no longer applies on `--version`, since explicit invocation overrides the implicit-suppression rule.
+- `tracksplit --check` adds a new `Update status` row reporting the same freshness state. A newer release counts as a warning in the summary; failed or suppressed checks show as informational and do not affect the count.
 - The legacy-path warning (added in 0.7.0) now fires at most once per calendar day. A stamp file at `~/.local/state/TrackSplit/legacy-warning.stamp` (or the platform equivalent) records the date of the last warning; subsequent runs on the same day stay silent. Users running several TrackSplit commands in a single session will no longer see the same warning block repeated on every invocation. The warning text, the set of paths that trigger it, and all other behaviour are unchanged. Mirrors the identical change in CrateDigger (PR #24).
 
 ## [0.7.1] - 2026-04-24

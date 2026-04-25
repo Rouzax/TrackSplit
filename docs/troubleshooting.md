@@ -230,9 +230,12 @@ The warning disappears on the next run once none of the old paths exist.
 
 ## Still stuck?
 
-Re-run with `--debug` and save the full output. Then open an issue and include:
+Open an issue and include:
 
 - The exact command you ran.
-- The full `--debug` output.
+- The log file for the run. TrackSplit writes a DEBUG-level log on every run, so you do not need to re-run with `--debug`. Find it at:
+  - Linux: `~/.local/state/TrackSplit/log/tracksplit.log`
+  - macOS: `~/Library/Logs/TrackSplit/tracksplit.log`
+  - Windows: `$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log`
 - The output of `ffmpeg -version` and `ffprobe -version`.
 - Your OS and how you installed TrackSplit.

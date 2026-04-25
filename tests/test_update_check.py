@@ -484,3 +484,107 @@ class TestDebugLogging:
             assert _read_cache() is None
         assert any("unreadable" in r.message for r in caplog.records)
         assert any(str(p) in r.message for r in caplog.records)
+
+
+def test_is_suppressed_explicit_env_var(monkeypatch):
+    from tracksplit import update_check
+    monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
+    assert update_check._is_suppressed_explicit() is True
+
+
+def test_is_suppressed_explicit_unset(monkeypatch):
+    from tracksplit import update_check
+    monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+    assert update_check._is_suppressed_explicit() is False
+
+
+def test_is_suppressed_explicit_ignores_tty(monkeypatch):
+    from tracksplit import update_check
+    monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+    monkeypatch.setattr("sys.stdout.isatty", lambda: False)
+    assert update_check._is_suppressed_explicit() is False
+
+
+def test_refresh_force_bypasses_freshness(monkeypatch, tmp_path):
+    import json, time
+    from tracksplit import update_check
+
+    cache_file = tmp_path / "update-check.json"
+    cache_file.write_text(json.dumps({
+        "schema": update_check.SCHEMA_VERSION,
+        "checked_at": int(time.time()),
+        "ttl_seconds": 86400,
+        "latest_version": "0.0.1",
+    }), encoding="utf-8")
+
+    monkeypatch.setattr(update_check, "_cache_path", lambda: cache_file)
+    monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+
+    fetch_calls = []
+    monkeypatch.setattr(update_check, "_fetch_latest_release",
+                        lambda: fetch_calls.append(1) or "9.9.9")
+
+    update_check.refresh_update_cache(force=True)
+
+    assert fetch_calls == [1]
+    written = json.loads(cache_file.read_text(encoding="utf-8"))
+    assert written["latest_version"] == "9.9.9"
+
+
+def test_refresh_default_respects_fresh_cache(monkeypatch, tmp_path):
+    import json, time
+    from tracksplit import update_check
+
+    cache_file = tmp_path / "update-check.json"
+    cache_file.write_text(json.dumps({
+        "schema": update_check.SCHEMA_VERSION,
+        "checked_at": int(time.time()),
+        "ttl_seconds": 86400,
+        "latest_version": "0.0.1",
+    }), encoding="utf-8")
+
+    monkeypatch.setattr(update_check, "_cache_path", lambda: cache_file)
+    monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+
+    fetch_calls = []
+    monkeypatch.setattr(update_check, "_fetch_latest_release",
+                        lambda: fetch_calls.append(1) or "9.9.9")
+
+    update_check.refresh_update_cache()
+
+    assert fetch_calls == []
+
+
+def test_refresh_force_honours_explicit_suppression(monkeypatch, tmp_path):
+    from tracksplit import update_check
+
+    cache_file = tmp_path / "update-check.json"
+    monkeypatch.setattr(update_check, "_cache_path", lambda: cache_file)
+
+    fetch_calls = []
+    monkeypatch.setattr(update_check, "_fetch_latest_release",
+                        lambda: fetch_calls.append(1) or "9.9.9")
+    monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
+    update_check.refresh_update_cache(force=True)
+    assert fetch_calls == []
+    assert not cache_file.exists()
+
+
+def test_format_freshness_line_three_states(monkeypatch):
+    from tracksplit import update_check
+    # Make _upgrade_command deterministic so the stale assertion isn't
+    # tied to install-method detection (PIPX_HOME, /uv/tools/, etc.)
+    monkeypatch.setattr(update_check, "_upgrade_command",
+                        lambda: "pipx upgrade tracksplit")
+
+    assert update_check.format_freshness_line(
+        "1.2.3", "1.2.3", package_name="tracksplit",
+    ) == "(latest)"
+    assert update_check.format_freshness_line(
+        "1.2.3", None, package_name="tracksplit",
+    ) == "(could not check for updates)"
+    text = update_check.format_freshness_line(
+        "1.2.3", "1.2.4", package_name="tracksplit",
+    )
+    assert "newer: 1.2.4" in text
+    assert "tracksplit" in text

@@ -357,6 +357,50 @@ def _run_check() -> int:
             soft_wrap=True,
         )
 
+    # --- Update status ---
+    out.print("\n[bold]Update status[/bold]")
+    from tracksplit.update_check import (
+        PACKAGE_NAME,
+        _is_suppressed_explicit,
+        _is_newer,
+        _read_cache,
+        format_freshness_line,
+        refresh_update_cache,
+    )
+    try:
+        update_installed = version(PACKAGE_NAME)
+    except PackageNotFoundError:
+        update_installed = "unknown"
+
+    if update_installed == "unknown":
+        out.print(f"  [dim]~[/dim] {PACKAGE_NAME:<14} version not detected")
+    elif _is_suppressed_explicit():
+        out.print(
+            f"  [dim]~[/dim] {PACKAGE_NAME:<14} {update_installed} "
+            f"(update check suppressed)"
+        )
+    else:
+        refresh_update_cache(force=True)
+        update_entry = _read_cache()
+        update_latest = update_entry.get("latest_version") if update_entry else None
+        annotation = format_freshness_line(
+            update_installed, update_latest, package_name=PACKAGE_NAME,
+        )
+        if update_latest is None:
+            out.print(
+                f"  [dim]~[/dim] {PACKAGE_NAME:<14} {update_installed} {annotation}"
+            )
+        elif _is_newer(installed=update_installed, candidate=update_latest):
+            out.print(
+                f"  [yellow]![/yellow] {PACKAGE_NAME:<14} {update_installed} "
+                f"{annotation}"
+            )
+            warnings += 1
+        else:
+            out.print(
+                f"  [green]✓[/green] {PACKAGE_NAME:<14} {update_installed} {annotation}"
+            )
+
     out.print("\n[bold]Python packages[/bold]")
     for pkg in _PACKAGES:
         try:
@@ -380,12 +424,50 @@ def _run_check() -> int:
     return 1 if errors else 0
 
 
-def _version_callback(value: bool) -> None:
-    if value:
-        from importlib.metadata import version
+def _print_version_with_freshness() -> None:
+    """Print 'tracksplit X.Y.Z' and an indented freshness annotation.
 
-        typer.echo(f"tracksplit {version('tracksplit')}")
-        raise typer.Exit()
+    Always performs a live fetch (force=True) when not env-suppressed.
+    Constructs a fresh Console bound to current sys.stdout so test runners
+    that swap sys.stdout (e.g. typer.testing.CliRunner) capture the output;
+    the module-level console caches the original sys.stdout at import time.
+    """
+    from importlib.metadata import version, PackageNotFoundError
+    from tracksplit.update_check import (
+        _is_suppressed_explicit,
+        _is_newer,
+        _read_cache,
+        _upgrade_command,
+        refresh_update_cache,
+    )
+
+    try:
+        installed = version("tracksplit")
+    except PackageNotFoundError:
+        installed = "unknown"
+
+    typer.echo(f"tracksplit {installed}")
+
+    if installed == "unknown":
+        return
+    if _is_suppressed_explicit():
+        return
+
+    refresh_update_cache(force=True)
+    entry = _read_cache()
+    latest = entry.get("latest_version") if entry else None
+    if latest is None:
+        return
+    out = make_console(file=sys.stdout)
+    if _is_newer(installed=installed, candidate=latest):
+        cmd = _upgrade_command()
+        out.print(
+            f"[yellow]![/yellow] A new tracksplit version is available: "
+            f"{installed} → {latest}"
+        )
+        out.print(f"  Upgrade: [cyan]{cmd}[/cyan]")
+    else:
+        out.print("  [dim](latest)[/dim]")
 
 
 @app.command()
@@ -398,9 +480,7 @@ def main(
     version_flag: bool = typer.Option(
         False,
         "--version",
-        callback=_version_callback,
-        is_eager=True,
-        help="Show version and exit.",
+        help="Show version and check for updates, then exit.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -456,6 +536,10 @@ def main(
 ) -> None:
     """Process video files and extract audio chapters into tagged albums."""
     _setup_logging(verbose, debug)
+
+    if version_flag:
+        _print_version_with_freshness()
+        raise typer.Exit()
 
     from tracksplit.update_check import print_cached_update_notice
     print_cached_update_notice(console)
