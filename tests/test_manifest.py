@@ -51,6 +51,11 @@ def test_build_album_manifest_captures_source(tmp_path):
     assert m.source.audio.channels == 2
     assert m.source.audio.duration_ts == 100
     assert m.resolved_artist_folder == "DJ"
+    assert m.resolved_album_folder == "F 2025"
+    assert m.output_format == "flac"
+    assert m.codec_mode == "copy"
+    assert m.chapters == chapters
+    assert m.track_filenames == ["01 - DJ - A.flac"]
     assert m.tags["artist"] == "DJ"
     assert len(m.cover_sha256) == 64
 
@@ -105,15 +110,18 @@ def test_load_album_manifest_schema_mismatch_returns_none(tmp_path):
     assert load_album_manifest(tmp_path) is None
 
 
-def test_load_album_manifest_schema_2_is_rejected(tmp_path):
+def test_load_album_manifest_schema_2_is_rejected(tmp_path, caplog):
     """Schema-2 manifests on disk after upgrade must trigger forced regen."""
+    import logging
     from tracksplit.manifest import ALBUM_MANIFEST_FILENAME, load_album_manifest
     (tmp_path / ALBUM_MANIFEST_FILENAME).write_text(
         '{"schema": 2, "source": {"path":"","mtime_ns":1,"size":2,"enriched_at":""},'
         ' "resolved_artist_folder":"","resolved_album_folder":"","output_format":"",'
         ' "codec_mode":"","chapters":[],"tags":{},"track_filenames":[],"cover_sha256":""}'
     )
-    assert load_album_manifest(tmp_path) is None
+    with caplog.at_level(logging.DEBUG, logger="tracksplit.manifest"):
+        assert load_album_manifest(tmp_path) is None
+    assert any("schema mismatch" in rec.getMessage().lower() for rec in caplog.records)
 
 
 def test_load_artist_manifest_schema_mismatch_returns_none(tmp_path):
@@ -158,6 +166,8 @@ def test_save_album_manifest_is_atomic(tmp_path, monkeypatch):
 
 
 def test_album_manifest_from_dict_defaults_intro_min_seconds_to_none():
+    # Direct from_dict with no intro_min_seconds key: simulates loading
+    # a manifest dict (e.g. via downstream tooling) that omits the optional field.
     raw = {
         "schema": MANIFEST_SCHEMA,
         "source": {"path": "/x.mkv", "audio": {

@@ -65,6 +65,17 @@ class AudioFingerprint:
                 )
         raise ValueError("ffprobe data has no audio stream")
 
+    @classmethod
+    def from_dict(cls, d: dict) -> "AudioFingerprint":
+        return cls(
+            codec_name=d.get("codec_name", ""),
+            sample_rate=int(d.get("sample_rate", 0) or 0),
+            channels=int(d.get("channels", 0) or 0),
+            duration_ts=int(d.get("duration_ts", 0) or 0),
+            time_base=d.get("time_base", ""),
+            bit_rate=int(d.get("bit_rate", 0) or 0),
+        )
+
 
 @dataclass(frozen=True)
 class SourceFingerprint:
@@ -106,19 +117,11 @@ class AlbumManifest:
     @classmethod
     def from_dict(cls, d: dict) -> "AlbumManifest":
         src = d["source"]
-        audio = src["audio"]
         return cls(
             schema=d["schema"],
             source=SourceFingerprint(
                 path=src["path"],
-                audio=AudioFingerprint(
-                    codec_name=audio.get("codec_name", ""),
-                    sample_rate=int(audio.get("sample_rate", 0) or 0),
-                    channels=int(audio.get("channels", 0) or 0),
-                    duration_ts=int(audio.get("duration_ts", 0) or 0),
-                    time_base=audio.get("time_base", ""),
-                    bit_rate=int(audio.get("bit_rate", 0) or 0),
-                ),
+                audio=AudioFingerprint.from_dict(src["audio"]),
             ),
             resolved_artist_folder=d["resolved_artist_folder"],
             resolved_album_folder=d["resolved_album_folder"],
