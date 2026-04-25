@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-25
+
 ### Changed
 
 - Re-extraction now uses an audio-stream fingerprint (codec, sample rate, channels, duration, time base, bit rate) read from ffprobe instead of the source file's mtime and size. CrateDigger container-level tag rewrites via `mkvpropedit` no longer trigger a spurious re-extract. The fingerprint moves only on real audio changes: re-encode, re-mux to a different codec, trim, channel layout change. Manual re-extracts via `--force` are unaffected.
