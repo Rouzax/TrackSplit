@@ -125,3 +125,74 @@ def test_run_check_missing_config_shows_expected_path(tmp_path, monkeypatch, cap
     out = capsys.readouterr().out
     assert str(fake_config) in out
     assert "No config file found" in out
+
+
+def test_version_prints_latest_when_current(monkeypatch):
+    """When installed == latest, --version output ends with '(latest)'."""
+    from importlib.metadata import version
+    from typer.testing import CliRunner
+    from tracksplit import cli, update_check
+
+    installed = version("tracksplit")
+    monkeypatch.setattr(update_check, "_fetch_latest_release", lambda: installed)
+    monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+
+    runner = CliRunner()
+    result = runner.invoke(cli.app, ["--version"])
+    assert result.exit_code == 0
+    assert f"tracksplit {installed}" in result.stdout
+    assert "(latest)" in result.stdout
+
+
+def test_version_prints_stale_when_newer_available(monkeypatch):
+    """When a newer release exists, the stale notice prints."""
+    from importlib.metadata import version
+    from typer.testing import CliRunner
+    from tracksplit import cli, update_check
+
+    installed = version("tracksplit")
+    parts = installed.split(".")
+    bumped = f"{parts[0]}.{parts[1]}.{int(parts[2]) + 1}"
+    monkeypatch.setattr(update_check, "_fetch_latest_release", lambda: bumped)
+    monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+
+    runner = CliRunner()
+    result = runner.invoke(cli.app, ["--version"])
+    assert result.exit_code == 0
+    assert f"tracksplit {installed}" in result.stdout
+    assert bumped in result.stdout
+
+
+def test_version_silent_on_fetch_failure(monkeypatch):
+    """Fetch returning None yields just the version line."""
+    from importlib.metadata import version
+    from typer.testing import CliRunner
+    from tracksplit import cli, update_check
+
+    installed = version("tracksplit")
+    monkeypatch.setattr(update_check, "_fetch_latest_release", lambda: None)
+    monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
+
+    runner = CliRunner()
+    result = runner.invoke(cli.app, ["--version"])
+    assert result.exit_code == 0
+    assert f"tracksplit {installed}" in result.stdout
+    assert "newer" not in result.stdout
+    assert "(latest)" not in result.stdout
+
+
+def test_version_honours_env_suppression(monkeypatch):
+    """TRACKSPLIT_NO_UPDATE_CHECK=1 skips the network call."""
+    from typer.testing import CliRunner
+    from tracksplit import cli, update_check
+
+    fetch_calls = []
+    monkeypatch.setattr(update_check, "_fetch_latest_release",
+                        lambda: fetch_calls.append(1) or "9.9.9")
+    monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
+
+    runner = CliRunner()
+    result = runner.invoke(cli.app, ["--version"])
+    assert result.exit_code == 0
+    assert fetch_calls == []
+    assert "newer" not in result.stdout
