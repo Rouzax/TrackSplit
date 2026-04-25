@@ -94,11 +94,29 @@ The full output path for an album is: `<output>/<Artist>/<Festival Year (Stage)>
 
 **What is happening:** TrackSplit uses a `.tracksplit_manifest.json` file in each album folder to detect whether a rebuild is needed. If that file is missing, unreadable, or was written by an older version with a different format, TrackSplit rebuilds the album.
 
+Note: mtime-only changes (files restored from backup, files reorganized on disk but not re-encoded) no longer cause this. The manifest keys off audio-stream metadata, not the file's modification time, so touching or moving a file without changing its audio does not trigger a rebuild.
+
 **Fix:**
 
 - Check that the album folder contains a `.tracksplit_manifest.json` file after a run. If it does not appear, TrackSplit may be writing to a different output directory than you expect.
 - If the manifest exists but rebuilds keep happening, re-run with `--verbose` to see what changed.
 - If you changed `--format` or `--output` since the last run, a rebuild is expected and correct.
+
+---
+
+## After re-running CrateDigger, TrackSplit ran again unexpectedly
+
+**What you see:** TrackSplit re-extracted an album after CrateDigger updated the source file, even though you did not change the audio.
+
+**What is happening:** TrackSplit compares the tags it would embed (genre, album artists, MusicBrainz IDs, comment, and others) against what the manifest recorded. If CrateDigger's enrichment changed any of those tags, TrackSplit correctly treats the album as outdated and re-extracts it.
+
+Enrichments that touch only bookkeeping fields (the DJ artwork URL, the CrateDigger enrichment timestamp) do not trigger a re-extract, because those fields are not embedded into the output tracks.
+
+If you see a re-extract you were not expecting, check the debug log for the exact field that changed:
+
+```bash
+tracksplit your-set.mkv --output ~/music/library/ --debug 2>&1 | grep -i manifest
+```
 
 ---
 
