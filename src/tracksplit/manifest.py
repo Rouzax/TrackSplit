@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 ALBUM_MANIFEST_FILENAME = ".tracksplit_manifest.json"
 ARTIST_MANIFEST_FILENAME = ".tracksplit_artist.json"
 LEGACY_CHAPTER_CACHE_FILENAME = ".tracksplit_chapters.json"
-MANIFEST_SCHEMA = 2
+MANIFEST_SCHEMA = 3
 
 
 TAG_KEYS = (
@@ -69,18 +69,13 @@ class AudioFingerprint:
 @dataclass(frozen=True)
 class SourceFingerprint:
     path: str
-    mtime_ns: int
-    size: int
-    enriched_at: str
+    audio: AudioFingerprint
 
     @classmethod
-    def from_path(cls, path: Path, enriched_at: str = "") -> "SourceFingerprint":
-        st = path.stat()
+    def from_ffprobe(cls, path: Path, ffprobe_data: dict) -> "SourceFingerprint":
         return cls(
             path=str(path),
-            mtime_ns=st.st_mtime_ns,
-            size=st.st_size,
-            enriched_at=enriched_at,
+            audio=AudioFingerprint.from_ffprobe(ffprobe_data),
         )
 
 
@@ -111,13 +106,19 @@ class AlbumManifest:
     @classmethod
     def from_dict(cls, d: dict) -> "AlbumManifest":
         src = d["source"]
+        audio = src["audio"]
         return cls(
             schema=d["schema"],
             source=SourceFingerprint(
                 path=src["path"],
-                mtime_ns=src["mtime_ns"],
-                size=src["size"],
-                enriched_at=src.get("enriched_at", ""),
+                audio=AudioFingerprint(
+                    codec_name=audio.get("codec_name", ""),
+                    sample_rate=int(audio.get("sample_rate", 0) or 0),
+                    channels=int(audio.get("channels", 0) or 0),
+                    duration_ts=int(audio.get("duration_ts", 0) or 0),
+                    time_base=audio.get("time_base", ""),
+                    bit_rate=int(audio.get("bit_rate", 0) or 0),
+                ),
             ),
             resolved_artist_folder=d["resolved_artist_folder"],
             resolved_album_folder=d["resolved_album_folder"],
@@ -139,6 +140,7 @@ def _filter_tags(tags: dict) -> dict:
 def build_album_manifest(
     *,
     source_path: Path,
+    ffprobe_data: dict,
     chapters: list[dict],
     tags: dict,
     artist_folder: str,
@@ -152,9 +154,7 @@ def build_album_manifest(
     from tracksplit.cover import COVER_SCHEMA_VERSION  # local import avoids cycle
     return AlbumManifest(
         schema=MANIFEST_SCHEMA,
-        source=SourceFingerprint.from_path(
-            source_path, enriched_at=tags.get("enriched_at", ""),
-        ),
+        source=SourceFingerprint.from_ffprobe(source_path, ffprobe_data),
         resolved_artist_folder=artist_folder,
         resolved_album_folder=album_folder,
         output_format=output_format,
