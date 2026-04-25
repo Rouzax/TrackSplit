@@ -207,3 +207,67 @@ def test_album_manifest_round_trip_preserves_cover_schema_version(tmp_path):
     assert m.cover_schema_version == COVER_SCHEMA_VERSION
     roundtrip = AlbumManifest.from_dict(m.to_dict())
     assert roundtrip.cover_schema_version == COVER_SCHEMA_VERSION
+
+
+def test_audio_fingerprint_from_ffprobe_picks_first_audio_stream():
+    from tracksplit.manifest import AudioFingerprint
+    ffprobe = {
+        "streams": [
+            {"codec_type": "video", "codec_name": "h264"},
+            {
+                "codec_type": "audio",
+                "codec_name": "opus",
+                "sample_rate": "48000",
+                "channels": 2,
+                "duration_ts": 14400000,
+                "time_base": "1/48000",
+                "bit_rate": "192000",
+            },
+            {"codec_type": "audio", "codec_name": "aac"},  # ignored
+        ],
+    }
+    fp = AudioFingerprint.from_ffprobe(ffprobe)
+    assert fp.codec_name == "opus"
+    assert fp.sample_rate == 48000
+    assert fp.channels == 2
+    assert fp.duration_ts == 14400000
+    assert fp.time_base == "1/48000"
+    assert fp.bit_rate == 192000
+
+
+def test_audio_fingerprint_handles_missing_optional_fields():
+    from tracksplit.manifest import AudioFingerprint
+    ffprobe = {
+        "streams": [
+            {
+                "codec_type": "audio",
+                "codec_name": "flac",
+                "sample_rate": "44100",
+                "channels": 2,
+                # no duration_ts, time_base, bit_rate
+            },
+        ],
+    }
+    fp = AudioFingerprint.from_ffprobe(ffprobe)
+    assert fp.codec_name == "flac"
+    assert fp.sample_rate == 44100
+    assert fp.channels == 2
+    assert fp.duration_ts == 0
+    assert fp.time_base == ""
+    assert fp.bit_rate == 0
+
+
+def test_audio_fingerprint_raises_when_no_audio_stream():
+    from tracksplit.manifest import AudioFingerprint
+    ffprobe = {"streams": [{"codec_type": "video", "codec_name": "h264"}]}
+    with pytest.raises(ValueError, match="no audio stream"):
+        AudioFingerprint.from_ffprobe(ffprobe)
+
+
+def test_audio_fingerprint_equality():
+    from tracksplit.manifest import AudioFingerprint
+    a = AudioFingerprint("opus", 48000, 2, 100, "1/48000", 192000)
+    b = AudioFingerprint("opus", 48000, 2, 100, "1/48000", 192000)
+    c = AudioFingerprint("opus", 48000, 2, 100, "1/48000", 256000)
+    assert a == b
+    assert a != c
