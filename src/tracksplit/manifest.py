@@ -37,7 +37,7 @@ TAG_KEYS = (
 _LIST_TAG_KEYS = frozenset({"genres", "albumartists", "albumartist_mbids"})
 
 
-def _tag_default(key: str):
+def tag_default(key: str):
     return [] if key in _LIST_TAG_KEYS else ""
 
 
@@ -151,7 +151,7 @@ class AlbumManifest:
 
 
 def _filter_tags(tags: dict) -> dict:
-    return {k: tags.get(k, _tag_default(k)) for k in TAG_KEYS}
+    return {k: tags.get(k, tag_default(k)) for k in TAG_KEYS}
 
 
 def build_album_manifest(

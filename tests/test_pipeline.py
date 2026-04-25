@@ -177,7 +177,8 @@ class TestShouldRegenerate:
         """Regression test: mtime bump from a tag-only mkvpropedit must not invalidate."""
         from tracksplit.pipeline import should_regenerate
         from tests._manifest_helpers import default_tags
-        import os, time
+        import os
+        import time
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
@@ -887,7 +888,7 @@ class TestPruneOrphans:
 
 
 class TestFindPriorAlbumDirs:
-    def _write_manifest(self, album_dir, source_path, size, mtime_ns,
+    def _write_manifest(self, album_dir, source_path,
                          artist_folder=None, album_folder=None):
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import make_manifest_dict
@@ -908,10 +909,9 @@ class TestFindPriorAlbumDirs:
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 10)
         out = tmp_path / "out"
-        self._write_manifest(out / "ArtistA" / "Old Name", src,
-                             src.stat().st_size, src.stat().st_mtime_ns)
+        self._write_manifest(out / "ArtistA" / "Old Name", src)
         self._write_manifest(out / "ArtistA" / "Other Album",
-                             tmp_path / "other.mkv", 99, 99)
+                             tmp_path / "other.mkv")
 
         found = find_prior_album_dirs(
             out, src, new_album_dir=out / "ArtistA" / "New Name",
@@ -924,8 +924,7 @@ class TestFindPriorAlbumDirs:
         src.write_bytes(b"x" * 10)
         out = tmp_path / "out"
         album = out / "ArtistA" / "Same Name"
-        self._write_manifest(album, src, src.stat().st_size,
-                             src.stat().st_mtime_ns)
+        self._write_manifest(album, src)
 
         assert find_prior_album_dirs(out, src, new_album_dir=album) == []
 
@@ -935,8 +934,7 @@ class TestFindPriorAlbumDirs:
         src.write_bytes(b"x" * 10)
         out = tmp_path / "out"
         old = out / "OldArtist" / "Album"
-        self._write_manifest(old, src, src.stat().st_size,
-                             src.stat().st_mtime_ns)
+        self._write_manifest(old, src)
 
         found = find_prior_album_dirs(
             out, src, new_album_dir=out / "NewArtist" / "Album",
@@ -958,14 +956,8 @@ class TestFindPriorAlbumDirs:
         srcB = tmp_path / "b.mkv"
         srcB.write_bytes(b"y" * 10)  # same size as srcA, different content/path
         out = tmp_path / "out"
-        self._write_manifest(
-            out / "ArtistA" / "AlbA", srcA,
-            srcA.stat().st_size, srcA.stat().st_mtime_ns,
-        )
-        self._write_manifest(
-            out / "ArtistB" / "AlbB", srcB,
-            srcB.stat().st_size, srcB.stat().st_mtime_ns,
-        )
+        self._write_manifest(out / "ArtistA" / "AlbA", srcA)
+        self._write_manifest(out / "ArtistB" / "AlbB", srcB)
 
         found = find_prior_album_dirs(
             out, srcA, new_album_dir=out / "Something" / "Else",
@@ -978,9 +970,7 @@ class TestFindPriorAlbumDirs:
         src.write_bytes(b"x" * 10)
         # Real album dir outside the output tree.
         real = tmp_path / "outside" / "Artist" / "Album"
-        self._write_manifest(
-            real, src, src.stat().st_size, src.stat().st_mtime_ns,
-        )
+        self._write_manifest(real, src)
         # Symlink under the output root pointing at the real dir.
         out = tmp_path / "out"
         (out / "Artist").mkdir(parents=True)

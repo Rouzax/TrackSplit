@@ -33,6 +33,7 @@ from tracksplit.manifest import (
     TAG_KEYS,
     SourceFingerprint,
     artwork_sha256,
+    tag_default,
     atomic_write_bytes,
     build_album_manifest,
     load_album_manifest,
@@ -361,7 +362,6 @@ def should_regenerate(
     manifest (for example, to check ``cover_schema_version``) can avoid
     a second load.
     """
-    from tracksplit.manifest import _tag_default
     name = source_path.name
     if force:
         logger.debug("regenerate %s: force=True", name)
@@ -390,7 +390,7 @@ def should_regenerate(
         return True
     if manifest.source.audio != current_source.audio:
         for field in ("codec_name", "sample_rate", "channels",
-                      "duration_ts", "bit_rate"):
+                      "duration_ts", "time_base", "bit_rate"):
             old = getattr(manifest.source.audio, field)
             new = getattr(current_source.audio, field)
             if old != new:
@@ -452,8 +452,8 @@ def should_regenerate(
         return True
 
     for k in TAG_KEYS:
-        old = manifest.tags.get(k, _tag_default(k))
-        new = tags.get(k, _tag_default(k))
+        old = manifest.tags.get(k, tag_default(k))
+        new = tags.get(k, tag_default(k))
         if old != new:
             logger.debug(
                 "regenerate %s: tag %r changed (%r -> %r)",
