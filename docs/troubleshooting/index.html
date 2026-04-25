@@ -637,6 +637,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#after-re-running-cratedigger-tracksplit-ran-again-unexpectedly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After re-running CrateDigger, TrackSplit ran again unexpectedly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#files-are-never-rebuilt-even-after-i-changed-something" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -852,6 +863,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#after-re-running-cratedigger-tracksplit-ran-again-unexpectedly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After re-running CrateDigger, TrackSplit ran again unexpectedly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#files-are-never-rebuilt-even-after-i-changed-something" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1019,6 +1041,7 @@
 <h2 id="files-are-rebuilt-every-run-even-though-nothing-changed">Files are rebuilt every run even though nothing changed</h2>
 <p><strong>What you see:</strong> TrackSplit processes the same files repeatedly instead of skipping them.</p>
 <p><strong>What is happening:</strong> TrackSplit uses a <code>.tracksplit_manifest.json</code> file in each album folder to detect whether a rebuild is needed. If that file is missing, unreadable, or was written by an older version with a different format, TrackSplit rebuilds the album.</p>
+<p>Note: mtime-only changes (files restored from backup, files reorganized on disk but not re-encoded) no longer cause this. The manifest keys off audio-stream metadata, not the file's modification time, so touching or moving a file without changing its audio does not trigger a rebuild.</p>
 <p><strong>Fix:</strong></p>
 <ul>
 <li>Check that the album folder contains a <code>.tracksplit_manifest.json</code> file after a run. If it does not appear, TrackSplit may be writing to a different output directory than you expect.</li>
@@ -1026,11 +1049,19 @@
 <li>If you changed <code>--format</code> or <code>--output</code> since the last run, a rebuild is expected and correct.</li>
 </ul>
 <hr />
+<h2 id="after-re-running-cratedigger-tracksplit-ran-again-unexpectedly">After re-running CrateDigger, TrackSplit ran again unexpectedly</h2>
+<p><strong>What you see:</strong> TrackSplit re-extracted an album after CrateDigger updated the source file, even though you did not change the audio.</p>
+<p><strong>What is happening:</strong> TrackSplit compares the tags it would embed (genre, album artists, MusicBrainz IDs, comment, and others) against what the manifest recorded. If CrateDigger's enrichment changed any of those tags, TrackSplit correctly treats the album as outdated and re-extracts it.</p>
+<p>Enrichments that touch only bookkeeping fields (the DJ artwork URL, the CrateDigger enrichment timestamp) do not trigger a re-extract, because those fields are not embedded into the output tracks.</p>
+<p>If you see a re-extract you were not expecting, check the debug log for the exact field that changed:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>tracksplit<span class="w"> </span>your-set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--debug<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>manifest
+</code></pre></div>
+<hr />
 <h2 id="files-are-never-rebuilt-even-after-i-changed-something">Files are never rebuilt even after I changed something</h2>
 <p><strong>What you see:</strong> TrackSplit skips an album you know needs updating.</p>
 <p><strong>Fix:</strong> Pass <code>--force</code> to rebuild everything, or delete the <code>.tracksplit_manifest.json</code> in the specific album folder to rebuild just that one album.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Rebuild one album</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--force
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Rebuild one album</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>tracksplit<span class="w"> </span>~/videos/set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--force
 </code></pre></div>
 <hr />
 <h2 id="batch-processing-is-slow-or-hanging">Batch processing is slow or hanging</h2>
@@ -1085,7 +1116,7 @@
 <p><strong>What you see:</strong> An error mentioning a missing font file, or generated artwork looks broken.</p>
 <p><strong>What is happening:</strong> A font file bundled with TrackSplit is missing or corrupt.</p>
 <p><strong>Fix:</strong> Reinstall the package:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span>--force-reinstall
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span>--force-reinstall
 </code></pre></div>
 <hr />
 <h2 id="where-are-my-logs">Where are my logs?</h2>

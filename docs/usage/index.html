@@ -1297,7 +1297,7 @@
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>Cancelled   0
 </code></pre></div>
 <h2 id="what-it-means-when-a-file-is-skipped">What it means when a file is skipped</h2>
-<p>TrackSplit keeps a small record file (<code>.tracksplit_manifest.json</code>) in each album folder. On subsequent runs it compares the source file and its settings against that record. If nothing meaningful has changed (same chapters, same metadata, same format), it skips the album without redoing any work.</p>
+<p>TrackSplit keeps a small record file (<code>.tracksplit_manifest.json</code>) in each album folder. On subsequent runs it compares the source file and its settings against that record. If nothing meaningful has changed (same audio stream, same chapters, same embedded tags, same output format), it skips the album without redoing any work. Surface-level file edits that do not touch the audio or embedded tags, such as a <code>touch</code> command or a re-import that only updates the file's modification time, do not cause a rebuild.</p>
 <p>A skipped file is not an error. It means the output is already up to date.</p>
 <p>To force a rebuild for everything, pass <code>--force</code>. To rebuild a single album, delete its <code>.tracksplit_manifest.json</code> and re-run.</p>
 <h2 id="what-ctrlc-does">What Ctrl+C does</h2>
