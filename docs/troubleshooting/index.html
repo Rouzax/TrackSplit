@@ -1142,10 +1142,13 @@
 <p>The warning disappears on the next run once none of the old paths exist.</p>
 <hr />
 <h2 id="still-stuck">Still stuck?</h2>
-<p>Re-run with <code>--debug</code> and save the full output. Then open an issue and include:</p>
+<p>Open an issue and include:</p>
 <ul>
 <li>The exact command you ran.</li>
-<li>The full <code>--debug</code> output.</li>
+<li>The log file for the run. TrackSplit writes a DEBUG-level log on every run, so you do not need to re-run with <code>--debug</code>. Find it at:</li>
+<li>Linux: <code>~/.local/state/TrackSplit/log/tracksplit.log</code></li>
+<li>macOS: <code>~/Library/Logs/TrackSplit/tracksplit.log</code></li>
+<li>Windows: <code>$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log</code></li>
 <li>The output of <code>ffmpeg -version</code> and <code>ffprobe -version</code>.</li>
 <li>Your OS and how you installed TrackSplit.</li>
 </ul>
