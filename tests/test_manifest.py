@@ -7,7 +7,6 @@ from tracksplit.manifest import (
     LEGACY_CHAPTER_CACHE_FILENAME,
     MANIFEST_SCHEMA,
     AlbumManifest,
-    AudioFingerprint,
     SourceFingerprint,
     build_album_manifest,
     load_album_manifest,
