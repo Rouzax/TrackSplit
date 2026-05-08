@@ -428,10 +428,9 @@ def test_tag_flac_logs_diff_all_adds_on_fresh_file(tmp_path, caplog):
     with caplog.at_level(logging.DEBUG, logger="tracksplit.tagger"):
         tag_flac(flac_path, album, track)
     joined = "\n".join(r.message for r in caplog.records)
-    assert "Tags for test.flac" in joined
-    # Format: "Tags for X: +N -M ~K"
+    assert "tagger.write: file=test.flac" in joined
     import re
-    m = re.search(r"Tags for test\.flac: \+(\d+) -(\d+) ~(\d+)", joined)
+    m = re.search(r"tagger\.write: file=test\.flac added=(\d+) removed=(\d+) changed=(\d+)", joined)
     assert m is not None, joined
     added, removed, changed = int(m.group(1)), int(m.group(2)), int(m.group(3))
     # Fresh file has few or no pre-existing tags; build_tag_dict emits many.
@@ -460,7 +459,7 @@ def test_tag_flac_logs_diff_changes_and_additions(tmp_path, caplog):
         tag_flac(flac_path, album, track)
     joined = "\n".join(r.message for r in caplog.records)
     import re
-    m = re.search(r"Tags for test\.flac: \+(\d+) -(\d+) ~(\d+)", joined)
+    m = re.search(r"tagger\.write: file=test\.flac added=(\d+) removed=(\d+) changed=(\d+)", joined)
     assert m is not None, joined
     added, removed, changed = int(m.group(1)), int(m.group(2)), int(m.group(3))
     # ARTIST, TITLE, ALBUM all change from seeded values to the new ones
@@ -524,7 +523,7 @@ def test_tag_flac_no_debug_on_no_op_retag(tmp_path, caplog):
     with caplog.at_level(logging.DEBUG, logger="tracksplit.tagger"):
         tag_flac(flac_path, album, track)
     joined = "\n".join(r.message for r in caplog.records)
-    assert "Tags for test.flac" not in joined
+    assert "tagger.write:" not in joined
 
 
 def _make_silent_opus(path: Path, duration: float = 0.2) -> None:
@@ -552,9 +551,9 @@ def test_tag_ogg_logs_diff(tmp_path, caplog):
     with caplog.at_level(logging.DEBUG, logger="tracksplit.tagger"):
         tag_ogg(opus_path, album, track)
     joined = "\n".join(r.message for r in caplog.records)
-    assert "Tags for test.opus" in joined
+    assert "tagger.write: file=test.opus" in joined
     import re
-    m = re.search(r"Tags for test\.opus: \+(\d+) -(\d+) ~(\d+)", joined)
+    m = re.search(r"tagger\.write: file=test\.opus added=(\d+) removed=(\d+) changed=(\d+)", joined)
     assert m is not None, joined
     added = int(m.group(1))
     assert added >= 5

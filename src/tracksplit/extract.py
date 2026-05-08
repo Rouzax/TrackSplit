@@ -54,11 +54,11 @@ def extract_audio(
 
     cmd = build_extract_command(input_path, output_path)
 
-    logger.info("Extracting audio from %s", input_path.name)
+    logger.debug("extract.start: file=%s", input_path.name)
 
     tracked_run(cmd, cancel_event=cancel_event)
 
-    logger.info("Audio extracted to %s", output_path)
+    logger.debug("extract.done: file=%s", input_path.name)
     return output_path
 
 
@@ -67,7 +67,7 @@ def decide_codec(ffprobe_data: dict, output_format: str) -> tuple[str, str]:
 
     Returns (ext, codec_mode) where codec_mode is 'copy' or 'libopus'.
 
-    Logs the decision at INFO so --verbose users can see why a given run
+    Logs the decision at DEBUG so --verbose users can see why a given run
     is fast (stream copy) or slow (libopus re-encode).
     """
     codec = get_audio_codec(ffprobe_data) or "unknown"
@@ -89,8 +89,8 @@ def decide_codec(ffprobe_data: dict, output_format: str) -> tuple[str, str]:
         raise ValueError(f"Unknown output format: {output_format}")
 
     ext, codec_mode = result
-    logger.info(
-        "Codec decision: input=%s, format=%s, output=%s (%s)",
+    logger.debug(
+        "extract.codec: input=%s format=%s output=%s mode=%s",
         codec, output_format, ext, codec_mode,
     )
     return result

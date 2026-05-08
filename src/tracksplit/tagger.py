@@ -128,7 +128,7 @@ def tag_flac(
     added, removed, changed = _count_tag_deltas(audio.tags, tag_dict)
     if added or removed or changed:
         logger.debug(
-            "Tags for %s: +%d -%d ~%d",
+            "tagger.write: file=%s added=%d removed=%d changed=%d",
             Path(path).name, added, removed, changed,
         )
     audio.clear()
@@ -159,7 +159,7 @@ def tag_ogg(
     added, removed, changed = _count_tag_deltas(audio.tags, tag_dict)
     if added or removed or changed:
         logger.debug(
-            "Tags for %s: +%d -%d ~%d",
+            "tagger.write: file=%s added=%d removed=%d changed=%d",
             Path(path).name, added, removed, changed,
         )
     audio.delete()
@@ -202,7 +202,7 @@ def tag_all(
                 tag_flac(p, album, track, cover_data=cover_data)
         except Exception as exc:
             logger.warning(
-                "Failed to tag %s: %s: %s",
+                'tagger.fail: file=%s error="%s: %s"',
                 p.name, type(exc).__name__, exc,
             )
             raise

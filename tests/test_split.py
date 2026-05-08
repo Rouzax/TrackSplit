@@ -398,7 +398,7 @@ class TestSplitTracksOpusEndToEnd:
 
 class TestSplitTracksDebugLogging:
     def test_debug_per_track(self, tmp_path, mocker, caplog):
-        """split_tracks emits a DEBUG 'splitting N/M: <title>' line per track."""
+        """split_tracks emits a structured DEBUG line per track."""
         import logging
         full_flac = tmp_path / "full.flac"
         full_flac.touch()
@@ -413,11 +413,11 @@ class TestSplitTracksDebugLogging:
             split_tracks(full_flac, tracks, output_dir)
 
         joined = "\n".join(r.message for r in caplog.records)
-        assert "splitting 1/2: First" in joined
-        assert "splitting 2/2: Second" in joined
+        assert 'split.track: num=1/2 title="First"' in joined
+        assert 'split.track: num=2/2 title="Second"' in joined
 
     def test_debug_opus_prefix_applied(self, tmp_path, mocker, caplog):
-        """When opus prefix is applied to a track, DEBUG names the fact."""
+        """When opus prefix is applied to a track, DEBUG shows prefix=True."""
         import logging
         full_audio = tmp_path / "full.opus"
         full_audio.touch()
@@ -436,12 +436,12 @@ class TestSplitTracksDebugLogging:
             )
         joined = "\n".join(r.message for r in caplog.records)
         # Track 2 gets the prefix (i > 0 AND start - OPUS_PREFIX_SECONDS >= 0)
-        assert "Opus prefix applied" in joined or "opus prefix applied" in joined.lower()
+        assert "prefix=True" in joined
 
     def test_debug_opus_prefix_skipped(self, tmp_path, mocker, caplog):
         """When a non-first track's start is less than OPUS_PREFIX_SECONDS,
         the prefix cannot be applied without a negative seek, and DEBUG
-        names the reason."""
+        shows prefix=False."""
         import logging
         full_audio = tmp_path / "full.opus"
         full_audio.touch()
@@ -461,5 +461,5 @@ class TestSplitTracksDebugLogging:
                 ext=".opus", codec_mode="copy", opus_packet_ms=20,
             )
         joined = "\n".join(r.message for r in caplog.records)
-        assert "Opus prefix skipped" in joined
-        assert "track 2" in joined.lower()
+        assert "prefix=False" in joined
+        assert "num=2/2" in joined

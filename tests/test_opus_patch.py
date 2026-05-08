@@ -113,6 +113,6 @@ class TestPatchOpusPreSkipDebugLogging:
         with caplog.at_level(logging.DEBUG, logger="tracksplit.opus_patch"):
             patch_opus_pre_skip(f, 960)
         joined = "\n".join(r.message for r in caplog.records)
+        assert "opus_patch.applied:" in joined
         assert f.name in joined
         assert "960" in joined
-        assert "pre_skip" in joined

@@ -111,14 +111,16 @@ def split_tracks(
 
     total = len(tracks)
     output_paths: list[Path] = []
+    logger.debug(
+        "split.start: file=%s tracks=%d codec_mode=%s",
+        full_flac.name, total, codec_mode,
+    )
     for i, track in enumerate(tracks):
         if cancel_event is not None and cancel_event.is_set():
             raise CancelledError("Cancelled")
 
         if on_progress:
             on_progress("Splitting tracks", i + 1, total)
-
-        logger.debug("splitting %d/%d: %s", i + 1, total, track.title)
 
         filename = build_track_filename(track, ext=ext)
         output_path = output_dir / filename
@@ -135,17 +137,12 @@ def split_tracks(
         )
         start = track.start - OPUS_PREFIX_SECONDS if use_prefix else track.start
 
-        if apply_opus_prefix and i > 0:
-            if use_prefix:
-                logger.debug(
-                    "Opus prefix applied to track %d: shift %.3fs, pre_skip %d samples",
-                    i + 1, OPUS_PREFIX_SECONDS, OPUS_PREFIX_SAMPLES,
-                )
-            else:
-                logger.debug(
-                    "Opus prefix skipped for track %d: start %.3fs below prefix %.3fs",
-                    i + 1, track.start, OPUS_PREFIX_SECONDS,
-                )
+        logger.debug(
+            'split.track: num=%d/%d title="%s" start=%.3f end=%s prefix=%s',
+            i + 1, total, track.title, start,
+            f"{end:.3f}" if end is not None else "eof",
+            use_prefix if (apply_opus_prefix and i > 0) else "n/a",
+        )
 
         cmd = build_split_command(
             full_flac, output_path, start, end,
@@ -158,4 +155,5 @@ def split_tracks(
 
         output_paths.append(output_path)
 
+    logger.debug("split.done: file=%s tracks=%d", full_flac.name, total)
     return output_paths
