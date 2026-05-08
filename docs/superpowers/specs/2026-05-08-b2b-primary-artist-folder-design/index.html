@@ -1,0 +1,975 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://rouzax.github.io/TrackSplit/docs/superpowers/specs/2026-05-08-b2b-primary-artist-folder-design/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>B2B Sets: Primary Artist Folder with Guest Annotation - TrackSplit</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#b2b-sets-primary-artist-folder-with-guest-annotation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="TrackSplit" class="md-header__button md-logo" aria-label="TrackSplit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TrackSplit
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              B2B Sets: Primary Artist Folder with Guest Annotation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Rouzax/TrackSplit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Rouzax/TrackSplit
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../usage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Usage
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../configuration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configuration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../output/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Output Structure
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="TrackSplit" class="md-nav__button md-logo" aria-label="TrackSplit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    TrackSplit
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Rouzax/TrackSplit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Rouzax/TrackSplit
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#folder-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Folder structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-mappings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example mappings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-does-not-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What does NOT change
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#files-to-modify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files to modify
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Files to modify">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#srctracksplitmodelspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        src/tracksplit/models.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#srctracksplitmetadatapy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        src/tracksplit/metadata.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#srctracksplitpipelinepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        src/tracksplit/pipeline.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#teststest_metadatapy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tests/test_metadata.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#teststest_modelspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tests/test_models.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="b2b-sets-primary-artist-folder-with-guest-annotation">B2B Sets: Primary Artist Folder with Guest Annotation</h1>
+<h2 id="context">Context</h2>
+<p>Multi-artist (B2B) DJ sets currently get their own combined artist folder (e.g., <code>Martin Garrix &amp; Alesso/</code>). This creates three problems:</p>
+<ol>
+<li><strong>Fragmented browsing</strong>: a DJ's sets are split across their solo folder and one or more combined folders.</li>
+<li><strong>One-off folder clutter</strong>: combined folders typically contain a single album, cluttering the top-level artist list.</li>
+<li><strong>Missing folder.jpg</strong>: <code>find_dj_artwork</code> looks up cached artwork by artist name. CrateDigger caches artwork per individual artist, so <code>"Martin Garrix &amp; Alesso"</code> has no match and the artist folder gets no cover.</li>
+</ol>
+<p>The fix: place multi-artist sets under the <strong>first</strong> listed artist's folder, and annotate the album folder name with <code>(with X &amp; Y)</code> to indicate the guest artist(s).</p>
+<h2 id="design">Design</h2>
+<h3 id="folder-structure">Folder structure</h3>
+<p>Before:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Martin Garrix &amp; Alesso/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  Red Rocks Amphitheatre 2025/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    01 - Carry You vs I Wanna Know.flac
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    ...
+</code></pre></div>
+<p>After:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Martin Garrix/
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  folder.jpg
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  Red Rocks Amphitheatre 2025 (with Alesso)/
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    01 - Carry You vs I Wanna Know.flac
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    ...
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  Red Rocks 2025/                          &lt;-- solo set, unaffected
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    ...
+</code></pre></div>
+<h3 id="rules">Rules</h3>
+<ol>
+<li>
+<p><strong>Multi-artist detection</strong>: <code>albumartists</code> list (from <code>CRATEDIGGER_1001TL_ARTISTS</code>) has 2+ entries.</p>
+</li>
+<li>
+<p><strong>Primary artist</strong>: <code>albumartists[0]</code>, the first artist from 1001TL/CrateDigger. This determines the artist folder.</p>
+</li>
+<li>
+<p><strong>Guest annotation</strong>: the album folder name gets a <code>with X</code> suffix listing all artists except the primary, joined with <code>&amp;</code>. The suffix is placed inside existing parentheses (comma-separated) or wrapped in new parentheses:</p>
+</li>
+<li>No existing parens: <code>Red Rocks Amphitheatre 2025</code> becomes <code>Red Rocks Amphitheatre 2025 (with Alesso)</code></li>
+<li>
+<p>Existing parens (stage): <code>UMF Miami 2026 (Mainstage)</code> becomes <code>UMF Miami 2026 (Mainstage, with Alesso)</code></p>
+</li>
+<li>
+<p><strong>FLAC tags stay combined</strong>: <code>AlbumMeta.artist</code> remains the full display name (<code>"Martin Garrix &amp; Alesso"</code>). <code>AlbumMeta.album</code> stays clean (no annotation). The ALBUMARTIST and ALBUM tags in output FLACs continue to reflect the actual performance. Players already show the combined ALBUMARTIST alongside the album name, so repeating guest info in the ALBUM tag would be redundant. The <code>with X</code> annotation only appears in the folder name via the <code>album_folder</code> property.</p>
+</li>
+<li>
+<p><strong>Solo/unenriched sets unchanged</strong>: when <code>albumartists</code> has 0 or 1 entries, behavior is identical to today.</p>
+</li>
+<li>
+<p><strong>Artist artwork</strong>: <code>find_dj_artwork</code> receives <code>albumartists[0]</code> so it finds the primary artist's cached artwork for <code>folder.jpg</code>.</p>
+</li>
+</ol>
+<h3 id="example-mappings">Example mappings</h3>
+<table>
+<thead>
+<tr>
+<th>Current path</th>
+<th>New path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Martin Garrix &amp; Alesso/Red Rocks Amphitheatre 2025/</code></td>
+<td><code>Martin Garrix/Red Rocks Amphitheatre 2025 (with Alesso)/</code></td>
+</tr>
+<tr>
+<td><code>Martin Garrix &amp; Alesso/UMF Miami 2026 (Mainstage)/</code></td>
+<td><code>Martin Garrix/UMF Miami 2026 (Mainstage, with Alesso)/</code></td>
+</tr>
+<tr>
+<td><code>Armin van Buuren &amp; Marlon Hoffstadt/UMF Miami 2026/</code></td>
+<td><code>Armin van Buuren/UMF Miami 2026 (with Marlon Hoffstadt)/</code></td>
+</tr>
+<tr>
+<td><code>AFROJACK &amp; R3HAB/Tomorrowland Winter 2026 (Mainstage)/</code></td>
+<td><code>AFROJACK/Tomorrowland Winter 2026 (Mainstage, with R3HAB)/</code></td>
+</tr>
+<tr>
+<td><code>Armin van Buuren &amp; KI/KI/AMF 2025 (Two Is One)/</code></td>
+<td><code>Armin van Buuren/AMF 2025 (Two Is One, with KI/KI)/</code></td>
+</tr>
+<tr>
+<td><code>Fred again.. &amp; Thomas Bangalter/Alexandra Palace London 2026 (USB002)/</code></td>
+<td><code>Fred again../Alexandra Palace London 2026 (USB002, with Thomas Bangalter)/</code></td>
+</tr>
+<tr>
+<td><code>Agents Of Time &amp; MORTEN/Tomorrowland Winter 2026 (Sunweb Stage)/</code></td>
+<td><code>Agents Of Time/Tomorrowland Winter 2026 (Sunweb Stage, with MORTEN)/</code></td>
+</tr>
+<tr>
+<td><code>AFROJACK &amp; Shimza/Coachella 2026 (Quasar)/</code></td>
+<td><code>AFROJACK/Coachella 2026 (Quasar, with Shimza)/</code></td>
+</tr>
+<tr>
+<td><code>Armin van Buuren &amp; Adam Beyer/Coachella 2026 (Quasar)/</code></td>
+<td><code>Armin van Buuren/Coachella 2026 (Quasar, with Adam Beyer)/</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="what-does-not-change">What does NOT change</h3>
+<ul>
+<li>FLAC ALBUM tag content (stays clean, no annotation)</li>
+<li>FLAC ALBUMARTIST tag content (stays combined display name)</li>
+<li>FLAC ALBUMARTIST_MBIDS (stays all artists' MBIDs)</li>
+<li>Solo/unenriched set behavior</li>
+<li>Cover art extraction (album-level cover.jpg)</li>
+<li>Chapter/track metadata</li>
+<li>Group acts like "Everything Always" (single entry in <code>albumartists</code>, not multi-artist)</li>
+</ul>
+<h2 id="files-to-modify">Files to modify</h2>
+<h3 id="srctracksplitmodelspy"><code>src/tracksplit/models.py</code></h3>
+<ul>
+<li><code>AlbumMeta.artist_folder</code> property (line 50): return <code>albumartists[0]</code> when <code>len(albumartists) &gt; 1</code>, else current behavior.</li>
+<li><code>AlbumMeta.album_folder</code> property (line 54): when <code>len(albumartists) &gt; 1</code>, append the <code>with X &amp; Y</code> annotation to <code>self.album</code>. If album already ends with <code>(...)</code>, insert <code>, with X &amp; Y</code> before the closing paren. Otherwise append <code>(with X &amp; Y)</code>. When single artist, return <code>self.album</code> as today.</li>
+</ul>
+<h3 id="srctracksplitmetadatapy"><code>src/tracksplit/metadata.py</code></h3>
+<ul>
+<li>No album name changes needed. The <code>album</code> field stays clean. The annotation is handled entirely by the <code>album_folder</code> property in models.py.</li>
+</ul>
+<h3 id="srctracksplitpipelinepy"><code>src/tracksplit/pipeline.py</code></h3>
+<ul>
+<li><code>find_dj_artwork</code> calls (lines 598, 660): pass <code>albumartists[0]</code> when available instead of <code>album.artist</code> for the artist lookup.</li>
+</ul>
+<h3 id="teststest_metadatapy"><code>tests/test_metadata.py</code></h3>
+<ul>
+<li>Update existing B2B tests that assert on album folder names.</li>
+</ul>
+<h3 id="teststest_modelspy"><code>tests/test_models.py</code></h3>
+<ul>
+<li>Test <code>artist_folder</code> returns first artist when multi-artist, original artist when single.</li>
+<li>Test <code>album_folder</code> appends <code>(with X)</code> when multi-artist, no parens in album.</li>
+<li>Test <code>album_folder</code> inserts <code>, with X</code> before closing paren when album has stage parens.</li>
+<li>Test <code>album_folder</code> with 3+ artists: <code>(with B &amp; C)</code>.</li>
+<li>Test <code>album_folder</code> unchanged for single artist.</li>
+</ul>
+<h2 id="migration">Migration</h2>
+<p>Existing B2B albums processed before this change will have a different <code>resolved_artist_folder</code> in their manifest. On next run, the manifest check (pipeline.py:404) detects the mismatch and regenerates into the new location. The old combined artist folder (now empty) is not auto-deleted. Users can remove it manually or a future cleanup step could handle it.</p>
+<h2 id="verification">Verification</h2>
+<ol>
+<li>Run existing test suite: <code>pytest tests/</code></li>
+<li>Process the Red Rocks B2B sample (<code>2025 - Martin Garrix &amp; Alesso - Red Rocks</code>) and verify:</li>
+<li>Output lands in <code>Martin Garrix/Red Rocks Amphitheatre 2025 (with Alesso)/</code></li>
+<li><code>folder.jpg</code> is generated in <code>Martin Garrix/</code></li>
+<li>FLAC ALBUMARTIST tag reads <code>Martin Garrix &amp; Alesso</code></li>
+<li>Process a solo Martin Garrix set at the same venue and verify no collision.</li>
+<li>Process a set with stage parens (e.g., UMF Miami Mainstage B2B) and verify album name reads <code>UMF Miami 2026 (Mainstage, with Alesso)</code>.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

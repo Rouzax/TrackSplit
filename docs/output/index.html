@@ -1081,6 +1081,7 @@
 <li><code>artist.jpg</code>: the same image under a different name, used by Kodi and other players that look for <code>artist.jpg</code> specifically.</li>
 </ul>
 <p>Both files contain the same image. TrackSplit writes both so the artist looks correct in whichever server you use.</p>
+<p><strong>Multi-artist (B2B) sets go under the primary artist's folder.</strong> When a set has more than one headliner (as listed in the CrateDigger <code>CRATEDIGGER_1001TL_ARTISTS</code> tag), TrackSplit places the album inside the first-listed artist's folder rather than creating a combined folder like <code>Martin Garrix &amp; Alesso/</code>. The artist artwork (<code>folder.jpg</code>, <code>artist.jpg</code>) reflects the primary artist.</p>
 <h3 id="album-folder">Album folder</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Festival Year (Stage)/
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  01 - Track Title.flac
@@ -1094,6 +1095,7 @@
 <li><strong>CrateDigger source without a festival tag (venue recording):</strong> <code>Venue Year</code> using the venue name, or the stage name if no venue is set. If that location string already contains the year (e.g. <code>"Bay Oval Park 2026-01-31"</code>), the year is not appended a second time.</li>
 <li><strong>Plain chaptered video:</strong> the source filename (without extension).</li>
 </ul>
+<p><strong>Multi-artist (B2B) sets get a "(with ...)" annotation on the folder name.</strong> When a set has more than one headliner, all guest artists (everyone after the first) are appended to the folder name: <code>Red Rocks Amphitheatre 2025 (with Alesso)</code>. For three or more headliners the guests are joined with <code>&amp;</code>: <code>Festival 2025 (with Alesso &amp; John Summit)</code>. When the base album name already ends with a parenthetical (such as a stage name), the "with" annotation is merged into it rather than added as a second pair of parentheses: <code>UMF Miami 2026 (Mainstage, with Alesso)</code>. The <code>ALBUM</code> tag inside every track file always contains the clean album name without this annotation; the annotation appears only in the folder name.</p>
 <h3 id="track-files">Track files</h3>
 <p>One audio file per chapter. Filenames follow the pattern <code>NN - Title.flac</code> (or <code>.opus</code>), where <code>NN</code> is a zero-padded number starting at <code>01</code>.</p>
 <p>If the video has audio before the first chapter marker (an unlabelled intro section) and that pre-chapter gap is at least 5 seconds, TrackSplit creates an extra track numbered <code>00 - Intro</code> for that segment. Gaps shorter than 5 seconds are folded into track 1 instead, so track 1 begins at the start of the file and absorbs the lead-in audio. This avoids tiny sliver files for negligible gaps. The threshold is fixed and not user-configurable.</p>
@@ -1209,7 +1211,7 @@
 </tr>
 <tr>
 <td><code>ALBUM</code></td>
-<td>The album name (same as the folder name)</td>
+<td>The clean album name. For multi-artist sets this is the base name without the "(with ...)" folder annotation.</td>
 </tr>
 <tr>
 <td><code>TRACKNUMBER</code></td>
