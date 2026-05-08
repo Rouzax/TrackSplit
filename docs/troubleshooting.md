@@ -199,19 +199,17 @@ pip install -e . --force-reinstall
 
 ## Where are my logs?
 
-TrackSplit writes a rotating log file on every run, in addition to what it prints in the terminal. The log file is at:
+TrackSplit creates a new log file for each CLI invocation, named with the timestamp and a short random suffix (for example, `split-2026-05-08T14-22-01-a3f2.log`). Log files are stored in:
 
 | Platform | Path |
 |---|---|
-| Linux | `~/.local/state/TrackSplit/log/tracksplit.log` |
-| macOS | `~/Library/Logs/TrackSplit/tracksplit.log` |
-| Windows | `$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log` |
+| Linux | `~/.local/state/TrackSplit/log/` |
+| macOS | `~/Library/Logs/TrackSplit/` |
+| Windows | `$env:LOCALAPPDATA\TrackSplit\Logs\` |
 
-The log rotates when it reaches 5 MB, and TrackSplit keeps the five most recent files (`tracksplit.log`, `tracksplit.log.1`, up to `tracksplit.log.5`). Older backups are deleted automatically.
+Log files older than seven days are automatically deleted at the start of each run. Each log file contains the same information as `--debug` output, so it is the first place to look if something went wrong during an unattended run. You do not need to re-run with `--debug` to retrieve it.
 
-The log file contains the same information as `--debug` output, so it is the first place to look if something went wrong during an unattended run. You do not need to re-run with `--debug` to retrieve it.
-
-**Running multiple tracksplit invocations at once.** The log file is shared across concurrent runs. Python's rotating handler is not multi-process safe: two tracksplit processes rotating the file simultaneously can lose recent log lines on Linux, or produce a transient `PermissionError` on Windows. This does not affect processing of your video files; only the log output is at risk. If you regularly run tracksplit in parallel, stagger the runs or use separate `HOME` directories.
+Per-command log files eliminate the multi-process log corruption issue that affected the previous rotating log design. Each concurrent TrackSplit invocation writes to its own file.
 
 ---
 
@@ -251,9 +249,9 @@ The warning disappears on the next run once none of the old paths exist.
 Open an issue and include:
 
 - The exact command you ran.
-- The log file for the run. TrackSplit writes a DEBUG-level log on every run, so you do not need to re-run with `--debug`. Find it at:
-  - Linux: `~/.local/state/TrackSplit/log/tracksplit.log`
-  - macOS: `~/Library/Logs/TrackSplit/tracksplit.log`
-  - Windows: `$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log`
+- The log file for the run. TrackSplit creates a per-run log file in the log directory. Find it at:
+  - Linux: `~/.local/state/TrackSplit/log/`
+  - macOS: `~/Library/Logs/TrackSplit/`
+  - Windows: `$env:LOCALAPPDATA\TrackSplit\Logs\`
 - The output of `ffmpeg -version` and `ffprobe -version`.
 - Your OS and how you installed TrackSplit.
