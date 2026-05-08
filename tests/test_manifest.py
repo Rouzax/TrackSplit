@@ -22,7 +22,7 @@ def _src(tmp_path: Path) -> Path:
 
 def test_build_album_manifest_captures_source(tmp_path):
     src = _src(tmp_path)
-    chapters = [{"index": 1, "title": "A", "start": 0.0, "end": 60.0}]
+    chapters = [{"index": 1, "title": "A", "start": 0.0, "end": 60.0, "tags": {}}]
     tags = {"artist": "DJ", "festival": "F", "date": "2025"}
     ffprobe = {
         "streams": [{

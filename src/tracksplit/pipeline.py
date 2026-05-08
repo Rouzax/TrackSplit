@@ -52,7 +52,7 @@ from tracksplit.probe import (
     parse_tags,
     run_ffprobe,
 )
-from tracksplit.split import split_tracks
+from tracksplit.split import build_track_filename, split_tracks
 from tracksplit.tagger import replace_cover_only, tag_all
 
 logger = logging.getLogger(__name__)
@@ -80,6 +80,7 @@ def _chapters_to_dicts(chapters: list[Chapter]) -> list[dict]:
             "title": ch.title,
             "start": ch.start,
             "end": ch.end,
+            "tags": dict(ch.tags),
         }
         for ch in chapters
     ]
@@ -356,6 +357,7 @@ def should_regenerate(
     *,
     force: bool,
     manifest: AlbumManifest | None = None,
+    track_filenames: list[str] | None = None,
 ) -> bool:
     """Return True when the album must be (re)generated.
 
@@ -440,13 +442,16 @@ def should_regenerate(
             name, stored_intro, INTRO_MIN_SECONDS,
         )
         return True
-    if manifest.chapters != chapter_dicts:
+    stored_chapters = manifest.chapters
+    if stored_chapters and "tags" not in stored_chapters[0]:
+        stored_chapters = [{**ch, "tags": {}} for ch in stored_chapters]
+    if stored_chapters != chapter_dicts:
         logger.debug(
             "pipeline.regenerate: file=%s reason=chapters_changed stored=%d current=%d",
-            name, len(manifest.chapters), len(chapter_dicts),
+            name, len(stored_chapters), len(chapter_dicts),
         )
-        if len(manifest.chapters) == len(chapter_dicts):
-            for i, (old, new) in enumerate(zip(manifest.chapters, chapter_dicts)):
+        if len(stored_chapters) == len(chapter_dicts):
+            for i, (old, new) in enumerate(zip(stored_chapters, chapter_dicts)):
                 if old != new:
                     logger.debug(
                         "pipeline.regenerate: file=%s reason=chapter_detail index=%d",
@@ -463,6 +468,12 @@ def should_regenerate(
                 name, k,
             )
             return True
+    if track_filenames is not None and manifest.track_filenames != track_filenames:
+        logger.debug(
+            "pipeline.regenerate: file=%s reason=track_filenames_changed",
+            name,
+        )
+        return True
     return False
 
 
@@ -559,12 +570,14 @@ def process_file(
 
     ext, codec_mode = decide_codec(ffprobe_data, output_format)
     chapter_dicts = _chapters_to_dicts(chapters)
+    expected_filenames = [build_track_filename(t, ext) for t in album.tracks]
 
     skip_manifest = load_album_manifest(album_dir)
     skip = not should_regenerate(
         album_dir, input_path, ffprobe_data, tags, chapter_dicts,
         artist_folder, album_folder, ext.lstrip("."), codec_mode,
         force=force, manifest=skip_manifest,
+        track_filenames=expected_filenames,
     )
     if skip:
         if (

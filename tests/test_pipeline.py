@@ -169,7 +169,7 @@ class TestShouldRegenerate:
         self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
             album, src, self._ffprobe(), default_tags(),
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is False
 
@@ -187,7 +187,7 @@ class TestShouldRegenerate:
         os.utime(src, (future, future))
         assert should_regenerate(
             album, src, self._ffprobe(), default_tags(),
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is False
 
@@ -200,7 +200,7 @@ class TestShouldRegenerate:
         self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
             album, src, self._ffprobe(codec_name="aac"), default_tags(),
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -213,7 +213,7 @@ class TestShouldRegenerate:
         self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
             album, src, self._ffprobe(sample_rate=44100), default_tags(),
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -226,7 +226,7 @@ class TestShouldRegenerate:
         self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
             album, src, self._ffprobe(channels=1), default_tags(),
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -239,7 +239,7 @@ class TestShouldRegenerate:
         self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
             album, src, self._ffprobe(duration_ts=99999), default_tags(),
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -250,7 +250,7 @@ class TestShouldRegenerate:
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        new_chapters = [{"index": 1, "title": "T2", "start": 0.0, "end": 90.0}]
+        new_chapters = [{"index": 1, "title": "T2", "start": 0.0, "end": 90.0, "tags": {}}]
         assert should_regenerate(
             album, src, self._ffprobe(), default_tags(), new_chapters,
             "A", "B", "flac", "copy", force=False,
@@ -266,7 +266,7 @@ class TestShouldRegenerate:
         tags = {**default_tags(), "festival": "NEW"}
         assert should_regenerate(
             album, src, self._ffprobe(), tags,
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -280,7 +280,7 @@ class TestShouldRegenerate:
         tags = {**default_tags(), "genres": ["House"]}
         assert should_regenerate(
             album, src, self._ffprobe(), tags,
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -294,7 +294,7 @@ class TestShouldRegenerate:
         tags = {**default_tags(), "comment": "https://1001.tl/x"}
         assert should_regenerate(
             album, src, self._ffprobe(), tags,
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -308,7 +308,7 @@ class TestShouldRegenerate:
         tags = {**default_tags(), "albumartists": ["A", "B"]}
         assert should_regenerate(
             album, src, self._ffprobe(), tags,
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -322,7 +322,7 @@ class TestShouldRegenerate:
         tags = {**default_tags(), "albumartist_display": "DJ X"}
         assert should_regenerate(
             album, src, self._ffprobe(), tags,
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -336,7 +336,7 @@ class TestShouldRegenerate:
         tags = {**default_tags(), "albumartist_mbids": ["mbid-1"]}
         assert should_regenerate(
             album, src, self._ffprobe(), tags,
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is True
 
@@ -355,7 +355,7 @@ class TestShouldRegenerate:
         }
         assert should_regenerate(
             album, src, self._ffprobe(), tags,
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is False
 
@@ -427,7 +427,7 @@ class TestShouldRegenerate:
         )
         assert should_regenerate(
             album, src, self._ffprobe(), default_tags(),
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is False
 
@@ -440,7 +440,7 @@ class TestShouldRegenerate:
         self._write_manifest(album, source_path=str(src))
         assert should_regenerate(
             album, src, self._ffprobe(), default_tags(),
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
         ) is False
 
@@ -450,7 +450,7 @@ class TestShouldRegenerate:
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        chapters = [{"index": 1, "title": "T", "start": 2.0, "end": 60.0}]
+        chapters = [{"index": 1, "title": "T", "start": 2.0, "end": 60.0, "tags": {}}]
         self._write_manifest(album, source_path=str(src), chapters=chapters)
         assert should_regenerate(
             album, src, self._ffprobe(), default_tags(), chapters,
@@ -463,7 +463,7 @@ class TestShouldRegenerate:
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        chapters = [{"index": 1, "title": "T", "start": 15.0, "end": 60.0}]
+        chapters = [{"index": 1, "title": "T", "start": 15.0, "end": 60.0, "tags": {}}]
         self._write_manifest(album, source_path=str(src), chapters=chapters)
         assert should_regenerate(
             album, src, self._ffprobe(), default_tags(), chapters,
@@ -476,7 +476,7 @@ class TestShouldRegenerate:
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
-        chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}]
+        chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}]
         assert INTRO_MIN_SECONDS != 3.0
         self._write_manifest(
             album, source_path=str(src), chapters=chapters, intro_min_seconds=3.0,
@@ -485,6 +485,103 @@ class TestShouldRegenerate:
             album, src, self._ffprobe(), default_tags(), chapters,
             "A", "B", "flac", "copy", force=False,
         ) is True
+
+    def test_chapter_tag_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        stored_chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0,
+                            "tags": {"CRATEDIGGER_TRACK_PERFORMER": "Old Artist"}}]
+        self._write_manifest(album, source_path=str(src), chapters=stored_chapters)
+        current_chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0,
+                             "tags": {"CRATEDIGGER_TRACK_PERFORMER": "New Artist"}}]
+        assert should_regenerate(
+            album, src, self._ffprobe(), default_tags(), current_chapters,
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_chapter_tag_added_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        current_chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0,
+                             "tags": {"TITLE": "My Track", "CRATEDIGGER_TRACK_PERFORMER": "DJ X"}}]
+        assert should_regenerate(
+            album, src, self._ffprobe(), default_tags(), current_chapters,
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_legacy_manifest_no_tags_key_skips_when_no_current_tags(self, tmp_path):
+        """Old manifests without chapter tags should not regenerate if current chapters also have no tags."""
+        from tracksplit.pipeline import should_regenerate
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tests._manifest_helpers import default_tags, make_manifest_dict
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        manifest_data = make_manifest_dict(
+            source_path=str(src),
+            chapters=[{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+        )
+        (album / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(manifest_data))
+        current_chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}]
+        assert should_regenerate(
+            album, src, self._ffprobe(), default_tags(), current_chapters,
+            "A", "B", "flac", "copy", force=False,
+        ) is False
+
+    def test_legacy_manifest_no_tags_key_regenerates_when_tags_present(self, tmp_path):
+        """Old manifests without chapter tags should regenerate if current chapters have tags."""
+        from tracksplit.pipeline import should_regenerate
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tests._manifest_helpers import default_tags, make_manifest_dict
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        manifest_data = make_manifest_dict(
+            source_path=str(src),
+            chapters=[{"index": 1, "title": "T", "start": 0.0, "end": 60.0}],
+        )
+        (album / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(manifest_data))
+        current_chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0,
+                             "tags": {"TITLE": "My Track"}}]
+        assert should_regenerate(
+            album, src, self._ffprobe(), default_tags(), current_chapters,
+            "A", "B", "flac", "copy", force=False,
+        ) is True
+
+    def test_track_filename_change_regenerates(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        assert should_regenerate(
+            album, src, self._ffprobe(), default_tags(),
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
+            "A", "B", "flac", "copy", force=False,
+            track_filenames=["01 - DJ X - New Title.flac"],
+        ) is True
+
+    def test_track_filename_unchanged_skips(self, tmp_path):
+        from tracksplit.pipeline import should_regenerate
+        from tests._manifest_helpers import default_tags
+        src = self._mk_source(tmp_path)
+        album = tmp_path / "album"
+        album.mkdir()
+        self._write_manifest(album, source_path=str(src))
+        assert should_regenerate(
+            album, src, self._ffprobe(), default_tags(),
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
+            "A", "B", "flac", "copy", force=False,
+            track_filenames=["01 - T.flac"],
+        ) is False
 
 
 # ---------------------------------------------------------------------------
@@ -615,12 +712,12 @@ class TestProcessFileManifest:
         manifest = build_album_manifest(
             source_path=src,
             ffprobe_data=ffprobe_data,
-            chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0}],
+            chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0, "tags": {}}],
             tags=tags,
             artist_folder="DJ X",
             album_folder="Show 2025",
             output_format="flac", codec_mode="copy",
-            track_filenames=["01 - DJ X - Track 1.flac"],
+            track_filenames=["01 - Track 1.flac"],
             cover_bytes=b"",
         )
         save_album_manifest(album_dir, manifest)
@@ -788,16 +885,16 @@ class TestProcessFileManifest:
         tags = {**default_tags(), "artist": "DJ X",
                 "festival": "Show", "date": "2025"}
         chapter_dicts = [
-            {"index": 1, "title": "Track 1", "start": 0.0, "end": 300.0},
-            {"index": 2, "title": "Track 2", "start": 300.0, "end": 600.0},
+            {"index": 1, "title": "Track 1", "start": 0.0, "end": 300.0, "tags": {}},
+            {"index": 2, "title": "Track 2", "start": 300.0, "end": 600.0, "tags": {}},
         ]
         save_album_manifest(album_dir, build_album_manifest(
             source_path=src, ffprobe_data=self._probe(),
             chapters=chapter_dicts, tags=tags,
             artist_folder="DJ X", album_folder="Show 2025",
             output_format="flac", codec_mode="copy",
-            track_filenames=["01 - DJ X - Track 1.flac",
-                             "02 - DJ X - Track 2.flac"],
+            track_filenames=["01 - Track 1.flac",
+                             "02 - Track 2.flac"],
             cover_bytes=b"",
         ))
         artist_dir.mkdir(exist_ok=True)
@@ -1379,12 +1476,12 @@ class TestSkipBranchCoverRebuild:
         m = build_album_manifest(
             source_path=src,
             ffprobe_data=self._probe(),
-            chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0}],
+            chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0, "tags": {}}],
             tags=tags,
             artist_folder="DJ X",
             album_folder="Show 2025",
             output_format="flac", codec_mode="copy",
-            track_filenames=["01 - DJ X - Track 1.flac"],
+            track_filenames=["01 - Track 1.flac"],
             cover_bytes=b"",
         )
         m = _replace(m, cover_schema_version=0)
@@ -1481,12 +1578,12 @@ class TestSkipBranchCoverRebuild:
         m = build_album_manifest(
             source_path=src,
             ffprobe_data=self._probe(),
-            chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0}],
+            chapters=[{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0, "tags": {}}],
             tags=tags,
             artist_folder="DJ X",
             album_folder="Show 2025",
             output_format="flac", codec_mode="copy",
-            track_filenames=["01 - DJ X - Track 1.flac"],
+            track_filenames=["01 - Track 1.flac"],
             cover_bytes=b"",
         )
         save_album_manifest(album_dir, m)

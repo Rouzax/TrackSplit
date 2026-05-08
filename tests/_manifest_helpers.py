@@ -73,7 +73,7 @@ def make_manifest_dict(*, source_path: str = "/x.mkv", **overrides) -> dict:
         "output_format": overrides.pop("output_format", "flac"),
         "codec_mode": overrides.pop("codec_mode", "copy"),
         "chapters": overrides.pop("chapters",
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0}]),
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}]),
         "tags": tags,
         "track_filenames": overrides.pop("track_filenames", ["01 - T.flac"]),
         "cover_sha256": overrides.pop("cover_sha256", "a" * 64),

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-05-08
+
+### Fixed
+
+- Per-chapter MKV tags (track artist, title, genre, label, MBIDs) are now stored in the album manifest and included in change detection. Updates to per-track metadata from CrateDigger now correctly trigger regeneration instead of being silently skipped.
+- Track filenames are now compared during change detection. If the resolved filename for any track differs from the stored manifest (e.g. because the track artist or title changed), the album is regenerated.
+
 ## [0.9.0] - 2026-05-08
 
 ### Changed
