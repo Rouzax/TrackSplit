@@ -1120,7 +1120,7 @@
 </code></pre></div>
 <hr />
 <h2 id="where-are-my-logs">Where are my logs?</h2>
-<p>TrackSplit writes a rotating log file on every run, in addition to what it prints in the terminal. The log file is at:</p>
+<p>TrackSplit creates a new log file for each CLI invocation, named with the timestamp and a short random suffix (for example, <code>split-2026-05-08T14-22-01-a3f2.log</code>). Log files are stored in:</p>
 <table>
 <thead>
 <tr>
@@ -1131,21 +1131,20 @@
 <tbody>
 <tr>
 <td>Linux</td>
-<td><code>~/.local/state/TrackSplit/log/tracksplit.log</code></td>
+<td><code>~/.local/state/TrackSplit/log/</code></td>
 </tr>
 <tr>
 <td>macOS</td>
-<td><code>~/Library/Logs/TrackSplit/tracksplit.log</code></td>
+<td><code>~/Library/Logs/TrackSplit/</code></td>
 </tr>
 <tr>
 <td>Windows</td>
-<td><code>$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log</code></td>
+<td><code>$env:LOCALAPPDATA\TrackSplit\Logs\</code></td>
 </tr>
 </tbody>
 </table>
-<p>The log rotates when it reaches 5 MB, and TrackSplit keeps the five most recent files (<code>tracksplit.log</code>, <code>tracksplit.log.1</code>, up to <code>tracksplit.log.5</code>). Older backups are deleted automatically.</p>
-<p>The log file contains the same information as <code>--debug</code> output, so it is the first place to look if something went wrong during an unattended run. You do not need to re-run with <code>--debug</code> to retrieve it.</p>
-<p><strong>Running multiple tracksplit invocations at once.</strong> The log file is shared across concurrent runs. Python's rotating handler is not multi-process safe: two tracksplit processes rotating the file simultaneously can lose recent log lines on Linux, or produce a transient <code>PermissionError</code> on Windows. This does not affect processing of your video files; only the log output is at risk. If you regularly run tracksplit in parallel, stagger the runs or use separate <code>HOME</code> directories.</p>
+<p>Log files older than seven days are automatically deleted at the start of each run. Each log file contains the same information as <code>--debug</code> output, so it is the first place to look if something went wrong during an unattended run. You do not need to re-run with <code>--debug</code> to retrieve it.</p>
+<p>Per-command log files eliminate the multi-process log corruption issue that affected the previous rotating log design. Each concurrent TrackSplit invocation writes to its own file.</p>
 <hr />
 <h2 id="legacy-tracksplit-or-cratedigger-files-detected-warning">"Legacy TrackSplit or CrateDigger files detected" warning</h2>
 <p><strong>What you see:</strong> A <code>WARNING</code> line on startup listing one or more old paths.</p>
@@ -1176,10 +1175,10 @@
 <p>Open an issue and include:</p>
 <ul>
 <li>The exact command you ran.</li>
-<li>The log file for the run. TrackSplit writes a DEBUG-level log on every run, so you do not need to re-run with <code>--debug</code>. Find it at:</li>
-<li>Linux: <code>~/.local/state/TrackSplit/log/tracksplit.log</code></li>
-<li>macOS: <code>~/Library/Logs/TrackSplit/tracksplit.log</code></li>
-<li>Windows: <code>$env:LOCALAPPDATA\TrackSplit\Logs\tracksplit.log</code></li>
+<li>The log file for the run. TrackSplit creates a per-run log file in the log directory. Find it at:</li>
+<li>Linux: <code>~/.local/state/TrackSplit/log/</code></li>
+<li>macOS: <code>~/Library/Logs/TrackSplit/</code></li>
+<li>Windows: <code>$env:LOCALAPPDATA\TrackSplit\Logs\</code></li>
 <li>The output of <code>ffmpeg -version</code> and <code>ffprobe -version</code>.</li>
 <li>Your OS and how you installed TrackSplit.</li>
 </ul>

@@ -1,0 +1,1486 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://rouzax.github.io/TrackSplit/docs/superpowers/specs/2026-05-08-structured-logging-design/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Structured Debug Logging Migration - TrackSplit</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#structured-debug-logging-migration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="TrackSplit" class="md-header__button md-logo" aria-label="TrackSplit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TrackSplit
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Structured Debug Logging Migration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Rouzax/TrackSplit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Rouzax/TrackSplit
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../usage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Usage
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../configuration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configuration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../output/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Output Structure
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="TrackSplit" class="md-nav__button md-logo" aria-label="TrackSplit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    TrackSplit
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Rouzax/TrackSplit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Rouzax/TrackSplit
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-infrastructure-srctracksplitlogpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Infrastructure: src/tracksplit/log.py
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-pathspy-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. paths.py changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-subprocess-logging-failures-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Subprocess logging: failures only
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-noise-reduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Noise reduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Noise reduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cratediggerpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cratedigger.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extractpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-structured-event-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Structured event format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-event-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Event catalog
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Event catalog">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pipelinepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pipeline.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extractpy_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splitpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        split.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#taggerpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tagger.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coverpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cover.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subprocess_utilspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        subprocess_utils.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#probepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        probe.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metadatapy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        metadata.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manifestpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        manifest.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update_checkpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_check.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toolspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tools.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cratediggerpy_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cratedigger.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opus_patchpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        opus_patch.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-cli-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. CLI integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Docs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="structured-debug-logging-migration">Structured Debug Logging Migration</h1>
+<p>Migrate TrackSplit from a single rotating log file with freeform messages to
+per-command log files with structured <code>prefix.event: key=value</code> events,
+matching the pattern established in CrateDigger v0.17.</p>
+<h2 id="goals">Goals</h2>
+<ol>
+<li>Per-run log files so each invocation is self-contained and easy to share.</li>
+<li>Structured events that are grepable and machine-parseable.</li>
+<li>Reduce noise: remove repeated per-file messages that add no diagnostic value.</li>
+<li>Add missing debug events for currently-invisible decisions.</li>
+</ol>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>Changing user-visible console output (INFO/WARNING stays readable prose).</li>
+<li>Adding log aggregation, structured JSON output, or remote shipping.</li>
+</ul>
+<hr />
+<h2 id="1-infrastructure-srctracksplitlogpy">1. Infrastructure: <code>src/tracksplit/log.py</code></h2>
+<p>New module extracted from <code>cli.py._setup_logging</code>. Responsibilities:</p>
+<ul>
+<li><code>setup_logging(verbose, debug, console, command) -&gt; Path | None</code></li>
+<li>Per-command file naming: <code>{command}-{YYYY-MM-DDTHH-MM-SS}-{4-hex}.log</code> in
+  <code>paths.log_dir()</code>.</li>
+<li><code>MemoryHandler(capacity=50, flushLevel=WARNING, flushOnClose=True)</code> wrapping
+  a <code>FileHandler(delay=True)</code>. Avoids creating empty files for <code>--version</code>
+  or <code>--help</code>.</li>
+<li><code>_cleanup_old_logs(log_dir, max_age_days=7)</code> called during setup.</li>
+<li>Close/clear existing handlers before adding new ones (test isolation).</li>
+<li>Returns the log file path on success, <code>None</code> on OS error (demoted to a
+  console WARNING).</li>
+</ul>
+<p>Console handler setup stays the same: <code>RichHandler</code> at the level dictated by
+<code>--verbose</code>/<code>--debug</code>, <code>NullHighlighter</code>, no markup.</p>
+<h2 id="2-pathspy-changes">2. <code>paths.py</code> changes</h2>
+<ul>
+<li>Remove <code>log_file() -&gt; Path</code>.</li>
+<li>Add <code>log_dir() -&gt; Path</code> returning <code>platformdirs.user_log_dir("TrackSplit")</code>.</li>
+<li>Single call site in <code>cli.py</code> (and now <code>log.py</code>) is the only consumer.</li>
+</ul>
+<h2 id="3-subprocess-logging-failures-only">3. Subprocess logging: failures only</h2>
+<p>Current state logs every subprocess call twice (before + after). For a
+26-track album that is 52 lines of full paths.</p>
+<p>New policy in <code>subprocess_utils.py</code>:</p>
+<ul>
+<li><code>subprocess.exit: code=N cmd="&lt;cmd&gt;" tail="&lt;stderr tail&gt;"</code> (non-zero only)</li>
+<li><code>subprocess.timeout: cmd="&lt;cmd&gt;"</code></li>
+<li><code>subprocess.cancel: cmd="&lt;cmd&gt;"</code></li>
+</ul>
+<p>Successful invocations produce no log output.</p>
+<h2 id="4-noise-reduction">4. Noise reduction</h2>
+<h3 id="cratediggerpy"><code>cratedigger.py</code></h3>
+<ul>
+<li>Log <code>cratedigger.config: data_dir=&lt;path&gt;</code> once at module/config load time.</li>
+<li>Remove per-call <code>CrateDigger candidate dirs</code> logging.</li>
+<li>Festival alias resolution: log each unique alias once per run
+  (<code>cratedigger.festival_alias: raw="X" short="Y" edition="Z"</code>), not per file.</li>
+</ul>
+<h3 id="extractpy"><code>extract.py</code></h3>
+<ul>
+<li>Do not log codec decision for files that will be skipped.</li>
+<li>Log <code>extract.codec</code> only when extraction actually proceeds.</li>
+</ul>
+<h2 id="5-structured-event-format">5. Structured event format</h2>
+<p>Convention: <code>prefix.event_name: key=value key=value</code></p>
+<p>Rules:
+- Keys are <code>snake_case</code>, unquoted.
+- String values with spaces get double quotes.
+- Numeric values unquoted.
+- Paths use filename only unless disambiguation is needed.
+- Lists use pipe-separated format: <code>tags=artist|title|album</code>.
+- Prefixes match module names.</p>
+<h2 id="6-event-catalog">6. Event catalog</h2>
+<h3 id="pipelinepy">pipeline.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pipeline.skip</code></td>
+<td>INFO</td>
+<td><code>file=, reason=unchanged</code></td>
+<td>File skipped, output current</td>
+</tr>
+<tr>
+<td><code>pipeline.regenerate</code></td>
+<td>DEBUG</td>
+<td><code>file=, reason=&lt;reason&gt; [field= old= new=]</code></td>
+<td>Decision to regenerate</td>
+</tr>
+<tr>
+<td><code>pipeline.process_start</code></td>
+<td>DEBUG</td>
+<td><code>file=, tracks=N, codec=</code></td>
+<td>About to process a file</td>
+</tr>
+<tr>
+<td><code>pipeline.process_done</code></td>
+<td>INFO</td>
+<td><code>file=, dir=</code></td>
+<td>Processing complete</td>
+</tr>
+<tr>
+<td><code>pipeline.orphan_prune</code></td>
+<td>INFO</td>
+<td><code>dir=, count=N</code></td>
+<td>Orphan tracks removed</td>
+</tr>
+<tr>
+<td><code>pipeline.cover_refresh</code></td>
+<td>INFO</td>
+<td><code>artist=</code></td>
+<td>Artist cover refreshed</td>
+</tr>
+<tr>
+<td><code>pipeline.intro_adjust</code></td>
+<td>DEBUG</td>
+<td><code>file=, first_start=N.Ns</code></td>
+<td>Track 1 start moved (gap too small for intro)</td>
+</tr>
+<tr>
+<td><code>pipeline.cover_rebuild</code></td>
+<td>DEBUG</td>
+<td><code>file=, reason=</code></td>
+<td>Cover-only rebuild triggered</td>
+</tr>
+</tbody>
+</table>
+<h3 id="extractpy_1">extract.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>extract.codec</code></td>
+<td>INFO</td>
+<td><code>file=, input=, format=, output=, mode=</code></td>
+<td>Codec decision (only when extracting)</td>
+</tr>
+<tr>
+<td><code>extract.start</code></td>
+<td>DEBUG</td>
+<td><code>file=</code></td>
+<td>Audio extraction begins</td>
+</tr>
+<tr>
+<td><code>extract.done</code></td>
+<td>DEBUG</td>
+<td><code>file=</code></td>
+<td>Audio extraction complete</td>
+</tr>
+</tbody>
+</table>
+<h3 id="splitpy">split.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>split.start</code></td>
+<td>DEBUG</td>
+<td><code>file=, tracks=N, codec_mode=</code></td>
+<td>Splitting begins</td>
+</tr>
+<tr>
+<td><code>split.track</code></td>
+<td>DEBUG</td>
+<td><code>num=N/M, title=, start=, end=, prefix=</code></td>
+<td>Per-track progress (replaces per-track subprocess lines)</td>
+</tr>
+<tr>
+<td><code>split.done</code></td>
+<td>DEBUG</td>
+<td><code>file=, tracks=N</code></td>
+<td>All tracks split</td>
+</tr>
+</tbody>
+</table>
+<h3 id="taggerpy">tagger.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tagger.write</code></td>
+<td>DEBUG</td>
+<td><code>file=, added=N, removed=N, changed=N</code></td>
+<td>Tag delta per track</td>
+</tr>
+</tbody>
+</table>
+<h3 id="coverpy">cover.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cover.source</code></td>
+<td>INFO</td>
+<td><code>file=, method=</code></td>
+<td>Cover art extracted</td>
+</tr>
+<tr>
+<td><code>cover.source_fail</code></td>
+<td>DEBUG</td>
+<td><code>file=, method=, error=</code></td>
+<td>Extraction method failed</td>
+</tr>
+<tr>
+<td><code>cover.compose</code></td>
+<td>DEBUG</td>
+<td><code>file=, layout=, background=, dj_artwork=</code></td>
+<td>Composition choices</td>
+</tr>
+<tr>
+<td><code>cover.dj_lookup</code></td>
+<td>DEBUG</td>
+<td><code>artist=, found=, path=</code></td>
+<td>DJ artwork search</td>
+</tr>
+</tbody>
+</table>
+<h3 id="subprocess_utilspy">subprocess_utils.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>subprocess.exit</code></td>
+<td>DEBUG</td>
+<td><code>code=, cmd=, tail=</code></td>
+<td>Non-zero exit only</td>
+</tr>
+<tr>
+<td><code>subprocess.timeout</code></td>
+<td>WARNING</td>
+<td><code>cmd=</code></td>
+<td>Process timed out</td>
+</tr>
+<tr>
+<td><code>subprocess.cancel</code></td>
+<td>DEBUG</td>
+<td><code>cmd=</code></td>
+<td>Process cancelled</td>
+</tr>
+</tbody>
+</table>
+<h3 id="probepy">probe.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>probe.chapters</code></td>
+<td>DEBUG</td>
+<td><code>file=, count=N</code></td>
+<td>Chapters parsed</td>
+</tr>
+<tr>
+<td><code>probe.skip_zero</code></td>
+<td>WARNING</td>
+<td><code>file=, title=, start=</code></td>
+<td>Zero-duration chapter filtered</td>
+</tr>
+<tr>
+<td><code>probe.title_synthesized</code></td>
+<td>DEBUG</td>
+<td><code>file=, track=N</code></td>
+<td>Default "Track NN" assigned</td>
+</tr>
+<tr>
+<td><code>probe.opus_packet</code></td>
+<td>DEBUG</td>
+<td><code>file=, duration_ms=N</code></td>
+<td>Opus packet duration detected</td>
+</tr>
+<tr>
+<td><code>probe.opus_disagree</code></td>
+<td>DEBUG</td>
+<td><code>file=</code></td>
+<td>Packets disagree, triggers re-encode</td>
+</tr>
+</tbody>
+</table>
+<h3 id="metadatapy">metadata.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>metadata.source</code></td>
+<td>DEBUG</td>
+<td><code>file=, structured=, cratedigger=</code></td>
+<td>Tag path selection</td>
+</tr>
+<tr>
+<td><code>metadata.title_dedup</code></td>
+<td>DEBUG</td>
+<td><code>file=, count=N</code></td>
+<td>Duplicate titles deduplicated</td>
+</tr>
+<tr>
+<td><code>metadata.artist_canon</code></td>
+<td>DEBUG</td>
+<td><code>file=, track=N, original=, canonical=</code></td>
+<td>Artist casing normalized</td>
+</tr>
+</tbody>
+</table>
+<h3 id="manifestpy">manifest.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>manifest.schema_mismatch</code></td>
+<td>DEBUG</td>
+<td><code>file=, found=N, expected=N</code></td>
+<td>Old manifest rejected</td>
+</tr>
+</tbody>
+</table>
+<h3 id="update_checkpy">update_check.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>update.suppressed</code></td>
+<td>DEBUG</td>
+<td><code>reason=</code></td>
+<td>Check skipped</td>
+</tr>
+<tr>
+<td><code>update.fetch</code></td>
+<td>DEBUG</td>
+<td><code>status=, version=</code></td>
+<td>Check result</td>
+</tr>
+<tr>
+<td><code>update.cache_error</code></td>
+<td>DEBUG</td>
+<td><code>error=</code></td>
+<td>Cache read failed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="toolspy">tools.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tools.config</code></td>
+<td>DEBUG</td>
+<td><code>path=</code></td>
+<td>Config file location</td>
+</tr>
+<tr>
+<td><code>tools.resolve</code></td>
+<td>DEBUG</td>
+<td><code>tool=, path=</code></td>
+<td>Tool path resolved</td>
+</tr>
+<tr>
+<td><code>tools.missing</code></td>
+<td>WARNING</td>
+<td><code>tool=</code></td>
+<td>Required tool not found</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cratediggerpy_1">cratedigger.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cratedigger.config</code></td>
+<td>DEBUG</td>
+<td><code>data_dir=</code></td>
+<td>Config loaded (once)</td>
+</tr>
+<tr>
+<td><code>cratedigger.festival_alias</code></td>
+<td>DEBUG</td>
+<td><code>raw=, short=, edition=</code></td>
+<td>First occurrence per alias</td>
+</tr>
+<tr>
+<td><code>cratedigger.load</code></td>
+<td>DEBUG</td>
+<td><code>file=, path=</code></td>
+<td>Data file loaded</td>
+</tr>
+</tbody>
+</table>
+<h3 id="opus_patchpy">opus_patch.py</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Level</th>
+<th>Fields</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>opus_patch.applied</code></td>
+<td>DEBUG</td>
+<td><code>file=, samples=N</code></td>
+<td>Pre-skip patched</td>
+</tr>
+</tbody>
+</table>
+<h2 id="7-cleanup">7. Cleanup</h2>
+<ul>
+<li>Remove unused <code>logger = logging.getLogger(__name__)</code> from <code>split.py</code>,
+  <code>tagger.py</code>, <code>manifest.py</code> (they will get real loggers with the new events).</li>
+<li>Remove <code>_setup_logging</code> from <code>cli.py</code>.</li>
+<li>Remove <code>log_file()</code> from <code>paths.py</code>.</li>
+</ul>
+<h2 id="8-cli-integration">8. CLI integration</h2>
+<ul>
+<li><code>cli.py</code> calls <code>log.setup_logging(...)</code>, stores returned path.</li>
+<li><code>--check</code> output includes a "Log file" row showing the per-run path.</li>
+<li>Error messages can reference the specific log file for the failed run.</li>
+</ul>
+<h2 id="9-tests">9. Tests</h2>
+<ul>
+<li><code>test_log.py</code>: handler setup, path return, old-log cleanup,
+  MemoryHandler flush on WARNING, handler cleanup on repeated calls.</li>
+<li>Update tests that mock/patch <code>_setup_logging</code> or <code>paths.log_file</code>.</li>
+<li>No per-message format tests.</li>
+</ul>
+<h2 id="10-docs">10. Docs</h2>
+<ul>
+<li><code>docs/troubleshooting.md</code>: reference per-command log directory, explain
+  file naming, mention 7-day cleanup.</li>
+<li><code>docs/faq.md</code>: update if it mentions the rotating log.</li>
+<li><code>CHANGELOG.md</code>: note the change under appropriate section.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
