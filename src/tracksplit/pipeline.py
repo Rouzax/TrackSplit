@@ -115,10 +115,10 @@ def prune_orphan_tracks(album_dir: Path, expected: set[str]) -> list[str]:
             p.unlink()
             removed.append(p.name)
         except OSError as exc:
-            logger.warning("Could not remove orphan %s: %s", p, exc)
+            logger.warning('pipeline.orphan_prune_fail: file=%s error="%s"', p.name, exc)
     if removed:
         logger.info(
-            "Pruned %d orphan track file(s) from %s", len(removed), album_dir,
+            "pipeline.orphan_prune: dir=%s count=%d", album_dir.name, len(removed),
         )
     return removed
 
@@ -157,6 +157,10 @@ def _apply_intro_track(album: AlbumMeta, chapters: list[Chapter]) -> None:
         album.tracks.insert(0, intro)
         return
     if chapters and chapters[0].start > 0.0 and album.tracks:
+        logger.debug(
+            "pipeline.intro_adjust: first_start=%.3fs",
+            chapters[0].start,
+        )
         album.tracks[0].start = 0.0
 
 
@@ -206,12 +210,12 @@ def _remove_stale_album_dirs(
 ) -> None:
     for stale in find_prior_album_dirs(output_root, source_path, new_album_dir):
         logger.info(
-            "Removing renamed album dir: %s -> %s", stale, new_album_dir,
+            "pipeline.stale_dir_remove: old=%s new=%s", stale.name, new_album_dir.name,
         )
         try:
             shutil.rmtree(stale)
         except OSError as exc:
-            logger.warning("Could not remove %s: %s", stale, exc)
+            logger.warning('pipeline.stale_dir_remove_fail: dir=%s error="%s"', stale.name, exc)
 
 
 def refresh_artist_cover(
@@ -250,12 +254,12 @@ def refresh_artist_cover(
                 schema=MANIFEST_SCHEMA, artist=artist_name, dj_artwork_sha256=new_hash,
             ),
         )
-        logger.info("Refreshed artist cover: %s", artist_dir.name)
+        logger.info("pipeline.cover_refresh: artist=%s", artist_dir.name)
     except OSError as exc:
         if exc.errno in FATAL_DISK_ERRNOS:
             raise
         logger.warning(
-            "Could not refresh artist cover for %s: %s", artist_dir, exc,
+            'pipeline.cover_refresh_fail: artist=%s error="%s"', artist_dir.name, exc,
         )
 
 
@@ -283,8 +287,7 @@ def rebuild_cover_only(
     background_data = extract(source_path, ffprobe_data=ffprobe_data)
     if background_data is None:
         logger.debug(
-            "rebuild_cover_only: no embedded cover in %s; "
-            "composing with gradient fallback",
+            "pipeline.cover_rebuild: file=%s reason=no_embedded_cover",
             source_path.name,
         )
     tags = manifest.tags
@@ -304,7 +307,7 @@ def rebuild_cover_only(
         )
         save_album_manifest(album_dir, updated)
         logger.info(
-            "Cover already current for %s; schema version bumped to %d",
+            "pipeline.cover_rebuild: file=%s reason=schema_bump version=%d",
             album_dir.name, COVER_SCHEMA_VERSION,
         )
         return
@@ -324,9 +327,8 @@ def rebuild_cover_only(
             missing.append(name)
     if missing:
         logger.warning(
-            "rebuild_cover_only: %d track file(s) in manifest not on disk "
-            "for %s: %s",
-            len(missing), album_dir.name, ", ".join(missing),
+            "pipeline.cover_rebuild_missing: dir=%s count=%d",
+            album_dir.name, len(missing),
         )
 
     updated = dataclass_replace(
@@ -336,7 +338,7 @@ def rebuild_cover_only(
     )
     save_album_manifest(album_dir, updated)
     logger.info(
-        "Cover-only rebuild for %s: %d track(s) re-embedded",
+        "pipeline.cover_rebuild: file=%s tracks=%d",
         album_dir.name, len(manifest.track_filenames),
     )
 
@@ -364,28 +366,28 @@ def should_regenerate(
     """
     name = source_path.name
     if force:
-        logger.debug("regenerate %s: force=True", name)
+        logger.debug("pipeline.regenerate: file=%s reason=force", name)
         return True
     if not album_dir.exists():
-        logger.debug("regenerate %s: album dir does not exist (%s)", name, album_dir)
+        logger.debug("pipeline.regenerate: file=%s reason=no_album_dir", name)
         return True
 
     if manifest is None:
         manifest = load_album_manifest(album_dir)
     if manifest is None:
-        logger.debug("regenerate %s: no/unreadable manifest at %s", name, album_dir)
+        logger.debug("pipeline.regenerate: file=%s reason=no_manifest", name)
         return True
 
     try:
         current_source = SourceFingerprint.from_ffprobe(source_path, ffprobe_data)
     except ValueError as exc:
-        logger.debug("regenerate %s: source fingerprint failed: %s", name, exc)
+        logger.debug('pipeline.regenerate: file=%s reason=fingerprint_failed error="%s"', name, exc)
         return True
 
     if manifest.source.path != current_source.path:
         logger.debug(
-            "regenerate %s: source.path changed (%r -> %r)",
-            name, manifest.source.path, current_source.path,
+            "pipeline.regenerate: file=%s reason=source_path_changed",
+            name,
         )
         return True
     if manifest.source.audio != current_source.audio:
@@ -395,31 +397,31 @@ def should_regenerate(
             new = getattr(current_source.audio, field)
             if old != new:
                 logger.debug(
-                    "regenerate %s: source.audio.%s changed (%r -> %r)",
+                    "pipeline.regenerate: file=%s reason=audio_changed field=%s old=%r new=%r",
                     name, field, old, new,
                 )
         return True
     if manifest.resolved_artist_folder != artist_folder:
         logger.debug(
-            "regenerate %s: artist folder changed (%r -> %r)",
+            'pipeline.regenerate: file=%s reason=artist_folder_changed old="%s" new="%s"',
             name, manifest.resolved_artist_folder, artist_folder,
         )
         return True
     if manifest.resolved_album_folder != album_folder:
         logger.debug(
-            "regenerate %s: album folder changed (%r -> %r)",
+            'pipeline.regenerate: file=%s reason=album_folder_changed old="%s" new="%s"',
             name, manifest.resolved_album_folder, album_folder,
         )
         return True
     if manifest.output_format != output_format:
         logger.debug(
-            "regenerate %s: output_format changed (%r -> %r)",
+            "pipeline.regenerate: file=%s reason=output_format_changed old=%s new=%s",
             name, manifest.output_format, output_format,
         )
         return True
     if manifest.codec_mode != codec_mode:
         logger.debug(
-            "regenerate %s: codec_mode changed (%r -> %r)",
+            "pipeline.regenerate: file=%s reason=codec_mode_changed old=%s new=%s",
             name, manifest.codec_mode, codec_mode,
         )
         return True
@@ -428,26 +430,27 @@ def should_regenerate(
         first_start = chapter_dicts[0]["start"] if chapter_dicts else 0.0
         if 0 < first_start < INTRO_MIN_SECONDS:
             logger.debug(
-                "regenerate %s: intro policy upgraded, stored gap %.3fs is under new %.1fs",
+                "pipeline.regenerate: file=%s reason=intro_policy_upgrade gap=%.3f threshold=%.1f",
                 name, first_start, INTRO_MIN_SECONDS,
             )
             return True
     elif stored_intro != INTRO_MIN_SECONDS:
         logger.debug(
-            "regenerate %s: intro_min_seconds changed (%r -> %r)",
+            "pipeline.regenerate: file=%s reason=intro_min_changed old=%s new=%.1f",
             name, stored_intro, INTRO_MIN_SECONDS,
         )
         return True
     if manifest.chapters != chapter_dicts:
         logger.debug(
-            "regenerate %s: chapters differ (%d stored, %d current)",
+            "pipeline.regenerate: file=%s reason=chapters_changed stored=%d current=%d",
             name, len(manifest.chapters), len(chapter_dicts),
         )
         if len(manifest.chapters) == len(chapter_dicts):
             for i, (old, new) in enumerate(zip(manifest.chapters, chapter_dicts)):
                 if old != new:
                     logger.debug(
-                        "regenerate %s: chapter[%d] %r -> %r", name, i, old, new,
+                        "pipeline.regenerate: file=%s reason=chapter_detail index=%d",
+                        name, i,
                     )
         return True
 
@@ -456,8 +459,8 @@ def should_regenerate(
         new = tags.get(k, tag_default(k))
         if old != new:
             logger.debug(
-                "regenerate %s: tag %r changed (%r -> %r)",
-                name, k, old, new,
+                "pipeline.regenerate: file=%s reason=tag_changed tag=%s",
+                name, k,
             )
             return True
     return False
@@ -480,9 +483,8 @@ def _resolve_opus_copy_packet_ms(
     if packet_ms == 20:
         return "copy", 20
     logger.warning(
-        "Unusual Opus frame duration %r on %s, re-encoding with libopus "
-        "for safe gapless output",
-        packet_ms, audio_path.name,
+        "pipeline.opus_fallback: file=%s packet_ms=%s mode=libopus",
+        audio_path.name, packet_ms,
     )
     return "libopus", None
 
@@ -516,7 +518,7 @@ def process_file(
     ffprobe_data = run_ffprobe(input_path)
 
     if not has_audio(ffprobe_data):
-        logger.warning("No audio stream found in %s, skipping", _safe_log_name(input_path))
+        logger.warning("pipeline.skip: file=%s reason=no_audio", _safe_log_name(input_path))
         return False
 
     chapters = parse_chapters(ffprobe_data)
@@ -538,7 +540,7 @@ def process_file(
         )
         if duration <= 0:
             logger.warning(
-                "No chapters and no duration in %s, skipping",
+                "pipeline.skip: file=%s reason=no_chapters_no_duration",
                 _safe_log_name(input_path),
             )
             return False
@@ -580,16 +582,14 @@ def process_file(
                 if exc.errno in FATAL_DISK_ERRNOS:
                     raise
                 logger.warning(
-                    "Cover-only rebuild failed for %s (%s); "
-                    "falling through to full regen",
+                    'pipeline.cover_rebuild: file=%s reason=failed error="%s"',
                     _safe_log_name(input_path), exc,
                 )
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
                 skip = False
             except Exception as exc:
                 logger.warning(
-                    "Cover-only rebuild failed for %s (%s); "
-                    "falling through to full regen",
+                    'pipeline.cover_rebuild: file=%s reason=failed error="%s"',
                     _safe_log_name(input_path), exc,
                 )
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
@@ -604,7 +604,7 @@ def process_file(
             compose=compose_artist_cover,
         )
         logger.info(
-            "Skipping %s, output unchanged since last run",
+            "pipeline.skip: file=%s reason=unchanged",
             _safe_log_name(input_path),
         )
         return False
@@ -612,9 +612,9 @@ def process_file(
     # Dry run: log and return
     if dry_run:
         logger.info(
-            "Dry run: would process %s -> %s (%d tracks)",
+            "pipeline.process_start: file=%s dir=%s tracks=%d dry_run=true",
             _safe_log_name(input_path),
-            album_dir,
+            album_dir.name,
             len(album.tracks),
         )
         if on_complete:
@@ -625,6 +625,10 @@ def process_file(
 
     # Extract, split, tag
     album_dir.mkdir(parents=True, exist_ok=True)
+    logger.debug(
+        "pipeline.process_start: file=%s tracks=%d codec=%s",
+        _safe_log_name(input_path), len(album.tracks), ext.lstrip("."),
+    )
 
     with tempfile.TemporaryDirectory() as tmp_str:
         tmp_dir = Path(tmp_str)
@@ -706,7 +710,7 @@ def process_file(
         compose=compose_artist_cover,
     )
 
-    logger.info("Processed %s -> %s", _safe_log_name(input_path), album_dir)
+    logger.info("pipeline.process_done: file=%s dir=%s", _safe_log_name(input_path), album_dir.name)
     if on_complete:
         on_complete(album_dir, len(album.tracks))
     return True

@@ -1150,7 +1150,7 @@ class TestResolveOpusCopyPacketMs:
             )
         assert codec_mode == "libopus"
         assert packet_ms is None
-        assert any("frame duration" in r.message for r in caplog.records)
+        assert any("pipeline.opus_fallback" in r.message for r in caplog.records)
 
     def test_probe_returns_none_escalates(self, mocker):
         from tracksplit import pipeline

@@ -298,7 +298,7 @@ def _prepare_background(
         try:
             bg = Image.open(io.BytesIO(background_data)).convert("RGB")
         except (UnidentifiedImageError, OSError) as exc:
-            logger.warning("Could not decode background image, using gradient: %s", exc)
+            logger.warning('cover.source_fail: method=decode error="%s"', exc)
             bg = create_gradient(size, size)
             accent = _ensure_contrast(180, 100, 220)
             return bg, accent
@@ -373,7 +373,7 @@ def _apply_fade_photo(
     try:
         src = Image.open(io.BytesIO(photo_data)).convert("RGBA")
     except Exception:
-        logger.warning("Failed to open set artwork for fade photo; skipping")
+        logger.warning("cover.source_fail: method=fade_photo error=open_failed")
         return
 
     src_w, src_h = src.size
@@ -627,7 +627,7 @@ def find_dj_artwork(
         for name in ("dj-artwork.jpg", "fanart.jpg"):
             candidate = artist_dir / name
             if candidate.is_file():
-                logger.debug("DJ artwork found: %s", candidate)
+                logger.debug("cover.dj_lookup: artist=%s found=true path=%s", artist, candidate.name)
                 return candidate.read_bytes()
 
     return None
@@ -696,7 +696,7 @@ def compose_artist_cover(
             photo_y = artist_y - PAD_PHOTO_TO_ARTIST - PHOTO_SIZE
             canvas.paste(photo, (photo_x, photo_y), photo)
         except Exception:
-            logger.warning("Failed to process DJ artwork, skipping photo")
+            logger.warning("cover.dj_artwork_fail: error=processing_failed")
 
     # Artist name: NO shadow for artist cover
     _draw_centered_no_shadow(draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255))
@@ -786,12 +786,12 @@ def _extract_cover_ffmpeg_stream(
             from tracksplit.probe import run_ffprobe
             ffprobe_data = run_ffprobe(input_path)
         except (subprocess.CalledProcessError, OSError) as exc:
-            logger.debug("ffprobe failed for cover lookup on %s: %s", input_path.name, exc)
+            logger.debug('cover.source_fail: file=%s method=ffprobe error="%s"', input_path.name, exc)
             return None
 
     found = _find_cover_stream(ffprobe_data)
     if found is None:
-        logger.debug("No cover art stream found in %s", input_path.name)
+        logger.debug("cover.source_fail: file=%s method=ffprobe error=no_cover_stream", input_path.name)
         return None
     stream_index, ext = found
 
@@ -812,17 +812,17 @@ def _extract_cover_ffmpeg_stream(
             "-update", "1",
             str(tmp_file),
         ]
-        logger.debug("Extracting cover via ffmpeg stream map: %s", " ".join(cmd))
+        logger.debug("cover.source: file=%s method=ffmpeg_stream", input_path.name)
         subprocess.run(cmd, capture_output=True, check=True, timeout=30)
 
         if tmp_file.exists() and tmp_file.stat().st_size > 0:
             data = tmp_file.read_bytes()
             logger.info(
-                "Extracted cover art via ffmpeg stream from %s", input_path.name,
+                "cover.source: file=%s method=ffmpeg", input_path.name,
             )
             return data
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
-        logger.debug("ffmpeg cover stream extraction failed: %s", exc)
+        logger.debug('cover.source_fail: file=%s method=ffmpeg error="%s"', input_path.name, exc)
     finally:
         if tmp_file is not None:
             tmp_file.unlink(missing_ok=True)
@@ -860,7 +860,7 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
             "json",
             str(input_path),
         ]
-        logger.debug("Trying mkvmerge identify: %s", " ".join(identify_cmd))
+        logger.debug("cover.source: file=%s method=mkvmerge_identify", input_path.name)
         identify_result = subprocess.run(
             identify_cmd, capture_output=True, check=True, text=True,
             timeout=30, encoding="utf-8",
@@ -869,7 +869,7 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
 
         image_attachment = _pick_image_attachment(info.get("attachments", []))
         if image_attachment is None:
-            logger.debug("No image attachments found in %s", input_path.name)
+            logger.debug("cover.source_fail: file=%s method=mkvextract error=no_attachments", input_path.name)
             return None
 
         att_id = image_attachment["id"]
@@ -886,13 +886,13 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
             "attachments",
             f"{att_id}:{tmp_file}",
         ]
-        logger.debug("Extracting attachment: %s", " ".join(extract_cmd))
+        logger.debug("cover.source: file=%s method=mkvextract", input_path.name)
         subprocess.run(extract_cmd, capture_output=True, check=True, timeout=30)
 
         if tmp_file.exists() and tmp_file.stat().st_size > 0:
             data = tmp_file.read_bytes()
             logger.info(
-                "Extracted cover art via mkvextract from %s", input_path.name
+                "cover.source: file=%s method=mkvextract", input_path.name,
             )
             return data
 
@@ -900,7 +900,7 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
         subprocess.CalledProcessError, subprocess.TimeoutExpired,
         json.JSONDecodeError, KeyError, OSError,
     ) as exc:
-        logger.debug("mkvmerge/mkvextract failed: %s", exc)
+        logger.debug('cover.source_fail: file=%s method=mkvtools error="%s"', input_path.name, exc)
     finally:
         if tmp_file is not None:
             tmp_file.unlink(missing_ok=True)
