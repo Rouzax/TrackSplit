@@ -56,13 +56,14 @@ def parse_chapters(ffprobe_data: dict) -> list[Chapter]:
         if end - start <= 0:
             title = raw_tags.get("title", "(untitled)")
             logger.warning(
-                "Skipping zero-duration chapter %r at %.3f s", title, start
+                'probe.skip_zero: title="%s" start=%.3f', title, start,
             )
             continue
 
         title = _fix_text(raw_tags.get("title", "").strip())
         if not title:
             title = f"Track {len(chapters) + 1:02d}"
+            logger.debug("probe.title_synthesized: track=%d", len(chapters) + 1)
 
         tags: dict[str, str] = {}
         for k, v in raw_tags.items():
@@ -82,6 +83,7 @@ def parse_chapters(ffprobe_data: dict) -> list[Chapter]:
             )
         )
 
+    logger.debug("probe.chapters: count=%d", len(chapters))
     return chapters
 
 
@@ -195,19 +197,21 @@ def get_opus_packet_duration_ms(path: Path) -> int | None:
             seconds = float(line.split("=", 1)[1])
         except ValueError:
             logger.debug(
-                "Opus packet duration parse failed for %s: %r", path.name, line,
+                'probe.opus_packet: file=%s error="parse failed: %s"', path.name, line,
             )
             return None
         durations_ms.add(int(round(seconds * 1000)))
     if not durations_ms:
         logger.debug(
-            "No Opus packets found for %s, skipping prefix fix", path.name,
+            "probe.opus_packet: file=%s error=no_packets", path.name,
         )
         return None
     if len(durations_ms) != 1:
         logger.debug(
-            "Opus packet durations disagree for %s: %s ms, skipping prefix fix",
+            "probe.opus_disagree: file=%s durations_ms=%s",
             path.name, sorted(durations_ms),
         )
         return None
-    return next(iter(durations_ms))
+    result = next(iter(durations_ms))
+    logger.debug("probe.opus_packet: file=%s duration_ms=%d", path.name, result)
+    return result

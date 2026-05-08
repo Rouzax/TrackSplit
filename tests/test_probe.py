@@ -562,4 +562,4 @@ class TestGetOpusPacketDurationMs:
         with caplog.at_level(logging.DEBUG, logger="tracksplit.probe"):
             assert get_opus_packet_duration_ms(Path("/tmp/x.mkv")) is None
         joined = "\n".join(r.message for r in caplog.records)
-        assert "no packet" in joined.lower() or "no opus packet" in joined.lower()
+        assert "no_packets" in joined.lower()

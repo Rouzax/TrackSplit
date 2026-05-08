@@ -120,7 +120,7 @@ def test_load_album_manifest_schema_2_is_rejected(tmp_path, caplog):
     )
     with caplog.at_level(logging.DEBUG, logger="tracksplit.manifest"):
         assert load_album_manifest(tmp_path) is None
-    assert any("schema mismatch" in rec.getMessage().lower() for rec in caplog.records)
+    assert any("schema_mismatch" in rec.getMessage().lower() for rec in caplog.records)
 
 
 def test_load_artist_manifest_schema_mismatch_returns_none(tmp_path):

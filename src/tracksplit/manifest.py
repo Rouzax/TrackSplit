@@ -217,13 +217,13 @@ def load_album_manifest(album_dir: Path) -> AlbumManifest | None:
         data = json.loads(path.read_text())
         if data.get("schema") != MANIFEST_SCHEMA:
             logger.debug(
-                "Manifest schema mismatch at %s: got %r, expected %r",
-                path, data.get("schema"), MANIFEST_SCHEMA,
+                "manifest.schema_mismatch: file=%s found=%s expected=%d",
+                path.name, data.get("schema"), MANIFEST_SCHEMA,
             )
             return None
         return AlbumManifest.from_dict(data)
     except (json.JSONDecodeError, OSError, KeyError, TypeError) as exc:
-        logger.warning("Manifest unreadable at %s: %s", path, exc)
+        logger.warning('manifest.unreadable: file=%s error="%s"', path.name, exc)
         return None
 
 
@@ -245,8 +245,8 @@ def load_artist_manifest(artist_dir: Path) -> ArtistManifest | None:
         d = json.loads(path.read_text())
         if d.get("schema") != MANIFEST_SCHEMA:
             logger.debug(
-                "Artist manifest schema mismatch at %s: got %r, expected %r",
-                path, d.get("schema"), MANIFEST_SCHEMA,
+                "manifest.schema_mismatch: file=%s found=%s expected=%d",
+                path.name, d.get("schema"), MANIFEST_SCHEMA,
             )
             return None
         return ArtistManifest(
@@ -254,7 +254,7 @@ def load_artist_manifest(artist_dir: Path) -> ArtistManifest | None:
             dj_artwork_sha256=d["dj_artwork_sha256"],
         )
     except (json.JSONDecodeError, OSError, KeyError) as exc:
-        logger.warning("Artist manifest unreadable at %s: %s", path, exc)
+        logger.warning('manifest.unreadable: file=%s error="%s"', path.name, exc)
         return None
 
 

@@ -1,11 +1,14 @@
 """Metadata extraction, sanitization, and album building for TrackSplit."""
 from __future__ import annotations
 
+import logging
 import re
 from typing import TYPE_CHECKING
 
 from tracksplit.models import AlbumMeta, Chapter, TrackMeta
 from tracksplit.probe import _split_pipe_preserving_empty
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from tracksplit.cratedigger import CrateDiggerConfig
@@ -230,6 +233,12 @@ def build_album_meta(
             or "PERFORMER_NAMES" in ctags
         )
 
+        if not clean_titles:
+            logger.debug(
+                "metadata.source: file=%s structured=%s cratedigger=%s",
+                filename_stem, has_structured, tier == 2,
+            )
+
         if has_structured:
             title = ctags.get("TITLE") or ch.title
             title, _ = strip_label(title)
@@ -261,6 +270,11 @@ def build_album_meta(
                 and artist
                 and track_artist.casefold() == artist.casefold()
             ):
+                if track_artist != artist:
+                    logger.debug(
+                        'metadata.artist_canon: file=%s track=%d original="%s" canonical="%s"',
+                        filename_stem, len(clean_titles) + 1, track_artist, artist,
+                    )
                 track_artist = artist
             display = track_artist
             names = []
@@ -274,7 +288,11 @@ def build_album_meta(
         publishers.append(label)
         track_genres.append(genres)
 
+    pre_dedup = list(clean_titles)
     clean_titles = deduplicate_titles(clean_titles)
+    dedup_count = sum(1 for a, b in zip(pre_dedup, clean_titles) if a != b)
+    if dedup_count:
+        logger.debug("metadata.title_dedup: file=%s count=%d", filename_stem, dedup_count)
 
     tracks: list[TrackMeta] = []
     for i, ch in enumerate(chapters):

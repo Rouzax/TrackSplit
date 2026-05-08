@@ -47,31 +47,29 @@ def _load_config() -> dict[str, str]:
     """Load tool paths from the platformdirs config file."""
     path = paths.config_file()
     if not path.is_file():
-        logger.debug("No tracksplit config found at %s; using defaults", path)
+        logger.debug("tools.config: path=%s status=not_found", path)
         return {}
     try:
         with open(path, "rb") as f:
             data = tomllib.load(f)
     except (tomllib.TOMLDecodeError, OSError) as exc:
-        logger.warning("Failed to read config %s: %s", path, exc)
+        logger.warning('tools.config: path=%s error="%s"', path, exc)
         return {}
     tools_section = data.get("tools", {})
     if not isinstance(tools_section, dict):
         logger.warning(
-            "Config %s: [tools] must be a table, got %s. Using defaults.",
+            'tools.config: path=%s error="[tools] must be a table, got %s"',
             path, type(tools_section).__name__,
         )
         return {}
     resolved = {k: str(v) for k, v in tools_section.items()}
     if resolved:
-        logger.info("Loaded tool config from %s: %s", path, sorted(resolved))
+        logger.info("tools.config: path=%s status=loaded tools=%s", path, "|".join(sorted(resolved)))
         for name, tool_path in resolved.items():
             if tool_path != name and not Path(tool_path).is_file():
-                logger.warning(
-                    "Configured %s path does not exist: %s", name, tool_path,
-                )
+                logger.warning("tools.missing: tool=%s path=%s", name, tool_path)
     else:
-        logger.info("Config at %s has no [tools] section", path)
+        logger.info("tools.config: path=%s status=empty", path)
     return resolved
 
 
