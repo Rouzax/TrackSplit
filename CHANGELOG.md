@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-05-08
+
+### Changed
+
+- Debug log files are now per-command. Each CLI invocation creates its own timestamped log file (e.g. `split-2026-05-08T14-22-01-a3f2.log`) instead of appending to a single rotating `tracksplit.log`. Log files older than seven days are cleaned up automatically on the next run.
+- All debug log messages now use a structured `prefix.event: key=value` format (e.g. `pipeline.regenerate: file=X reason=force`) instead of freeform prose, making log files easier to grep and parse.
+- `--check` output now includes a "Log directory" row showing the log directory path and the number of log files present.
+- Subprocess logging (ffmpeg, ffprobe, mkvmerge, mkvextract) now records failures only. Successful invocations no longer appear in the debug log, significantly reducing log noise during normal operation.
+- CrateDigger config resolution is now logged once at startup instead of once per file. Festival alias resolution is deduplicated so each alias is logged at most once per run. Previously a 100-file batch could produce hundreds of identical "candidate dirs" lines.
+
 ## [0.8.0] - 2026-04-25
 
 ### Changed
