@@ -32,6 +32,15 @@ logger = logging.getLogger(__name__)
 _config_cache: dict[tuple[str, ...], "CrateDiggerConfig"] = {}
 _config_cache_lock = threading.Lock()
 
+_logged_festival_aliases: set[str] = set()
+_logged_festival_aliases_lock = threading.Lock()
+
+
+def _clear_logged_aliases() -> None:
+    """Reset the logged-alias set. Intended for tests."""
+    with _logged_festival_aliases_lock:
+        _logged_festival_aliases.clear()
+
 
 def _clear_config_cache() -> None:
     """Reset the load_config memo. Intended for tests."""
@@ -54,7 +63,7 @@ def find_cratedigger_dirs(input_path: Path) -> list[Path]:
     if env:
         env_path = Path(env)
         if env_path.is_dir():
-            logger.debug("CrateDigger data: $CRATEDIGGER_DATA_DIR -> %s", env_path)
+            logger.debug("cratedigger.config: data_dir=%s source=env", env_path)
             return [env_path]
 
     dirs: list[Path] = []
@@ -69,7 +78,6 @@ def find_cratedigger_dirs(input_path: Path) -> list[Path]:
     if visible.resolve() not in seen:
         dirs.append(visible)
 
-    logger.debug("CrateDigger candidate dirs: %s", [str(d) for d in dirs])
     return dirs
 
 
@@ -79,7 +87,7 @@ def _load_json(path: Path) -> dict:
     except FileNotFoundError:
         return {}
     except (OSError, json.JSONDecodeError) as exc:
-        logger.debug("CrateDigger config read failed: %s (%s)", path, exc)
+        logger.debug("cratedigger.load_fail: path=%s error=%s", path, exc)
         return {}
 
 
@@ -88,7 +96,7 @@ def _find_json(dirs: list[Path], filename: str) -> dict:
     for d in dirs:
         path = d / filename
         if path.is_file():
-            logger.debug("Loading %s from %s", filename, d)
+            logger.debug("cratedigger.load: file=%s path=%s", filename, d)
             return _load_json(path)
     return {}
 
@@ -292,6 +300,7 @@ def load_config(input_path: Path) -> CrateDiggerConfig:
         return cached
 
     cfg = CrateDiggerConfig()
+    logger.debug("cratedigger.config: data_dirs=%s", [str(d) for d in dirs])
 
     # -- Curated data: per-file first-found-wins across candidate dirs --
 
@@ -347,9 +356,13 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
         canon, edition = cfg.resolve_festival(raw_festival)
         display = cfg.festival_display(canon, edition) or raw_festival
         if display != raw_festival:
-            logger.debug(
-                "Festival: %r -> %r (edition=%r)", raw_festival, display, edition,
-            )
+            with _logged_festival_aliases_lock:
+                if raw_festival not in _logged_festival_aliases:
+                    _logged_festival_aliases.add(raw_festival)
+                    logger.debug(
+                        'cratedigger.festival_alias: raw="%s" short="%s" edition="%s"',
+                        raw_festival, display, edition,
+                    )
         tags["festival"] = display
         tags["edition"] = edition
     else:
@@ -359,7 +372,7 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
     if raw_artist:
         resolved = cfg.resolve_artist(raw_artist)
         if resolved != raw_artist:
-            logger.debug("Artist: %r -> %r", raw_artist, resolved)
+            logger.debug('cratedigger.artist_alias: raw="%s" canonical="%s"', raw_artist, resolved)
         tags["artist"] = resolved
 
     return tags

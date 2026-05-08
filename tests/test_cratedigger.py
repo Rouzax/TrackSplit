@@ -440,7 +440,7 @@ class TestLoadJsonNoise:
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
             load_config(home / "video.mkv")
         assert not any(
-            "config read failed" in rec.message for rec in caplog.records
+            "cratedigger.load_fail" in rec.message for rec in caplog.records
         )
 
     def test_malformed_json_logs_debug(self, tmp_path: Path, caplog):
@@ -452,7 +452,7 @@ class TestLoadJsonNoise:
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
             load_config(home / "video.mkv")
         assert any(
-            "config read failed" in rec.message and "festivals.json" in rec.message
+            "cratedigger.load_fail" in rec.message and "festivals.json" in rec.message
             for rec in caplog.records
         )
 
