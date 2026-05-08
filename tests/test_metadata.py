@@ -302,9 +302,10 @@ def test_build_album_meta_tier2_no_festival():
 def test_build_album_meta_tier2_venue_no_date_year_from_filename():
     """Tier 2 with venue but no CRATEDIGGER date: year extracted from filename.
 
-    Also verifies B2B disambiguation: when ALBUMARTIST_DISPLAY is missing but
-    albumartists has 2+ entries, the artist folder uses the joined names so
-    a B2B set does not collide with a solo set at the same venue + year.
+    Also verifies B2B display: when ALBUMARTIST_DISPLAY is missing but
+    albumartists has 2+ entries, display_artist is the joined names.
+    Folder-level disambiguation is handled by AlbumMeta.album_folder
+    appending a '(with ...)' suffix and artist_folder using the primary artist.
     """
     tags = {
         "artist": "Martin Garrix",

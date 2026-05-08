@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-05-08
+
+### Changed
+
+- Multi-artist (B2B) sets are now placed under the primary artist's folder with a `(with X)` annotation on the album folder name (e.g. `Martin Garrix/Red Rocks Amphitheatre 2025 (with Alesso)/`) instead of a combined artist folder. The `ALBUM` and `ALBUMARTIST` tags inside track files are unchanged. On re-run, affected albums are regenerated in the new location; the old combined artist folder is not deleted automatically.
+
 ## [0.8.2] - 2026-05-08
 
 ### Fixed

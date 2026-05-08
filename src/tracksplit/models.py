@@ -48,8 +48,17 @@ class AlbumMeta:
 
     @property
     def artist_folder(self) -> str:
+        if len(self.albumartists) > 1:
+            return self.albumartists[0]
         return self.artist or "Unknown Artist"
 
     @property
     def album_folder(self) -> str:
-        return self.album or "Unknown Album"
+        base = self.album or "Unknown Album"
+        if len(self.albumartists) > 1:
+            guests = " & ".join(self.albumartists[1:])
+            suffix = f"with {guests}"
+            if base.endswith(")"):
+                return f"{base[:-1]}, {suffix})"
+            return f"{base} ({suffix})"
+        return base

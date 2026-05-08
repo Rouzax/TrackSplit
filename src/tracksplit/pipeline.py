@@ -595,11 +595,12 @@ def process_file(
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
                 skip = False
     if skip:
-        dj_artwork_data = find_dj_artwork(input_path, artist=album.artist)
+        primary_artist = album.albumartists[0] if album.albumartists else album.artist
+        dj_artwork_data = find_dj_artwork(input_path, artist=primary_artist)
         artist_dir = output_dir / safe_filename(album.artist_folder)
         refresh_artist_cover(
             artist_dir,
-            artist_name=album.artist,
+            artist_name=primary_artist,
             dj_artwork_data=dj_artwork_data,
             compose=compose_artist_cover,
         )
@@ -657,8 +658,9 @@ def process_file(
         # Cover art
         _progress("Extracting cover art")
         cover_data = extract_cover_from_mkv(input_path, ffprobe_data=ffprobe_data)
+        primary_artist = album.albumartists[0] if album.albumartists else album.artist
         dj_artwork_data = find_dj_artwork(
-            input_path, artist=album.artist,
+            input_path, artist=primary_artist,
         )
 
         _progress("Composing covers")
@@ -705,7 +707,7 @@ def process_file(
     artist_dir = output_dir / safe_filename(album.artist_folder)
     refresh_artist_cover(
         artist_dir,
-        artist_name=album.artist,
+        artist_name=primary_artist,
         dj_artwork_data=dj_artwork_data,
         compose=compose_artist_cover,
     )

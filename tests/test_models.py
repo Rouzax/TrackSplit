@@ -60,3 +60,63 @@ def test_albummeta_albumartists_defaults():
     a = AlbumMeta(artist="X", album="Y")
     assert a.albumartists == []
     assert a.albumartist_mbids == []
+
+
+def test_artist_folder_multi_artist_returns_first():
+    a = AlbumMeta(
+        artist="Martin Garrix & Alesso", album="X",
+        albumartists=["Martin Garrix", "Alesso"],
+    )
+    assert a.artist_folder == "Martin Garrix"
+
+
+def test_artist_folder_single_artist_unchanged():
+    a = AlbumMeta(
+        artist="Martin Garrix", album="X",
+        albumartists=["Martin Garrix"],
+    )
+    assert a.artist_folder == "Martin Garrix"
+
+
+def test_album_folder_multi_artist_no_parens():
+    a = AlbumMeta(
+        artist="Martin Garrix & Alesso",
+        album="Red Rocks Amphitheatre 2025",
+        albumartists=["Martin Garrix", "Alesso"],
+    )
+    assert a.album_folder == "Red Rocks Amphitheatre 2025 (with Alesso)"
+
+
+def test_album_folder_multi_artist_with_stage_parens():
+    a = AlbumMeta(
+        artist="Martin Garrix & Alesso",
+        album="UMF Miami 2026 (Mainstage)",
+        albumartists=["Martin Garrix", "Alesso"],
+    )
+    assert a.album_folder == "UMF Miami 2026 (Mainstage, with Alesso)"
+
+
+def test_album_folder_three_artists():
+    a = AlbumMeta(
+        artist="A & B & C",
+        album="Fest 2025",
+        albumartists=["A", "B", "C"],
+    )
+    assert a.album_folder == "Fest 2025 (with B & C)"
+
+
+def test_album_folder_three_artists_with_stage_parens():
+    a = AlbumMeta(
+        artist="A & B & C",
+        album="Fest 2025 (Mainstage)",
+        albumartists=["A", "B", "C"],
+    )
+    assert a.album_folder == "Fest 2025 (Mainstage, with B & C)"
+
+
+def test_album_folder_single_artist_unchanged():
+    a = AlbumMeta(
+        artist="Martin Garrix", album="Tomorrowland 2025 (Mainstage)",
+        albumartists=["Martin Garrix"],
+    )
+    assert a.album_folder == "Tomorrowland 2025 (Mainstage)"

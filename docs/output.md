@@ -47,6 +47,8 @@ The top-level folder is named after the artist. Inside it, two image files are p
 
 Both files contain the same image. TrackSplit writes both so the artist looks correct in whichever server you use.
 
+**Multi-artist (B2B) sets go under the primary artist's folder.** When a set has more than one headliner (as listed in the CrateDigger `CRATEDIGGER_1001TL_ARTISTS` tag), TrackSplit places the album inside the first-listed artist's folder rather than creating a combined folder like `Martin Garrix & Alesso/`. The artist artwork (`folder.jpg`, `artist.jpg`) reflects the primary artist.
+
 ### Album folder
 
 ```
@@ -62,6 +64,8 @@ Each video gets its own album folder inside the artist folder. The folder name c
 - **CrateDigger source with a festival tag:** `Festival Year (Stage)`, or `Festival Year` when no stage is set.
 - **CrateDigger source without a festival tag (venue recording):** `Venue Year` using the venue name, or the stage name if no venue is set. If that location string already contains the year (e.g. `"Bay Oval Park 2026-01-31"`), the year is not appended a second time.
 - **Plain chaptered video:** the source filename (without extension).
+
+**Multi-artist (B2B) sets get a "(with ...)" annotation on the folder name.** When a set has more than one headliner, all guest artists (everyone after the first) are appended to the folder name: `Red Rocks Amphitheatre 2025 (with Alesso)`. For three or more headliners the guests are joined with ` & `: `Festival 2025 (with Alesso & John Summit)`. When the base album name already ends with a parenthetical (such as a stage name), the "with" annotation is merged into it rather than added as a second pair of parentheses: `UMF Miami 2026 (Mainstage, with Alesso)`. The `ALBUM` tag inside every track file always contains the clean album name without this annotation; the annotation appears only in the folder name.
 
 ### Track files
 
@@ -143,7 +147,7 @@ The core tags written on every track:
 | `TITLE` | The track title (from the chapter name) |
 | `ARTIST` | The performing artist for this track |
 | `ALBUMARTIST` | The headlining artist for the whole set |
-| `ALBUM` | The album name (same as the folder name) |
+| `ALBUM` | The clean album name. For multi-artist sets this is the base name without the "(with ...)" folder annotation. |
 | `TRACKNUMBER` | The track number |
 | `DISCNUMBER` | Always `1` |
 
