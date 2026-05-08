@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import errno
 import logging
-import logging.handlers
 import os
 import signal
 import subprocess
@@ -14,10 +13,9 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from rich.highlighter import NullHighlighter
-from rich.logging import RichHandler
 
 from tracksplit import paths
+from tracksplit.log import setup_logging
 from tracksplit.console import (
     BatchProgress,
     FileProgress,
@@ -75,66 +73,6 @@ def _report_failure(name: str, exc: BaseException) -> str:
     return detail
 
 
-def _setup_logging(verbose: bool, debug: bool) -> None:
-    """Configure the tracksplit logger with Rich console + rotating file handler.
-
-    Mirrors festival_organizer.log.setup_logging so both CLIs share a policy:
-    the rotating file handler always logs at DEBUG so the file is a full
-    post-mortem trail, while the console handler follows --verbose/--debug.
-
-    A filesystem failure when creating the log file is demoted to a single
-    WARNING on the console handler; the CLI still starts.
-    """
-    console_level = logging.DEBUG if debug else logging.INFO if verbose else logging.WARNING
-
-    logger = logging.getLogger("tracksplit")
-
-    for handler in list(logger.handlers):
-        try:
-            handler.close()
-        except Exception:
-            pass
-    logger.handlers.clear()
-
-    logger.setLevel(logging.DEBUG)
-
-    rich_handler = RichHandler(
-        console=console,
-        rich_tracebacks=True,
-        show_path=False,
-        markup=False,
-        highlighter=NullHighlighter(),
-    )
-    rich_handler.setLevel(console_level)
-    logger.addHandler(rich_handler)
-
-    file_handler_error: str | None = None
-    try:
-        log_path = paths.ensure_parent(paths.log_file())
-        file_handler = logging.handlers.RotatingFileHandler(
-            log_path,
-            maxBytes=5 * 1024 * 1024,
-            backupCount=5,
-            encoding="utf-8",
-            delay=True,
-        )
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(logging.Formatter(
-            "%(asctime)s %(levelname)s %(name)s: %(message)s"
-        ))
-        logger.addHandler(file_handler)
-    except OSError as exc:
-        file_handler_error = f"{type(exc).__name__}: {exc}"
-
-    if file_handler_error is not None:
-        logger.warning(
-            "Could not open log file at %s (%s). Continuing without file logging.",
-            paths.log_file(), file_handler_error,
-        )
-
-    paths.warn_if_legacy_paths_exist()
-
-
 def _live_display_enabled() -> bool:
     """Check whether the live progress display should be active.
 
@@ -143,11 +81,13 @@ def _live_display_enabled() -> bool:
     tracksplit logger's RichHandler level rather than the root logger
     because the file handler is always at DEBUG.
     """
+    from rich.logging import RichHandler
+
     logger = logging.getLogger("tracksplit")
     for handler in logger.handlers:
         if isinstance(handler, RichHandler):
             return handler.level > logging.INFO
-    # No console handler configured (e.g. tests that skip _setup_logging);
+    # No console handler configured (e.g. tests that skip setup_logging);
     # err on the side of showing the spinner, matching prior default.
     return True
 
@@ -401,6 +341,14 @@ def _run_check() -> int:
                 f"  [green]✓[/green] {PACKAGE_NAME:<14} {update_installed} {annotation}"
             )
 
+    out.print("\n[bold]Log directory[/bold]")
+    log_directory = paths.log_dir()
+    if log_directory.is_dir():
+        log_count = sum(1 for f in log_directory.iterdir() if f.suffix == ".log")
+        out.print(f"  [green]\u2713[/green] {log_directory} ({log_count} file(s))")
+    else:
+        out.print(f"  [dim]~[/dim] {log_directory} (not yet created)")
+
     out.print("\n[bold]Python packages[/bold]")
     for pkg in _PACKAGES:
         try:
@@ -535,7 +483,8 @@ def main(
     ),
 ) -> None:
     """Process video files and extract audio chapters into tagged albums."""
-    _setup_logging(verbose, debug)
+    _log_path = setup_logging(verbose, debug, console=console, command="split")
+    paths.warn_if_legacy_paths_exist()
 
     if version_flag:
         _print_version_with_freshness()
