@@ -51,13 +51,13 @@ class TestCrateDiggerCacheDir:
             assert result == Path("/fake/cache/CrateDigger")
 
 
-class TestLogFile:
+class TestLogDir:
     def test_uses_platformdirs_user_log_dir(self):
         with patch("tracksplit.paths.platformdirs") as mock_pd:
             mock_pd.user_log_dir.return_value = "/fake/log/TrackSplit"
-            result = paths.log_file()
+            result = paths.log_dir()
             mock_pd.user_log_dir.assert_called_once_with("TrackSplit", appauthor=False)
-            assert result == Path("/fake/log/TrackSplit/tracksplit.log")
+            assert result == Path("/fake/log/TrackSplit")
 
 
 class TestEnsureParent:

@@ -8,7 +8,7 @@ Layout (Windows / Linux):
 
 - Config + user data:    ``Documents\\TrackSplit\\config.toml`` / ``~/TrackSplit/config.toml``
 - Cache:                 ``%LOCALAPPDATA%\\TrackSplit\\Cache\\`` / ``~/.cache/TrackSplit/``
-- Logs:                  ``%LOCALAPPDATA%\\TrackSplit\\Logs\\`` / ``~/.local/state/TrackSplit/log/``
+- Logs:                  ``%LOCALAPPDATA%\\TrackSplit\\Logs\\`` / ``~/.local/state/TrackSplit/log/`` (per-command files)
 
 The user-edited config lives under a *visible* folder (Documents on Windows,
 ``$HOME`` root on Linux) because the grab-bag problem the rewrite solved was
@@ -75,9 +75,9 @@ def state_dir() -> Path:
     return Path(platformdirs.user_state_dir(APP_NAME, appauthor=False))
 
 
-def log_file() -> Path:
-    """Return the path to the rotating log file (``tracksplit.log``)."""
-    return Path(platformdirs.user_log_dir(APP_NAME, appauthor=False)) / "tracksplit.log"
+def log_dir() -> Path:
+    """Return the directory for per-command log files."""
+    return Path(platformdirs.user_log_dir(APP_NAME, appauthor=False))
 
 
 def ensure_parent(path: Path) -> Path:
