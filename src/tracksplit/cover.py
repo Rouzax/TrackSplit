@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, Unidenti
 
 from tracksplit.cratedigger import find_cratedigger_dirs
 from tracksplit.fonts import get_font_path
+from tracksplit.paths import cratedigger_cache_dir, safe_artist_name
 from tracksplit.tools import get_tool
 
 logger = logging.getLogger(__name__)
@@ -604,32 +605,57 @@ def compose_cover(
 # DJ artwork lookup
 # ---------------------------------------------------------------------------
 
+_DJ_IMAGE_NAMES = ("dj-artwork.jpg", "fanart.jpg")
+
+
+def _check_artist_dir(artist_dir: Path, artist: str, source: str) -> bytes | None:
+    for name in _DJ_IMAGE_NAMES:
+        candidate = artist_dir / name
+        if candidate.is_file():
+            logger.debug(
+                "cover.dj_lookup: artist=%s found=true source=%s path=%s",
+                artist, source, candidate,
+            )
+            return candidate.read_bytes()
+    return None
+
+
 def find_dj_artwork(
     input_path: Path,
     artist: str = "",
 ) -> bytes | None:
-    """Look up cached DJ artwork from CrateDigger's artist cache.
+    """Look up cached DJ artwork from CrateDigger's artist directories.
 
-    Lookup uses :func:`tracksplit.cratedigger.find_cratedigger_dirs` which
-    resolves to a single directory (env var, walk-up, or visible data dir).
-    Within that directory, checks ``artists/{artist}/dj-artwork.jpg`` first,
-    then ``artists/{artist}/fanart.jpg`` as fallback.
+    Search order:
 
-    Returns None if no artwork is found.
+    1. CrateDigger's platformdirs **cache** directory, using the sanitized
+       artist name (matching CrateDigger's ``_safe_artist_name`` convention).
+    2. CrateDigger **data** directories (walk-up ``.cratedigger/``, visible
+       data dir), trying the sanitized name first, then the raw name.
+
+    Within each artist directory, checks ``dj-artwork.jpg`` first,
+    then ``fanart.jpg`` as fallback.
     """
-    cratedigger_dirs = find_cratedigger_dirs(input_path)
-
     if not artist:
         return None
 
-    for cd in cratedigger_dirs:
-        artist_dir = cd / "artists" / artist
-        for name in ("dj-artwork.jpg", "fanart.jpg"):
-            candidate = artist_dir / name
-            if candidate.is_file():
-                logger.debug("cover.dj_lookup: artist=%s found=true path=%s", artist, candidate.name)
-                return candidate.read_bytes()
+    sanitized = safe_artist_name(artist)
+    names_to_try = [sanitized, artist] if sanitized != artist else [artist]
+    logger.debug("cover.dj_lookup: artist=%r sanitized=%r", artist, sanitized)
 
+    cache_artist_dir = cratedigger_cache_dir() / "artists" / sanitized
+    result = _check_artist_dir(cache_artist_dir, artist, "cache")
+    if result is not None:
+        return result
+
+    for cd in find_cratedigger_dirs(input_path):
+        for try_name in names_to_try:
+            artist_dir = cd / "artists" / try_name
+            result = _check_artist_dir(artist_dir, artist, "data")
+            if result is not None:
+                return result
+
+    logger.debug("cover.dj_lookup: artist=%s found=false", artist)
     return None
 
 

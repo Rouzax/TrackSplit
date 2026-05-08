@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import sys
 import tempfile
 from datetime import date
@@ -94,6 +95,17 @@ def cratedigger_cache_dir() -> Path:
     data dir instead; see :func:`resolve_cratedigger_data_dir`.
     """
     return Path(platformdirs.user_cache_dir(CRATEDIGGER_APP_NAME, appauthor=False))
+
+
+_SAFE_ARTIST_RE = re.compile(r"[^A-Za-z0-9 _()&.\-]")
+
+
+def safe_artist_name(name: str) -> str:
+    """Sanitize an artist name for CrateDigger cache directory lookups.
+
+    Mirrors CrateDigger's ``_safe_artist_name``.
+    """
+    return _SAFE_ARTIST_RE.sub("_", name).strip() or "_"
 
 
 def cratedigger_data_dir() -> Path:

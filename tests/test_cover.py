@@ -4,6 +4,7 @@ import io
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from PIL import Image
 
 from tracksplit.cover import (
@@ -247,6 +248,13 @@ class TestComposeCover:
 
 
 class TestFindDjArtwork:
+    @pytest.fixture(autouse=True)
+    def _empty_cache(self, tmp_path, monkeypatch):
+        """Isolate tests from the real CrateDigger cache directory."""
+        empty = tmp_path / "_empty_cd_cache"
+        empty.mkdir()
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: empty)
+
     def test_finds_dj_artwork_jpg_in_global(self, tmp_path, monkeypatch):
         """Prefers dj-artwork.jpg over fanart.jpg."""
         cd_dir = tmp_path / ".cratedigger"
@@ -302,9 +310,6 @@ class TestFindDjArtwork:
         assert result == b"lib-artwork"
 
     def test_returns_none_when_not_found(self, tmp_path, monkeypatch):
-        # Patch the resolver to return None (no walk-up dir) and point the
-        # visible data dir at a non-existent path so the real fallback cannot
-        # accidentally satisfy the lookup on a dev machine.
         monkeypatch.setattr(
             "tracksplit.paths.walkup_cratedigger_dir",
             lambda _p: None,
@@ -320,9 +325,85 @@ class TestFindDjArtwork:
         assert result is None
 
     def test_no_artist_returns_none(self, tmp_path):
-        # Empty artist short-circuits before any resolver lookup.
         result = find_dj_artwork(tmp_path / "file.flac")
         assert result is None
+
+    def test_finds_artwork_in_cache_dir(self, tmp_path, monkeypatch):
+        """Cache dir is the primary lookup location."""
+        cache_dir = tmp_path / "cd_cache"
+        artist_dir = cache_dir / "artists" / "AFROJACK"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"cache-artwork")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", artist="AFROJACK")
+        assert result == b"cache-artwork"
+
+    def test_cache_dir_uses_sanitized_name(self, tmp_path, monkeypatch):
+        """Cache dir uses the sanitized artist name (e.g. Tiësto -> Ti_sto)."""
+        cache_dir = tmp_path / "cd_cache"
+        artist_dir = cache_dir / "artists" / "Ti_sto"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"sanitized-artwork")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", artist="Tiësto")
+        assert result == b"sanitized-artwork"
+
+    def test_cache_dir_takes_priority_over_data_dir(self, tmp_path, monkeypatch):
+        cache_dir = tmp_path / "cd_cache"
+        cache_artist = cache_dir / "artists" / "DJ"
+        cache_artist.mkdir(parents=True)
+        (cache_artist / "dj-artwork.jpg").write_bytes(b"from-cache")
+
+        data_dir = tmp_path / ".cratedigger"
+        data_artist = data_dir / "artists" / "DJ"
+        data_artist.mkdir(parents=True)
+        (data_artist / "dj-artwork.jpg").write_bytes(b"from-data")
+
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: data_dir)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", artist="DJ")
+        assert result == b"from-cache"
+
+    def test_data_dir_tries_sanitized_name(self, tmp_path, monkeypatch):
+        data_dir = tmp_path / ".cratedigger"
+        artist_dir = data_dir / "artists" / "VER_WEST"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"data-sanitized")
+
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: data_dir)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", artist="VER:WEST")
+        assert result == b"data-sanitized"
+
+    def test_logs_not_found(self, tmp_path, monkeypatch, caplog):
+        import logging
+
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        with caplog.at_level(logging.DEBUG, logger="tracksplit.cover"):
+            result = find_dj_artwork(tmp_path / "file.mkv", artist="Nobody")
+        assert result is None
+        assert any("found=false" in r.message for r in caplog.records)
 
 
 class TestComposeArtistCover:

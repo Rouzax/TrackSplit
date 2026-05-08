@@ -427,3 +427,35 @@ class TestStateDir:
             result = paths.state_dir()
             mock_pd.user_state_dir.assert_called_once_with("TrackSplit", appauthor=False)
             assert result == Path("/fake/state/TrackSplit")
+
+
+class TestSafeArtistName:
+    def test_passthrough_for_safe_name(self):
+        assert paths.safe_artist_name("Martin Garrix") == "Martin Garrix"
+
+    def test_replaces_unicode(self):
+        assert paths.safe_artist_name("Tiësto") == "Ti_sto"
+
+    def test_replaces_colon(self):
+        assert paths.safe_artist_name("VER:WEST") == "VER_WEST"
+
+    def test_replaces_slash(self):
+        assert paths.safe_artist_name("AC/DC") == "AC_DC"
+
+    def test_preserves_ampersand(self):
+        assert paths.safe_artist_name("Above & Beyond") == "Above & Beyond"
+
+    def test_preserves_parentheses(self):
+        assert paths.safe_artist_name("DJ (Official)") == "DJ (Official)"
+
+    def test_preserves_dot_and_hyphen(self):
+        assert paths.safe_artist_name("Mr. Sub-Zero") == "Mr. Sub-Zero"
+
+    def test_empty_returns_underscore(self):
+        assert paths.safe_artist_name("") == "_"
+
+    def test_whitespace_only_returns_underscore(self):
+        assert paths.safe_artist_name("   ") == "_"
+
+    def test_strips_whitespace(self):
+        assert paths.safe_artist_name("  Garrix  ") == "Garrix"

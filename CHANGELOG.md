@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-05-08
+
+### Fixed
+
+- Artist folder images now find DJ artwork from CrateDigger's platform cache directory (`~/.cache/CrateDigger/artists/` on Linux, `AppData\Local\CrateDigger\Cache\artists\` on Windows). Previously only the data directories were searched, which never contain the downloaded artwork.
+- Artist name sanitization now matches CrateDigger's convention (e.g. "Tiësto" looks up "Ti_sto"), so artists with non-ASCII or special characters in their names get their photos.
+- Debug logging in `find_dj_artwork` now reports which directories are checked, whether artwork was found, and the source (cache vs data), making lookup failures diagnosable from the log.
+
 ## [0.8.1] - 2026-05-08
 
 ### Changed
