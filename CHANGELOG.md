@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-05-11
+
 ### Changed
 
 - CrateDigger integration now reads `places.json` (renamed from `festivals.json`
