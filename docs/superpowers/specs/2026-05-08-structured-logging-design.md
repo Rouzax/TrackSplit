@@ -141,7 +141,6 @@ Rules:
 |-------|-------|--------|------|
 | `probe.chapters` | DEBUG | `file=, count=N` | Chapters parsed |
 | `probe.skip_zero` | WARNING | `file=, title=, start=` | Zero-duration chapter filtered |
-| `probe.title_synthesized` | DEBUG | `file=, track=N` | Default "Track NN" assigned |
 | `probe.opus_packet` | DEBUG | `file=, duration_ms=N` | Opus packet duration detected |
 | `probe.opus_disagree` | DEBUG | `file=` | Packets disagree, triggers re-encode |
 

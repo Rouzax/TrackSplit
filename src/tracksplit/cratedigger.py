@@ -1,13 +1,14 @@
 """CrateDigger config reader: festival/artist alias resolution and MBID lookup.
 
 TrackSplit consumes MKVs produced by CrateDigger (sibling project). CrateDigger
-stores canonical naming rules in ``festivals.json`` and ``artists.json`` (curated
-data dir) plus auto-generated ``dj_cache.json`` and ``mbid_cache.json`` (cache
+stores canonical naming rules in ``places.json`` (formerly ``festivals.json``)
+and ``artists.json`` (curated data dir) plus auto-generated ``dj_cache.json``
+and ``mbid_cache.json`` (cache
 dir). This module mirrors the subset of CrateDigger's resolver logic that
 TrackSplit needs so that album folders, vorbis tags, and cover art all use
 consistent canonical names.
 
-Curated data (festivals.json, artists.json) is resolved per-file across
+Curated data (places.json, artists.json) is resolved per-file across
 candidate directories, matching CrateDigger's own ``_load_external_config``
 semantics. For each file the walk-up ``.cratedigger/`` directory is checked
 first; if the file is not there, the visible data dir
@@ -101,6 +102,17 @@ def _find_json(dirs: list[Path], filename: str) -> dict:
     return {}
 
 
+def _find_json_multi(dirs: list[Path], filenames: list[str]) -> dict:
+    """First-found-wins JSON lookup, trying each filename per directory."""
+    for d in dirs:
+        for filename in filenames:
+            path = d / filename
+            if path.is_file():
+                logger.debug("cratedigger.load: file=%s path=%s", filename, d)
+                return _load_json(path)
+    return {}
+
+
 def _strip_diacritics(s: str) -> str:
     """Fold diacritics for case/accent-insensitive matching ("Tiësto" -> "Tiesto")."""
     return "".join(
@@ -124,10 +136,11 @@ def _ci_get(mapping: dict, key: str):
 class CrateDiggerConfig:
     """Parsed CrateDigger config from per-file first-found-wins lookup.
 
-    Each curated file (festivals.json, artists.json) is resolved
+    Each curated file (places.json, artists.json) is resolved
     independently across candidate directories. A library-local
-    ``.cratedigger/festivals.json`` replaces the global one entirely;
-    missing files fall through to the visible data dir.
+    ``.cratedigger/places.json`` replaces the global one entirely;
+    missing files fall through to the visible data dir. The legacy
+    filename ``festivals.json`` is accepted as a fallback.
     """
 
     festival_config: dict = field(default_factory=dict)
@@ -281,7 +294,7 @@ def _invert_alias_map(raw: dict[str, list[str]]) -> dict[str, str]:
 def load_config(input_path: Path) -> CrateDiggerConfig:
     """Load CrateDigger config using per-file first-found-wins.
 
-    For each curated file (festivals.json, artists.json), candidate
+    For each curated file (places.json, artists.json), candidate
     directories are checked in priority order and the first file found
     wins entirely, matching CrateDigger's ``_load_external_config``.
 
@@ -304,7 +317,7 @@ def load_config(input_path: Path) -> CrateDiggerConfig:
 
     # -- Curated data: per-file first-found-wins across candidate dirs --
 
-    fest = _find_json(dirs, "festivals.json")
+    fest = _find_json_multi(dirs, ["places.json", "festivals.json"])
     fest = {
         k: v for k, v in fest.items()
         if not k.startswith("_") and isinstance(v, dict)

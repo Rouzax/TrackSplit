@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- CrateDigger integration now reads `places.json` (renamed from `festivals.json`
+  in CrateDigger). The old filename is still accepted as a fallback.
+
+### Fixed
+
+- Removed per-chapter `probe.title_synthesized` debug log that fired once per
+  untitled chapter, producing hundreds of redundant lines during parallel
+  processing.
+
 ## [0.9.1] - 2026-05-08
 
 ### Fixed

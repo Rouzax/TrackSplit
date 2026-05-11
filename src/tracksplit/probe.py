@@ -63,7 +63,6 @@ def parse_chapters(ffprobe_data: dict) -> list[Chapter]:
         title = _fix_text(raw_tags.get("title", "").strip())
         if not title:
             title = f"Track {len(chapters) + 1:02d}"
-            logger.debug("probe.title_synthesized: track=%d", len(chapters) + 1)
 
         tags: dict[str, str] = {}
         for k, v in raw_tags.items():

@@ -17,7 +17,7 @@ teach themselves ``%APPDATA%`` navigation. Caches and logs use the platform
 default because users never touch them, they get big, and backups should be
 able to skip them.
 
-CrateDigger curated data (festivals.json, artists.json) is resolved per-file
+CrateDigger curated data (places.json, artists.json) is resolved per-file
 across candidate directories in priority order, matching CrateDigger's own
 ``_load_external_config`` semantics:
 
@@ -91,7 +91,7 @@ def cratedigger_cache_dir() -> Path:
     """Return CrateDigger's platformdirs cache directory.
 
     CrateDigger stores auto-generated caches (dj_cache.json, mbid_cache.json)
-    here. Curated data (festivals.json, artists.json) lives in the visible
+    here. Curated data (places.json, artists.json) lives in the visible
     data dir instead; see :func:`resolve_cratedigger_data_dir`.
     """
     return Path(platformdirs.user_cache_dir(CRATEDIGGER_APP_NAME, appauthor=False))

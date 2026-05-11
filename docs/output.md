@@ -208,7 +208,7 @@ TrackSplit reads CrateDigger's caches directly, not just the tags baked into the
    | macOS | `~/CrateDigger/` |
    | Windows | `Documents\CrateDigger\` |
 
-Each file is resolved independently. A library-local `.cratedigger/festivals.json` replaces the user-level one entirely, but if the walk-up directory has no `festivals.json`, the user-level file is used. The same applies to `artists.json`. This means you can have a `.cratedigger` directory for folder layout config without needing to duplicate your festival and artist definitions there.
+Each file is resolved independently. A library-local `.cratedigger/places.json` replaces the user-level one entirely, but if the walk-up directory has no `places.json` (or the legacy `festivals.json`), the user-level file is used. The same applies to `artists.json`. This means you can have a `.cratedigger` directory for folder layout config without needing to duplicate your place and artist definitions there.
 
 If none of the locations has the file, TrackSplit continues without it (raw tag values pass through unchanged). No configuration is needed when CrateDigger is installed in its default location.
 
@@ -216,7 +216,7 @@ If none of the locations has the file, TrackSplit continues without it (raw tag 
 
 | File | What TrackSplit uses it for |
 |---|---|
-| `festivals.json` | Canonical festival name and alias resolution. Rewrites raw festival names (e.g. `"TML"`, `"A State Of Trance Festival"`) to their canonical form (`"Tomorrowland"`, `"ASOT"`), and decomposes edition suffixes (`"Tomorrowland Winter"` to `"Tomorrowland"` + edition `"Winter"`). Drives the `FESTIVAL` tag and the album folder name. |
+| `places.json` (legacy: `festivals.json`) | Canonical festival name and alias resolution. Rewrites raw festival names (e.g. `"TML"`, `"A State Of Trance Festival"`) to their canonical form (`"Tomorrowland"`, `"ASOT"`), and decomposes edition suffixes (`"Tomorrowland Winter"` to `"Tomorrowland"` + edition `"Winter"`). Drives the `FESTIVAL` tag and the album folder name. |
 | `artists.json` | Canonical artist name resolution (e.g. `"tiesto"` to `"Tiësto"`). Applied before the artist folder name and the `ALBUMARTIST` tag are written. Case- and diacritic-insensitive, so both `"Tiesto"` and `"TIËSTO"` resolve correctly. |
 | `dj_cache.json` | Supplements `artists.json` with per-DJ aliases scraped by CrateDigger. Loaded before `artists.json` so manual entries in `artists.json` win when the same alias appears in both. |
 | `mbid_cache.json` | Fills missing MusicBrainz artist IDs. For Tier-1 sources (no CrateDigger tags) the `ALBUMARTIST` is looked up here to populate `MUSICBRAINZ_ALBUMARTISTID`. For Tier-2 sources, any empty slot in the positional MBID list (per-track `MUSICBRAINZ_ARTISTID` and album-level `MUSICBRAINZ_ALBUMARTISTID`) is backfilled from this cache. Unknown names stay empty. |

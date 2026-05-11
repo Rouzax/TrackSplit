@@ -39,7 +39,7 @@ def cd_home(tmp_path: Path) -> Path:
     home = tmp_path / "home"
     cd = home / ".cratedigger"
     cd.mkdir(parents=True)
-    (cd / "festivals.json").write_text(json.dumps({
+    (cd / "places.json").write_text(json.dumps({
         "_comment": "test",
         "ASOT": {"aliases": ["A State Of Trance Festival", "A State Of Trance"]},
         "Tomorrowland": {
@@ -321,7 +321,7 @@ class TestCacheVsDataSplit:
     def test_dj_cache_read_from_cache_dir(self, tmp_path: Path, monkeypatch):
         data_dir = tmp_path / "data" / ".cratedigger"
         data_dir.mkdir(parents=True)
-        (data_dir / "festivals.json").write_text("{}")
+        (data_dir / "places.json").write_text("{}")
         (data_dir / "artists.json").write_text("{}")
         (data_dir / "dj_cache.json").write_text(json.dumps({
             "wrong": {"name": "ShouldNotAppear", "aliases": [], "member_of": []},
@@ -345,7 +345,7 @@ class TestCacheVsDataSplit:
     def test_mbid_cache_read_from_cache_dir(self, tmp_path: Path, monkeypatch):
         data_dir = tmp_path / "data" / ".cratedigger"
         data_dir.mkdir(parents=True)
-        (data_dir / "festivals.json").write_text("{}")
+        (data_dir / "places.json").write_text("{}")
         (data_dir / "artists.json").write_text("{}")
         (data_dir / "mbid_cache.json").write_text(json.dumps({"Wrong": "wrong-mbid"}))
         cache_dir = tmp_path / "cache"
@@ -394,7 +394,7 @@ class TestApplyCratediggerCanon:
         home = tmp_path / "home"
         cd = home / ".cratedigger"
         cd.mkdir(parents=True)
-        (cd / "festivals.json").write_text("{ not valid json")
+        (cd / "places.json").write_text("{ not valid json")
         monkeypatch.setattr(Path, "home", lambda: home)
         tags = {"artist": "A", "festival": "F"}
         # Should not raise; malformed files are skipped.
@@ -448,11 +448,11 @@ class TestLoadJsonNoise:
         home = tmp_path / "home"
         cd = home / ".cratedigger"
         cd.mkdir(parents=True)
-        (cd / "festivals.json").write_text("{ not json")
+        (cd / "places.json").write_text("{ not json")
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
             load_config(home / "video.mkv")
         assert any(
-            "cratedigger.load_fail" in rec.message and "festivals.json" in rec.message
+            "cratedigger.load_fail" in rec.message and "places.json" in rec.message
             for rec in caplog.records
         )
 
@@ -460,11 +460,11 @@ class TestLoadJsonNoise:
 class TestPerFileFallback:
     """Regression tests for the walk-up-shadows-visible-dir bug.
 
-    When a walk-up .cratedigger exists but has no festivals.json,
-    the visible data dir's festivals.json must be used.
+    When a walk-up .cratedigger exists but has no places.json,
+    the visible data dir's places.json must be used.
     """
 
-    def test_walkup_without_festivals_falls_through_to_visible(
+    def test_walkup_without_places_falls_through_to_visible(
         self, tmp_path: Path, monkeypatch,
     ):
         walkup = tmp_path / "library" / ".cratedigger"
@@ -472,7 +472,7 @@ class TestPerFileFallback:
 
         visible = tmp_path / "visible"
         visible.mkdir()
-        (visible / "festivals.json").write_text(json.dumps({
+        (visible / "places.json").write_text(json.dumps({
             "AMF": {"aliases": ["Amsterdam Music Festival"]},
         }))
 
@@ -502,23 +502,64 @@ class TestPerFileFallback:
         cfg = load_config(input_file)
         assert cfg.resolve_artist("Tiësto") == "Tiesto"
 
-    def test_walkup_festivals_shadows_visible_entirely(
+    def test_walkup_places_shadows_visible_entirely(
         self, tmp_path: Path, monkeypatch,
     ):
         walkup = tmp_path / "library" / ".cratedigger"
         walkup.mkdir(parents=True)
-        (walkup / "festivals.json").write_text(json.dumps({
+        (walkup / "places.json").write_text(json.dumps({
             "TML": {"aliases": ["Tomorrowland"]},
         }))
 
         visible = tmp_path / "visible"
         visible.mkdir()
-        (visible / "festivals.json").write_text(json.dumps({
+        (visible / "places.json").write_text(json.dumps({
             "AMF": {"aliases": ["Amsterdam Music Festival"]},
             "TML": {"aliases": ["Tomorrowland"]},
         }))
 
         monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
+        input_file = tmp_path / "library" / "video.mkv"
+        input_file.touch()
+        cfg = load_config(input_file)
+        assert cfg.resolve_festival("Tomorrowland") == ("TML", "")
+        assert cfg.resolve_festival("Amsterdam Music Festival") == ("Amsterdam Music Festival", "")
+
+    def test_legacy_festivals_json_fallback(
+        self, tmp_path: Path, monkeypatch,
+    ):
+        """When only festivals.json exists, it is loaded for backwards compat."""
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+        (walkup / "festivals.json").write_text(json.dumps({
+            "AMF": {"aliases": ["Amsterdam Music Festival"]},
+        }))
+
+        monkeypatch.setattr(
+            "tracksplit.paths.walkup_cratedigger_dir", lambda _: walkup,
+        )
+        input_file = tmp_path / "library" / "video.mkv"
+        input_file.touch()
+        cfg = load_config(input_file)
+        assert cfg.resolve_festival("Amsterdam Music Festival") == ("AMF", "")
+
+    def test_places_json_takes_priority_over_festivals_json(
+        self, tmp_path: Path, monkeypatch,
+    ):
+        """When both exist in the same dir, places.json wins."""
+        walkup = tmp_path / "library" / ".cratedigger"
+        walkup.mkdir(parents=True)
+        (walkup / "places.json").write_text(json.dumps({
+            "TML": {"aliases": ["Tomorrowland"]},
+        }))
+        (walkup / "festivals.json").write_text(json.dumps({
+            "AMF": {"aliases": ["Amsterdam Music Festival"]},
+            "TML": {"aliases": ["Tomorrowland"]},
+        }))
+
+        monkeypatch.setattr(
+            "tracksplit.paths.walkup_cratedigger_dir", lambda _: walkup,
+        )
         input_file = tmp_path / "library" / "video.mkv"
         input_file.touch()
         cfg = load_config(input_file)
