@@ -737,6 +737,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#folder-cleanup-on-re-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Folder cleanup on re-run
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1018,6 +1029,17 @@
     <span class="md-ellipsis">
       
         Re-run manifest details
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#folder-cleanup-on-re-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Folder cleanup on re-run
       
     </span>
   </a>
@@ -1380,6 +1402,14 @@
 <li>The list of track filenames written.</li>
 </ul>
 <p>On a subsequent run, TrackSplit loads the manifest and compares it against these fields. If nothing in that list changed, the album is skipped. Re-extraction is triggered by changes to the audio stream, chapters, or any of the embedded tags listed above. Container-level edits that do not touch the audio stream or embedded tags (such as a sibling tool rewriting MKV metadata) no longer cause spurious re-extracts. Deleting the manifest forces a full rebuild for that one album. Passing <code>--force</code> on the command line rebuilds everything regardless of manifests.</p>
+<h3 id="folder-cleanup-on-re-run">Folder cleanup on re-run</h3>
+<p>When regeneration is triggered, TrackSplit tidies up leftover files from the previous run automatically. It identifies old output by reading manifests, not by matching folder names.</p>
+<ul>
+<li><strong>Album folder moved:</strong> if the album folder path changed (because the artist name, festival name, venue name, or stage changed), the old folder is deleted and a new one is created at the correct location.</li>
+<li><strong>Track files renamed or removed:</strong> if track names changed within an album but the folder stayed the same, orphan audio files from the previous run are removed from the album directory.</li>
+<li><strong>Empty artist folders are not removed:</strong> if all albums move out of an artist folder (for example, after a name correction in <code>places.json</code> or <code>artists.json</code>), the now-empty artist folder stays behind. Delete it manually if it appears.</li>
+<li><strong><code>--force</code> follows the same rules:</strong> it rebuilds every album but applies the same folder and file cleanup logic described above.</li>
+</ul>
 
 
 
