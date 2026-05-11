@@ -1332,7 +1332,7 @@
 </tr>
 </tbody>
 </table>
-<p>Each file is resolved independently. A library-local <code>.cratedigger/festivals.json</code> replaces the user-level one entirely, but if the walk-up directory has no <code>festivals.json</code>, the user-level file is used. The same applies to <code>artists.json</code>. This means you can have a <code>.cratedigger</code> directory for folder layout config without needing to duplicate your festival and artist definitions there.</p>
+<p>Each file is resolved independently. A library-local <code>.cratedigger/places.json</code> replaces the user-level one entirely, but if the walk-up directory has no <code>places.json</code> (or the legacy <code>festivals.json</code>), the user-level file is used. The same applies to <code>artists.json</code>. This means you can have a <code>.cratedigger</code> directory for folder layout config without needing to duplicate your place and artist definitions there.</p>
 <p>If none of the locations has the file, TrackSplit continues without it (raw tag values pass through unchanged). No configuration is needed when CrateDigger is installed in its default location.</p>
 <p><strong>Cache files TrackSplit reads:</strong></p>
 <table>
@@ -1344,7 +1344,7 @@
 </thead>
 <tbody>
 <tr>
-<td><code>festivals.json</code></td>
+<td><code>places.json</code> (legacy: <code>festivals.json</code>)</td>
 <td>Canonical festival name and alias resolution. Rewrites raw festival names (e.g. <code>"TML"</code>, <code>"A State Of Trance Festival"</code>) to their canonical form (<code>"Tomorrowland"</code>, <code>"ASOT"</code>), and decomposes edition suffixes (<code>"Tomorrowland Winter"</code> to <code>"Tomorrowland"</code> + edition <code>"Winter"</code>). Drives the <code>FESTIVAL</code> tag and the album folder name.</td>
 </tr>
 <tr>
