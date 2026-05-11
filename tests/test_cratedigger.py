@@ -54,6 +54,10 @@ def cd_home(tmp_path: Path) -> Path:
             "editions": {"Europe": {}, "Miami": {"aliases": ["UMF Miami"]}},
         },
         "Awakenings": {},
+        "Red Rocks": {
+            "aliases": ["Red Rocks Amphitheatre"],
+            "color": "#C0392B",
+        },
     }))
     (cd / "artists.json").write_text(json.dumps({
         "aliases": {
@@ -129,6 +133,20 @@ class TestResolveFestival:
 
     def test_canonical_is_idempotent(self, cfg):
         assert cfg.resolve_festival("Tomorrowland") == ("Tomorrowland", "")
+
+
+class TestResolveVenue:
+    def test_alias_resolves(self, cfg):
+        assert cfg.resolve_venue("Red Rocks Amphitheatre") == "Red Rocks"
+
+    def test_unknown_venue_unchanged(self, cfg):
+        assert cfg.resolve_venue("Unknown Venue") == "Unknown Venue"
+
+    def test_empty(self, cfg):
+        assert cfg.resolve_venue("") == ""
+
+    def test_canonical_is_idempotent(self, cfg):
+        assert cfg.resolve_venue("Red Rocks") == "Red Rocks"
 
 
 class TestFestivalDisplay:
@@ -389,6 +407,25 @@ class TestApplyCratediggerCanon:
         assert tags["artist"] == "SomeArtist"
         assert tags["festival"] == "Some Fest"
         assert tags["edition"] == ""
+
+    def test_venue_resolved(self, cd_home: Path, monkeypatch):
+        monkeypatch.setattr(Path, "home", lambda: cd_home)
+        tags = {"artist": "Martin Garrix", "venue": "Red Rocks Amphitheatre"}
+        apply_cratedigger_canon(tags, cd_home / "video.mkv")
+        assert tags["venue"] == "Red Rocks"
+
+    def test_venue_and_festival_resolved_independently(
+        self, cd_home: Path, monkeypatch,
+    ):
+        monkeypatch.setattr(Path, "home", lambda: cd_home)
+        tags = {
+            "artist": "Martin Garrix",
+            "festival": "TML",
+            "venue": "Red Rocks Amphitheatre",
+        }
+        apply_cratedigger_canon(tags, cd_home / "video.mkv")
+        assert tags["festival"] == "Tomorrowland"
+        assert tags["venue"] == "Red Rocks"
 
     def test_malformed_json_survives(self, tmp_path: Path, monkeypatch):
         home = tmp_path / "home"

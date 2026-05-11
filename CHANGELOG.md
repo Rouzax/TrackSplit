@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-05-11
+
+### Fixed
+
+- Venue names (e.g. "Red Rocks Amphitheatre") are now resolved through
+  `places.json` aliases, producing canonical album folder names like
+  "Red Rocks 2025" instead of "Red Rocks Amphitheatre 2025". Cover art
+  also uses the canonical name.
+
 ## [0.9.2] - 2026-05-11
 
 ### Changed

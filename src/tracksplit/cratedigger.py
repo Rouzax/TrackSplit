@@ -194,6 +194,12 @@ class CrateDiggerConfig:
 
         return name, ""
 
+    def resolve_venue(self, name: str) -> str:
+        """Return the canonical name for a venue, or the input unchanged."""
+        if not name:
+            return ""
+        return self._resolve_festival_alias(name)
+
     def _resolve_festival_alias(self, name: str) -> str:
         if name in self.festival_aliases:
             return self.festival_aliases[name]
@@ -380,6 +386,12 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
         tags["edition"] = edition
     else:
         tags.setdefault("edition", "")
+
+    raw_venue = tags.get("venue", "")
+    if raw_venue:
+        resolved = cfg.resolve_venue(raw_venue)
+        if resolved != raw_venue:
+            tags["venue"] = resolved
 
     raw_artist = tags.get("artist", "")
     if raw_artist:
