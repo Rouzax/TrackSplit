@@ -235,3 +235,12 @@ If none of the locations has the file, TrackSplit continues without it (raw tag 
 - The list of track filenames written.
 
 On a subsequent run, TrackSplit loads the manifest and compares it against these fields. If nothing in that list changed, the album is skipped. Re-extraction is triggered by changes to the audio stream, chapters, or any of the embedded tags listed above. Container-level edits that do not touch the audio stream or embedded tags (such as a sibling tool rewriting MKV metadata) no longer cause spurious re-extracts. Deleting the manifest forces a full rebuild for that one album. Passing `--force` on the command line rebuilds everything regardless of manifests.
+
+### Folder cleanup on re-run
+
+When regeneration is triggered, TrackSplit tidies up leftover files from the previous run automatically. It identifies old output by reading manifests, not by matching folder names.
+
+- **Album folder moved:** if the album folder path changed (because the artist name, festival name, venue name, or stage changed), the old folder is deleted and a new one is created at the correct location.
+- **Track files renamed or removed:** if track names changed within an album but the folder stayed the same, orphan audio files from the previous run are removed from the album directory.
+- **Empty artist folders are not removed:** if all albums move out of an artist folder (for example, after a name correction in `places.json` or `artists.json`), the now-empty artist folder stays behind. Delete it manually if it appears.
+- **`--force` follows the same rules:** it rebuilds every album but applies the same folder and file cleanup logic described above.
