@@ -983,7 +983,7 @@
 
 <h1 id="troubleshooting">Troubleshooting</h1>
 <p><strong>First step for any issue:</strong> run <code>tracksplit --check</code>. It tests whether <code>ffmpeg</code>, <code>ffprobe</code>, and <code>mkvextract</code> are reachable and prints their versions or an install hint. Most setup problems show up here.</p>
-<p>If the check passes but something still goes wrong, re-run your command with <code>--debug</code>. This prints the exact FFmpeg commands TrackSplit runs and all subprocess output, which usually points straight at the cause.</p>
+<p>If the check passes but something still goes wrong, check the log file for the run. TrackSplit writes a log file automatically for every invocation, and it contains the exact FFmpeg commands TrackSplit ran and all subprocess output, which usually points straight at the cause. The log path is shown in the summary panel at the end of each run and under <code>tracksplit --check</code>.</p>
 <hr />
 <h2 id="tracksplit-says-ffmpeg-or-ffprobe-is-missing">TrackSplit says ffmpeg or ffprobe is missing</h2>
 <p><strong>What you see:</strong> <code>tracksplit --check</code> prints a red <code>✗</code> next to <code>ffmpeg</code> or <code>ffprobe</code>, with an install hint.</p>
@@ -1024,7 +1024,7 @@
 <p><strong>What you see:</strong> An error message mid-run, possibly with a traceback.</p>
 <p><strong>FFmpeg returned an error:</strong></p>
 <p>The underlying FFmpeg command failed. Common causes: corrupt input file, an unusual codec, or the disk filling up mid-write.</p>
-<p>Fix: re-run with <code>--debug</code> to see the exact FFmpeg command and its error output. That usually identifies the cause immediately.</p>
+<p>Fix: open the log file for the run. It contains the exact FFmpeg command and its error output, which usually identifies the cause immediately. The log path is shown in the summary panel at the end of the run and under <code>tracksplit --check</code>.</p>
 <p><strong>A tool is no longer found:</strong></p>
 <p>A tool was found during <code>--check</code> but is now missing or was moved. Re-run <code>tracksplit --check</code> to see which tool is affected, then reinstall or update your <a href="../configuration/">config file</a>.</p>
 <p><strong><code>No space left on device</code> or similar disk error:</strong></p>
@@ -1054,8 +1054,9 @@
 <p><strong>What is happening:</strong> TrackSplit compares the tags it would embed (genre, album artists, MusicBrainz IDs, comment, and others) against what the manifest recorded. If CrateDigger's enrichment changed any of those tags, TrackSplit correctly treats the album as outdated and re-extracts it.</p>
 <p>Enrichments that touch only bookkeeping fields (the DJ artwork URL, the CrateDigger enrichment timestamp) do not trigger a re-extract, because those fields are not embedded into the output tracks.</p>
 <p>If you see a re-extract you were not expecting, check the debug log for the exact field that changed:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>tracksplit<span class="w"> </span>your-set.mkv<span class="w"> </span>--output<span class="w"> </span>~/music/library/<span class="w"> </span>--debug<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>manifest
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>grep<span class="w"> </span>-i<span class="w"> </span>manifest<span class="w"> </span>~/.local/state/TrackSplit/log/split-*.log
 </code></pre></div>
+<p>The exact log path is shown at the end of each run. On macOS use <code>~/Library/Logs/TrackSplit/</code>; on Windows use <code>$env:LOCALAPPDATA\TrackSplit\Logs\</code>.</p>
 <hr />
 <h2 id="files-are-never-rebuilt-even-after-i-changed-something">Files are never rebuilt even after I changed something</h2>
 <p><strong>What you see:</strong> TrackSplit skips an album you know needs updating.</p>
