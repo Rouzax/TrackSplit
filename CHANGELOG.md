@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-05-12
+
+### Added
+
+- Batch summary panel now shows the log file path at the end of directory runs.
+
+### Changed
+
+- Bug report issue template asks for the automatic log file instead of `--debug` output.
+- Troubleshooting docs and CONTRIBUTING.md point at the per-run log file instead of suggesting `--debug`.
+
 ## [0.9.3] - 2026-05-11
 
 ### Fixed

@@ -48,7 +48,13 @@ def status_text(status: str, name: str, detail: str = "") -> Text:
     return text
 
 
-def summary_panel(processed: int, skipped: int, failed: int, cancelled: int = 0) -> Panel:
+def summary_panel(
+    processed: int,
+    skipped: int,
+    failed: int,
+    cancelled: int = 0,
+    log_path: object = None,
+) -> Panel:
     """Build a final summary panel for batch runs."""
     body = Text()
     body.append("Processed: ", style="bold")
@@ -62,6 +68,10 @@ def summary_panel(processed: int, skipped: int, failed: int, cancelled: int = 0)
     if cancelled:
         body.append("  cancelled: ", style="bold")
         body.append(str(cancelled), style="yellow")
+    if log_path:
+        body.append("\n")
+        body.append("Log: ", style="bold")
+        body.append(str(log_path), style="dim")
     return Panel(body, title="Summary", expand=True)
 
 

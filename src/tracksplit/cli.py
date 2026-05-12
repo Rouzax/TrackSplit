@@ -147,6 +147,7 @@ def _process_directory(
     dry_run: bool,
     output_format: str,
     workers: int,
+    log_path: object = None,
 ) -> None:
     """Process a directory of video files with parallel workers."""
     video_files = find_video_files(input_dir)
@@ -249,7 +250,7 @@ def _process_directory(
                         f.cancel()
 
     console.print()
-    console.print(summary_panel(processed, skipped, failed, cancelled))
+    console.print(summary_panel(processed, skipped, failed, cancelled, log_path=log_path))
 
 
 _TOOLS: list[tuple[str, bool]] = [
@@ -561,6 +562,7 @@ def main(
                 force=force, dry_run=dry_run,
                 output_format=output_format,
                 workers=workers,
+                log_path=_log_path,
             )
 
         else:

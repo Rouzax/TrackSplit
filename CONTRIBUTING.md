@@ -4,7 +4,7 @@ Thanks for your interest. TrackSplit is a small, focused CLI and we aim to keep 
 
 ## Reporting issues
 
-- **Bugs**: use the [Bug Report](https://github.com/Rouzax/TrackSplit/issues/new?template=bug_report.yml) template. Include the output of `tracksplit --check` and, where relevant, a `--debug` log.
+- **Bugs**: use the [Bug Report](https://github.com/Rouzax/TrackSplit/issues/new?template=bug_report.yml) template. Include the output of `tracksplit --check` and, where relevant, the per-run debug log file (its path is shown in the summary panel after each run and in `tracksplit --check`).
 - **Feature requests**: use the [Feature Request](https://github.com/Rouzax/TrackSplit/issues/new?template=feature_request.yml) template. Describe the use case, not just the mechanism.
 
 ## Development setup

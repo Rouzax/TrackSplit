@@ -2,7 +2,7 @@
 
 **First step for any issue:** run `tracksplit --check`. It tests whether `ffmpeg`, `ffprobe`, and `mkvextract` are reachable and prints their versions or an install hint. Most setup problems show up here.
 
-If the check passes but something still goes wrong, re-run your command with `--debug`. This prints the exact FFmpeg commands TrackSplit runs and all subprocess output, which usually points straight at the cause.
+If the check passes but something still goes wrong, check the log file for the run. TrackSplit writes a log file automatically for every invocation, and it contains the exact FFmpeg commands TrackSplit ran and all subprocess output, which usually points straight at the cause. The log path is shown in the summary panel at the end of each run and under `tracksplit --check`.
 
 ---
 
@@ -60,7 +60,7 @@ If FFmpeg is installed but in a non-standard location, see [Configuration](confi
 
 The underlying FFmpeg command failed. Common causes: corrupt input file, an unusual codec, or the disk filling up mid-write.
 
-Fix: re-run with `--debug` to see the exact FFmpeg command and its error output. That usually identifies the cause immediately.
+Fix: open the log file for the run. It contains the exact FFmpeg command and its error output, which usually identifies the cause immediately. The log path is shown in the summary panel at the end of the run and under `tracksplit --check`.
 
 **A tool is no longer found:**
 
@@ -115,8 +115,10 @@ Enrichments that touch only bookkeeping fields (the DJ artwork URL, the CrateDig
 If you see a re-extract you were not expecting, check the debug log for the exact field that changed:
 
 ```bash
-tracksplit your-set.mkv --output ~/music/library/ --debug 2>&1 | grep -i manifest
+grep -i manifest ~/.local/state/TrackSplit/log/split-*.log
 ```
+
+The exact log path is shown at the end of each run. On macOS use `~/Library/Logs/TrackSplit/`; on Windows use `$env:LOCALAPPDATA\TrackSplit\Logs\`.
 
 ---
 
