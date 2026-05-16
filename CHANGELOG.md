@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-05-16
+
 ### Added
 
 - CrateDigger `CRATEDIGGER_1001TL_LOCATION` tag is now used as a fallback
