@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- CrateDigger `CRATEDIGGER_1001TL_LOCATION` tag is now used as a fallback
+  when no venue or festival is present. Standalone venue shows that only
+  carry a location tag now produce clean album names like "Bay Oval Park
+  2026" instead of the raw filename. The location value is also shown on
+  the cover art accent line and canonicalized through `places.json` aliases.
+
 ## [0.9.4] - 2026-05-12
 
 ### Added

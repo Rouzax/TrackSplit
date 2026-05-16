@@ -62,7 +62,7 @@ Festival Year (Stage)/
 Each video gets its own album folder inside the artist folder. The folder name comes from the metadata:
 
 - **CrateDigger source with a festival tag:** `Festival Year (Stage)`, or `Festival Year` when no stage is set.
-- **CrateDigger source without a festival tag (venue recording):** `Venue Year` using the venue name, or the stage name if no venue is set. If that location string already contains the year (e.g. `"Bay Oval Park 2026-01-31"`), the year is not appended a second time.
+- **CrateDigger source without a festival tag (venue recording):** `Venue Year` using the venue name, or the location name (from the 1001Tracklists page heading) if no venue is set, or the stage name if neither is available. If that location string already contains the year (e.g. `"Bay Oval Park 2026-01-31"`), the year is not appended a second time.
 - **Plain chaptered video:** the source filename (without extension).
 
 **Multi-artist (B2B) sets get a "(with ...)" annotation on the folder name.** When a set has more than one headliner, all guest artists (everyone after the first) are appended to the folder name: `Red Rocks Amphitheatre 2025 (with Alesso)`. For three or more headliners the guests are joined with ` & `: `Festival 2025 (with Alesso & John Summit)`. When the base album name already ends with a parenthetical (such as a stage name), the "with" annotation is merged into it rather than added as a second pair of parentheses: `UMF Miami 2026 (Mainstage, with Alesso)`. The `ALBUM` tag inside every track file always contains the clean album name without this annotation; the annotation appears only in the folder name.
@@ -103,7 +103,7 @@ Alternatively, place it in a library-local `.cratedigger/artists.json` next to y
 
 With this entry, any track tagged `Dimitri Vegas & Like Mike` resolves to `DVLM` before the cover is drawn, so the name renders on one line at a larger font and stays readable on small thumbnails in Kodi or Jellyfin. The alias also affects the artist folder name, the `ALBUMARTIST` tag, and DJ artwork lookup (all three use the canonical name), so picking a short form you are happy to see elsewhere matters.
 
-**Festival accent fallback.** The line directly below the accent rail shows the festival name when one is present. If there is no festival, TrackSplit falls back to the venue, then to the first comma-separated segment of the stage, then leaves the slot empty. When stage is what fills the accent line, the separate stage subline below is suppressed so the same text does not appear twice. Whitespace-only festival, venue, or stage values are treated as empty and fall through the chain.
+**Festival accent fallback.** The line directly below the accent rail shows the festival name when one is present. If there is no festival, TrackSplit falls back to the venue, then to the location (from the 1001Tracklists page heading), then to the first comma-separated segment of the stage, then leaves the slot empty. When stage is what fills the accent line, the separate stage subline below is suppressed so the same text does not appear twice. Whitespace-only festival, venue, location, or stage values are treated as empty and fall through the chain.
 
 ### Gapless playback
 
@@ -190,7 +190,7 @@ TrackSplit only reads your source video files. It never modifies, moves, or dele
 ### Metadata tiers
 
 - **Tier 1 (any chaptered video):** TrackSplit infers artist and album from filename and embedded tags. The album folder uses the filename stem. You get numbered, tagged tracks with whatever metadata the source carries.
-- **Tier 2 (CrateDigger-tagged source):** TrackSplit uses the canonical artist, festival, venue, date, and MusicBrainz IDs embedded by CrateDigger. The album folder uses `Festival Year (Stage)` naming for festival sets, or `Venue Year` for venue recordings without a festival name. Every tag is populated precisely with no guessing.
+- **Tier 2 (CrateDigger-tagged source):** TrackSplit uses the canonical artist, festival, venue, date, and MusicBrainz IDs embedded by CrateDigger. The album folder uses `Festival Year (Stage)` naming for festival sets, or `Venue Year` (or `Location Year`) for venue recordings without a festival name. Every tag is populated precisely with no guessing.
 
 ### CrateDigger cache reuse
 

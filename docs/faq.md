@@ -37,7 +37,7 @@ No. TrackSplit only reads your source files. All output goes to the directory yo
 
 ## Can I change the folder or filename template?
 
-Not yet. For CrateDigger-tagged sources the album folder is named `Festival Year (Stage)` when a festival tag is present, or `Venue Year` for venue recordings without a festival name. Plain chaptered videos use the source filename. The album folder is always placed inside an `Artist/` folder. Track filenames follow `NN - Title`. The template is fixed in the current release.
+Not yet. For CrateDigger-tagged sources the album folder is named `Festival Year (Stage)` when a festival tag is present, or `Venue Year` (or `Location Year` when only a location tag is present) for venue recordings without a festival name. Plain chaptered videos use the source filename. The album folder is always placed inside an `Artist/` folder. Track filenames follow `NN - Title`. The template is fixed in the current release.
 
 ## Does it need the internet?
 
