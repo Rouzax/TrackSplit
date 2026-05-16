@@ -202,6 +202,7 @@ class TestParseTags:
         assert tags["festival"] == ""
         assert tags["stage"] == ""
         assert tags["venue"] == ""
+        assert tags["location"] == ""
         assert tags["comment"] == ""
         assert tags["dj_artwork"] == ""
         assert tags["cratedigger"] is False
@@ -238,6 +239,23 @@ class TestParseTags:
         tags = parse_tags({"format": {}})
         assert tags["artist"] == ""
         assert tags["cratedigger"] is False
+
+    def test_location_extracted(self):
+        data = _make_ffprobe_data(tags={
+            "ARTIST": "FISHER",
+            "CRATEDIGGER_1001TL_LOCATION": "Bay Oval Park",
+            "CRATEDIGGER_1001TL_DATE": "2026-01-15",
+        })
+        tags = parse_tags(data)
+        assert tags["location"] == "Bay Oval Park"
+        assert tags["cratedigger"] is True
+
+    def test_location_empty_when_absent(self):
+        data = _make_ffprobe_data(tags={
+            "ARTIST": "Someone",
+        })
+        tags = parse_tags(data)
+        assert tags["location"] == ""
 
 
 # ---------------------------------------------------------------------------

@@ -126,6 +126,7 @@ def parse_tags(ffprobe_data: dict) -> dict:
         "genres": genres,
         "stage": ci.get("CRATEDIGGER_1001TL_STAGE", ""),
         "venue": ci.get("CRATEDIGGER_1001TL_VENUE", ""),
+        "location": ci.get("CRATEDIGGER_1001TL_LOCATION", ""),
         "comment": ci.get("CRATEDIGGER_1001TL_URL", ""),
         "dj_artwork": ci.get("CRATEDIGGER_1001TL_DJ_ARTWORK", ""),
         "enriched_at": ci.get("CRATEDIGGER_ENRICHED_AT", ""),
