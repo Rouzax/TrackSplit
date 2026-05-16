@@ -682,7 +682,7 @@ def process_file(
             festival=album.festival,
             date=album.date,
             stage=album.stage,
-            venue=album.venue,
+            venue=album.venue or album.location,
             background_data=cover_data,
         )
 
