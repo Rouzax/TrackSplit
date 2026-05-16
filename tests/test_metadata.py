@@ -342,6 +342,23 @@ def test_build_album_meta_tier2_stage_contains_date_no_year_appended():
     assert meta.album == "Bay Oval Park, New Zealand 2026-01-31"
 
 
+def test_build_album_meta_tier2_location_no_venue_no_festival():
+    """Tier 2 with location but no venue or festival: album from location + year."""
+    tags = {
+        "artist": "FISHER",
+        "festival": "",
+        "date": "2026-01-15",
+        "stage": "",
+        "venue": "",
+        "location": "Bay Oval Park",
+        "genres": [],
+    }
+    chapters = _make_chapters(["Track 1"])
+    meta = build_album_meta(tags, chapters, "2026 - FISHER - Bay Oval Park", tier=2)
+    assert meta.album == "Bay Oval Park 2026"
+    assert meta.location == "Bay Oval Park"
+
+
 def test_build_album_meta_tier2_venue_with_date_tag():
     """Tier 2 with venue and CRATEDIGGER date: year comes from date tag."""
     tags = {

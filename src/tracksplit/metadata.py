@@ -173,12 +173,12 @@ def build_album_meta(
                 album = f"{album} ({stage})"
         else:
             venue = tags.get("venue", "")
-            location = venue or stage
-            if location:
-                if year and year not in location:
-                    album = f"{location} {year}"
+            place = venue or tags.get("location", "") or stage
+            if place:
+                if year and year not in place:
+                    album = f"{place} {year}"
                 else:
-                    album = location
+                    album = place
             else:
                 album = filename_stem
     else:
@@ -318,6 +318,7 @@ def build_album_meta(
         festival=tags.get("festival", ""),
         stage=tags.get("stage", ""),
         venue=tags.get("venue", ""),
+        location=tags.get("location", ""),
         comment=tags.get("comment", ""),
         tracks=tracks,
         albumartists=albumartists,

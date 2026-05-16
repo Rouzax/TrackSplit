@@ -40,6 +40,7 @@ class AlbumMeta:
     festival: str = ""
     stage: str = ""
     venue: str = ""
+    location: str = ""
     comment: str = ""
     tracks: list[TrackMeta] = field(default_factory=list)
     cover_data: bytes | None = None
