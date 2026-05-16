@@ -414,6 +414,12 @@ class TestApplyCratediggerCanon:
         apply_cratedigger_canon(tags, cd_home / "video.mkv")
         assert tags["venue"] == "Red Rocks"
 
+    def test_location_resolved(self, cd_home: Path, monkeypatch):
+        monkeypatch.setattr(Path, "home", lambda: cd_home)
+        tags = {"artist": "FISHER", "location": "Red Rocks Amphitheatre"}
+        apply_cratedigger_canon(tags, cd_home / "video.mkv")
+        assert tags["location"] == "Red Rocks"
+
     def test_venue_and_festival_resolved_independently(
         self, cd_home: Path, monkeypatch,
     ):

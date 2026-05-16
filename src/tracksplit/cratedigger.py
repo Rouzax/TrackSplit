@@ -393,6 +393,12 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
         if resolved != raw_venue:
             tags["venue"] = resolved
 
+    raw_location = tags.get("location", "")
+    if raw_location:
+        resolved = cfg.resolve_venue(raw_location)
+        if resolved != raw_location:
+            tags["location"] = resolved
+
     raw_artist = tags.get("artist", "")
     if raw_artist:
         resolved = cfg.resolve_artist(raw_artist)
