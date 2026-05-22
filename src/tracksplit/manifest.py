@@ -124,6 +124,7 @@ class AlbumManifest:
     cover_sha256: str
     intro_min_seconds: float | None = None
     cover_schema_version: int = 0
+    tag_schema_version: int = 0
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -147,6 +148,7 @@ class AlbumManifest:
             cover_sha256=d["cover_sha256"],
             intro_min_seconds=d.get("intro_min_seconds"),
             cover_schema_version=d.get("cover_schema_version", 0),
+            tag_schema_version=d.get("tag_schema_version", 0),
         )
 
 
@@ -169,6 +171,7 @@ def build_album_manifest(
 ) -> AlbumManifest:
     from tracksplit.pipeline import INTRO_MIN_SECONDS  # local import avoids cycle
     from tracksplit.cover import COVER_SCHEMA_VERSION  # local import avoids cycle
+    from tracksplit.tagger import TAG_SCHEMA_VERSION  # local import avoids cycle
     return AlbumManifest(
         schema=MANIFEST_SCHEMA,
         source=SourceFingerprint.from_ffprobe(source_path, ffprobe_data),
@@ -182,6 +185,7 @@ def build_album_manifest(
         cover_sha256=_sha256(cover_bytes) if cover_bytes else "",
         intro_min_seconds=INTRO_MIN_SECONDS,
         cover_schema_version=COVER_SCHEMA_VERSION,
+        tag_schema_version=TAG_SCHEMA_VERSION,
     )
 
 

@@ -150,12 +150,15 @@ The core tags written on every track:
 | `ALBUM` | The clean album name. For multi-artist sets this is the base name without the "(with ...)" folder annotation. |
 | `TRACKNUMBER` | The track number |
 | `DISCNUMBER` | Always `1` |
+| `DISCTOTAL` | Always `1` |
 
 Additional tags are written when the information is available:
 
 | Tag | When it appears |
 |---|---|
-| `DATE` | When the source has a date |
+| `DATE` | When the source has a date (recording/event date) |
+| `ORIGINALDATE` | Same value as `DATE`; Navidrome and other servers use this for the "original date" field |
+| `RELEASEDATE` | Same value as `DATE`; Navidrome and other servers use this for the "release date" field |
 | `TRACKTOTAL` | When the total track count is known |
 | `GENRE` | Per-track genre from CrateDigger, or the album genre as a fallback |
 | `PUBLISHER` | When present in the source |

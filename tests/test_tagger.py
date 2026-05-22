@@ -56,6 +56,9 @@ def test_build_tag_dict_all_fields():
     assert tags["DISCNUMBER"] == ["1"]
     assert tags["TRACKTOTAL"] == ["2"]
     assert tags["DATE"] == ["2024-03-22"]
+    assert tags["ORIGINALDATE"] == ["2024-03-22"]
+    assert tags["RELEASEDATE"] == ["2024-03-22"]
+    assert tags["DISCTOTAL"] == ["1"]
     # Track-level genre takes precedence
     assert tags["GENRE"] == ["Trance"]
     assert tags["PUBLISHER"] == ["Armada Music"]
@@ -88,10 +91,12 @@ def test_build_tag_dict_minimal():
     assert tags["ALBUM"] == ["Minimal Set"]
     assert tags["TRACKNUMBER"] == ["1"]
     assert tags["DISCNUMBER"] == ["1"]
+    assert tags["DISCTOTAL"] == ["1"]
 
     # Optional tags absent
     for key in (
-        "TRACKTOTAL", "DATE", "GENRE", "PUBLISHER", "COMMENT",
+        "TRACKTOTAL", "DATE", "ORIGINALDATE", "RELEASEDATE", "GENRE",
+        "PUBLISHER", "COMMENT",
         "MUSICBRAINZ_ALBUMARTISTID", "FESTIVAL", "STAGE", "VENUE",
     ):
         assert key not in tags, f"{key} should not be present when empty"

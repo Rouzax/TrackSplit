@@ -82,6 +82,8 @@ def make_manifest_dict(*, source_path: str = "/x.mkv", **overrides) -> dict:
         data["intro_min_seconds"] = overrides.pop("intro_min_seconds")
     if "cover_schema_version" in overrides:
         data["cover_schema_version"] = overrides.pop("cover_schema_version")
+    if "tag_schema_version" in overrides:
+        data["tag_schema_version"] = overrides.pop("tag_schema_version")
     if overrides:
         raise TypeError(f"unexpected overrides: {sorted(overrides)}")
     return data

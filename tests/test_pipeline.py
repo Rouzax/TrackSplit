@@ -585,6 +585,197 @@ class TestShouldRegenerate:
 
 
 # ---------------------------------------------------------------------------
+# retag_album
+# ---------------------------------------------------------------------------
+
+
+class TestRetagAlbum:
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    def test_retag_album_retags_and_rebuilds_cover(
+        self, mock_extract, mock_compose, mock_tag, tmp_path,
+    ):
+        from tracksplit.pipeline import retag_album
+        from tracksplit.manifest import (
+            load_album_manifest, ALBUM_MANIFEST_FILENAME,
+        )
+        from tracksplit.tagger import TAG_SCHEMA_VERSION
+        from tests._manifest_helpers import (
+            default_tags, make_manifest_dict, make_ffprobe, make_audio_fp,
+        )
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        album_dir = tmp_path / "album"
+        album_dir.mkdir()
+
+        (album_dir / "01 - T.flac").write_bytes(b"audio")
+
+        data = make_manifest_dict(
+            source_path=str(src),
+            track_filenames=["01 - T.flac"],
+            tag_schema_version=0,
+        )
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
+
+        mock_extract.return_value = None
+        mock_compose.return_value = b"NEW-COVER"
+
+        new_tags = {**default_tags(), "festival": "Updated Fest"}
+        album = AlbumMeta(
+            artist="A", album="B", festival="Updated Fest",
+            tracks=[TrackMeta(number=1, title="T", start=0.0, end=60.0)],
+        )
+        ffprobe = make_ffprobe(make_audio_fp())
+
+        retag_album(
+            album_dir=album_dir,
+            album=album,
+            source_path=src,
+            ffprobe_data=ffprobe,
+            tags=new_tags,
+            chapter_dicts=[{"index": 1, "title": "T",
+                            "start": 0.0, "end": 60.0, "tags": {}}],
+            artist_folder="A",
+            album_folder="B",
+            codec_mode="copy",
+        )
+
+        mock_tag.assert_called_once()
+        call_paths = mock_tag.call_args[0][0]
+        assert [p.name for p in call_paths] == ["01 - T.flac"]
+
+        assert (album_dir / "cover.jpg").read_bytes() == b"NEW-COVER"
+
+        m = load_album_manifest(album_dir)
+        assert m is not None
+        assert m.tag_schema_version == TAG_SCHEMA_VERSION
+        assert m.tags["festival"] == "Updated Fest"
+
+    def test_retag_album_raises_on_missing_track(self, tmp_path):
+        from tracksplit.pipeline import retag_album
+        from tests._manifest_helpers import (
+            default_tags, make_manifest_dict, make_ffprobe, make_audio_fp,
+        )
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        album_dir = tmp_path / "album"
+        album_dir.mkdir()
+
+        data = make_manifest_dict(
+            source_path=str(src),
+            track_filenames=["01 - T.flac"],
+        )
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
+
+        album = AlbumMeta(
+            artist="A", album="B",
+            tracks=[TrackMeta(number=1, title="T", start=0.0, end=60.0)],
+        )
+        with pytest.raises(FileNotFoundError):
+            retag_album(
+                album_dir=album_dir,
+                album=album,
+                source_path=src,
+                ffprobe_data=make_ffprobe(make_audio_fp()),
+                tags=default_tags(),
+                chapter_dicts=[{"index": 1, "title": "T",
+                                "start": 0.0, "end": 60.0, "tags": {}}],
+                artist_folder="A",
+                album_folder="B",
+                codec_mode="copy",
+            )
+
+    @pytest.mark.skipif(
+        __import__("shutil").which("ffmpeg") is None, reason="ffmpeg required",
+    )
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    def test_retag_album_writes_new_tags_to_real_flac(
+        self, mock_extract, mock_compose, tmp_path,
+    ):
+        """End-to-end: create a real FLAC with old-style tags (no
+        ORIGINALDATE/RELEASEDATE/DISCTOTAL), run retag_album, and
+        verify the new Vorbis comments appear on disk."""
+        import subprocess
+        from mutagen.flac import FLAC
+        from tracksplit.pipeline import retag_album
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tests._manifest_helpers import (
+            default_tags, make_manifest_dict, make_ffprobe, make_audio_fp,
+        )
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        album_dir = tmp_path / "album"
+        album_dir.mkdir()
+        flac_path = album_dir / "01 - T.flac"
+
+        subprocess.run(
+            ["ffmpeg", "-y", "-f", "lavfi",
+             "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+             "-t", "0.5", "-c:a", "flac", str(flac_path)],
+            check=True, capture_output=True,
+        )
+
+        # Simulate old TrackSplit output: write tags WITHOUT the new ones
+        audio = FLAC(flac_path)
+        audio.clear()
+        audio["TITLE"] = ["T"]
+        audio["ARTIST"] = ["DJ X"]
+        audio["ALBUMARTIST"] = ["DJ X"]
+        audio["ALBUM"] = ["Fest 2025"]
+        audio["TRACKNUMBER"] = ["1"]
+        audio["DISCNUMBER"] = ["1"]
+        audio["DATE"] = ["2025-06-15"]
+        audio.save()
+
+        audio = FLAC(flac_path)
+        assert audio["DATE"] == ["2025-06-15"]
+        assert "ORIGINALDATE" not in audio
+        assert "RELEASEDATE" not in audio
+        assert "DISCTOTAL" not in audio
+
+        data = make_manifest_dict(
+            source_path=str(src),
+            track_filenames=["01 - T.flac"],
+            tag_schema_version=0,
+        )
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
+
+        mock_extract.return_value = None
+        mock_compose.return_value = b"COVER"
+
+        new_album = AlbumMeta(
+            artist="DJ X", album="Fest 2025", date="2025-06-15",
+            tracks=[TrackMeta(number=1, title="T", start=0.0, end=30.0)],
+        )
+        retag_album(
+            album_dir=album_dir,
+            album=new_album,
+            source_path=src,
+            ffprobe_data=make_ffprobe(make_audio_fp()),
+            tags={**default_tags(), "artist": "DJ X", "date": "2025-06-15"},
+            chapter_dicts=[{"index": 1, "title": "T",
+                            "start": 0.0, "end": 30.0, "tags": {}}],
+            artist_folder="DJ X",
+            album_folder="Fest 2025",
+            codec_mode="copy",
+        )
+
+        reread = FLAC(flac_path)
+        assert reread["DATE"] == ["2025-06-15"]
+        assert reread["ORIGINALDATE"] == ["2025-06-15"]
+        assert reread["RELEASEDATE"] == ["2025-06-15"]
+        assert reread["DISCTOTAL"] == ["1"]
+        assert reread["ARTIST"] == ["DJ X"]
+        assert reread["ALBUM"] == ["Fest 2025"]
+
+
+# ---------------------------------------------------------------------------
 # _safe_log_name
 # ---------------------------------------------------------------------------
 
@@ -911,6 +1102,187 @@ class TestProcessFileManifest:
         assert process_file(src, out) is False
         assert (artist_dir / "folder.jpg").read_bytes() == b"NEW_COVER"
         assert (artist_dir / "artist.jpg").read_bytes() == b"NEW_COVER"
+
+
+class TestProcessFileRetag:
+    @patch("tracksplit.pipeline.retag_album")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_process_file_retags_on_tag_change(
+        self, mock_probe, mock_retag, tmp_path,
+    ):
+        """When only tags changed, process_file calls retag_album
+        instead of the full extract+split pipeline."""
+        from tracksplit.manifest import (
+            build_album_manifest, save_album_manifest,
+        )
+        from tracksplit.pipeline import process_file
+        from tests._manifest_helpers import default_tags
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+
+        ffprobe_data = {
+            "streams": [{"codec_type": "audio", "codec_name": "flac"}],
+            "format": {"tags": {"ARTIST": "DJ X",
+                                 "CRATEDIGGER_1001TL_FESTIVAL": "New Fest",
+                                 "CRATEDIGGER_1001TL_DATE": "2025"},
+                       "duration": "600.0"},
+            "chapters": [
+                {"start_time": "0.0", "end_time": "600.0",
+                 "tags": {"title": "Track 1"}},
+            ],
+        }
+        mock_probe.return_value = ffprobe_data
+
+        album_dir = tmp_path / "out" / "DJ X" / "New Fest 2025"
+        album_dir.mkdir(parents=True)
+        (album_dir / "01 - Track 1.flac").write_bytes(b"audio")
+
+        old_tags = {**default_tags(), "artist": "DJ X",
+                    "festival": "Old Fest", "date": "2025"}
+        manifest = build_album_manifest(
+            source_path=src,
+            ffprobe_data=ffprobe_data,
+            chapters=[{"index": 1, "title": "Track 1",
+                        "start": 0.0, "end": 600.0, "tags": {}}],
+            tags=old_tags,
+            artist_folder="DJ X",
+            album_folder="New Fest 2025",
+            output_format="flac", codec_mode="copy",
+            track_filenames=["01 - Track 1.flac"],
+            cover_bytes=b"",
+        )
+        save_album_manifest(album_dir, manifest)
+
+        result = process_file(src, tmp_path / "out")
+        assert result is True
+        mock_retag.assert_called_once()
+
+    @patch("tracksplit.pipeline.retag_album")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_process_file_retags_on_tag_schema_bump(
+        self, mock_probe, mock_retag, tmp_path,
+    ):
+        """Skip path: source tags unchanged, but tag_schema_version is
+        outdated. Should trigger retag_album."""
+        from tracksplit.manifest import (
+            build_album_manifest, save_album_manifest, ALBUM_MANIFEST_FILENAME,
+        )
+        from tracksplit.pipeline import process_file
+        from tests._manifest_helpers import default_tags
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+        ffprobe_data = {
+            "streams": [{"codec_type": "audio", "codec_name": "flac"}],
+            "format": {"tags": {"ARTIST": "DJ X",
+                                 "CRATEDIGGER_1001TL_FESTIVAL": "Show",
+                                 "CRATEDIGGER_1001TL_DATE": "2025"},
+                       "duration": "600.0"},
+            "chapters": [
+                {"start_time": "0.0", "end_time": "600.0",
+                 "tags": {"title": "Track 1"}},
+            ],
+        }
+        mock_probe.return_value = ffprobe_data
+
+        album_dir = tmp_path / "out" / "DJ X" / "Show 2025"
+        album_dir.mkdir(parents=True)
+        (album_dir / "01 - Track 1.flac").write_bytes(b"audio")
+
+        tags = {**default_tags(), "artist": "DJ X",
+                "festival": "Show", "date": "2025"}
+        manifest = build_album_manifest(
+            source_path=src,
+            ffprobe_data=ffprobe_data,
+            chapters=[{"index": 1, "title": "Track 1",
+                        "start": 0.0, "end": 600.0, "tags": {}}],
+            tags=tags,
+            artist_folder="DJ X",
+            album_folder="Show 2025",
+            output_format="flac", codec_mode="copy",
+            track_filenames=["01 - Track 1.flac"],
+            cover_bytes=b"",
+        )
+        save_album_manifest(album_dir, manifest)
+
+        manifest_path = album_dir / ALBUM_MANIFEST_FILENAME
+        data = json.loads(manifest_path.read_text())
+        data["tag_schema_version"] = 0
+        manifest_path.write_text(json.dumps(data))
+
+        result = process_file(src, tmp_path / "out")
+        mock_retag.assert_called_once()
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.retag_album")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_process_file_falls_through_on_retag_failure(
+        self, mock_probe, mock_retag, mock_cover_mkv, mock_dj,
+        mock_artist_cover, mock_compose, mock_prepare, mock_split,
+        mock_tag, tmp_path,
+    ):
+        """If retag_album raises, process_file deletes the manifest
+        and falls through to the full pipeline."""
+        from tracksplit.manifest import (
+            build_album_manifest, save_album_manifest,
+        )
+        from tracksplit.pipeline import process_file
+        from tests._manifest_helpers import default_tags
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+        ffprobe_data = {
+            "streams": [{"codec_type": "audio", "codec_name": "flac"}],
+            "format": {"tags": {"ARTIST": "DJ X",
+                                 "CRATEDIGGER_1001TL_FESTIVAL": "New Fest",
+                                 "CRATEDIGGER_1001TL_DATE": "2025"},
+                       "duration": "600.0"},
+            "chapters": [
+                {"start_time": "0.0", "end_time": "600.0",
+                 "tags": {"title": "Track 1"}},
+            ],
+        }
+        mock_probe.return_value = ffprobe_data
+        mock_retag.side_effect = FileNotFoundError("missing track")
+
+        album_dir = tmp_path / "out" / "DJ X" / "New Fest 2025"
+        album_dir.mkdir(parents=True)
+
+        old_tags = {**default_tags(), "artist": "DJ X",
+                    "festival": "Old Fest", "date": "2025"}
+        manifest = build_album_manifest(
+            source_path=src,
+            ffprobe_data=ffprobe_data,
+            chapters=[{"index": 1, "title": "Track 1",
+                        "start": 0.0, "end": 600.0, "tags": {}}],
+            tags=old_tags,
+            artist_folder="DJ X",
+            album_folder="New Fest 2025",
+            output_format="flac", codec_mode="copy",
+            track_filenames=["01 - Track 1.flac"],
+            cover_bytes=b"",
+        )
+        save_album_manifest(album_dir, manifest)
+
+        mock_cover_mkv.return_value = None
+        mock_dj.return_value = None
+        mock_compose.return_value = b"JPEG"
+        mock_artist_cover.return_value = b"JPEG2"
+        mock_prepare.return_value = (src, ".flac", "copy")
+        mock_split.return_value = [
+            album_dir / "01 - DJ X - Track 1.flac",
+        ]
+
+        result = process_file(src, tmp_path / "out")
+        assert result is True
+        mock_split.assert_called_once()
 
 
 class TestPruneOrphans:

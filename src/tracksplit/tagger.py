@@ -13,6 +13,8 @@ from tracksplit.models import AlbumMeta, TrackMeta
 
 logger = logging.getLogger(__name__)
 
+TAG_SCHEMA_VERSION = 1
+
 
 def _count_tag_deltas(
     existing: dict | None,
@@ -63,6 +65,7 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
         "ALBUM": [album.album],
         "TRACKNUMBER": [str(track.number)],
         "DISCNUMBER": ["1"],
+        "DISCTOTAL": ["1"],
     }
 
     if album.tracks:
@@ -70,6 +73,8 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
 
     if album.date:
         tags["DATE"] = [album.date]
+        tags["ORIGINALDATE"] = [album.date]
+        tags["RELEASEDATE"] = [album.date]
 
     genre = track.genre or album.genre
     if genre:

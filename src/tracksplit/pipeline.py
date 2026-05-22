@@ -54,7 +54,7 @@ from tracksplit.probe import (
     run_ffprobe,
 )
 from tracksplit.split import build_track_filename, split_tracks
-from tracksplit.tagger import replace_cover_only, tag_all
+from tracksplit.tagger import TAG_SCHEMA_VERSION, replace_cover_only, tag_all
 
 logger = logging.getLogger(__name__)
 
@@ -351,6 +351,73 @@ def rebuild_cover_only(
     )
 
 
+def retag_album(
+    *,
+    album_dir: Path,
+    album: AlbumMeta,
+    source_path: Path,
+    ffprobe_data: dict,
+    tags: dict,
+    chapter_dicts: list[dict],
+    artist_folder: str,
+    album_folder: str,
+    codec_mode: str,
+    on_progress: Callable[[str, int, int], None] | None = None,
+) -> None:
+    """Re-tag existing track files and rebuild cover art without
+    re-extracting or re-splitting audio. Updates the on-disk manifest.
+
+    Raises ``FileNotFoundError`` when any expected track file is missing.
+    Callers should catch and fall through to a full regeneration.
+    """
+    manifest = load_album_manifest(album_dir)
+    if manifest is None:
+        raise FileNotFoundError("no manifest in album dir")
+
+    track_paths = [album_dir / name for name in manifest.track_filenames]
+    missing = [p for p in track_paths if not p.exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"{len(missing)} track(s) missing: {missing[0].name}"
+        )
+
+    cover_data = extract_cover_from_mkv(source_path, ffprobe_data=ffprobe_data)
+    cover_bytes = compose_cover(
+        artist=album.artist,
+        festival=album.festival,
+        date=album.date,
+        stage=album.stage,
+        venue=album.venue or album.location,
+        background_data=cover_data,
+    )
+
+    tag_all(track_paths, album, cover_data=cover_bytes, on_progress=on_progress)
+
+    atomic_write_bytes(album_dir / "cover.jpg", cover_bytes)
+    folder_jpg = album_dir / "folder.jpg"
+    if folder_jpg.exists():
+        atomic_write_bytes(folder_jpg, cover_bytes)
+
+    ext = Path(manifest.track_filenames[0]).suffix.lstrip(".")
+    updated = build_album_manifest(
+        source_path=source_path,
+        ffprobe_data=ffprobe_data,
+        chapters=chapter_dicts,
+        tags=tags,
+        artist_folder=artist_folder,
+        album_folder=album_folder,
+        output_format=ext,
+        codec_mode=codec_mode,
+        track_filenames=manifest.track_filenames,
+        cover_bytes=cover_bytes,
+    )
+    save_album_manifest(album_dir, updated)
+    logger.info(
+        "pipeline.retag: file=%s tracks=%d",
+        album_dir.name, len(manifest.track_filenames),
+    )
+
+
 def check_regen_level(
     album_dir: Path,
     source_path: Path,
@@ -591,9 +658,45 @@ def process_file(
         force=force, manifest=skip_manifest,
         track_filenames=expected_filenames,
     )
-    skip = level == RegenLevel.SKIP
-    if skip:
+
+    _retag_kwargs = dict(
+        album_dir=album_dir,
+        album=album,
+        source_path=input_path,
+        ffprobe_data=ffprobe_data,
+        tags=tags,
+        chapter_dicts=chapter_dicts,
+        artist_folder=artist_folder,
+        album_folder=album_folder,
+        codec_mode=codec_mode,
+        on_progress=on_progress,
+    )
+
+    # -- SKIP path: check schema version bumps -------------------------
+    if level == RegenLevel.SKIP:
         if (
+            skip_manifest is not None
+            and skip_manifest.tag_schema_version < TAG_SCHEMA_VERSION
+        ):
+            try:
+                retag_album(**_retag_kwargs)
+            except OSError as exc:
+                if exc.errno in FATAL_DISK_ERRNOS:
+                    raise
+                logger.warning(
+                    'pipeline.retag: file=%s reason=failed error="%s"',
+                    _safe_log_name(input_path), exc,
+                )
+                (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
+                level = RegenLevel.FULL
+            except Exception as exc:
+                logger.warning(
+                    'pipeline.retag: file=%s reason=failed error="%s"',
+                    _safe_log_name(input_path), exc,
+                )
+                (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
+                level = RegenLevel.FULL
+        elif (
             skip_manifest is not None
             and skip_manifest.cover_schema_version < COVER_SCHEMA_VERSION
         ):
@@ -612,15 +715,16 @@ def process_file(
                     _safe_log_name(input_path), exc,
                 )
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
-                skip = False
+                level = RegenLevel.FULL
             except Exception as exc:
                 logger.warning(
                     'pipeline.cover_rebuild: file=%s reason=failed error="%s"',
                     _safe_log_name(input_path), exc,
                 )
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
-                skip = False
-    if skip:
+                level = RegenLevel.FULL
+
+    if level == RegenLevel.SKIP:
         primary_artist = album.albumartists[0] if album.albumartists else album.artist
         dj_artwork_data = find_dj_artwork(input_path, artist=primary_artist)
         artist_dir = output_dir / safe_filename(album.artist_folder)
@@ -635,6 +739,45 @@ def process_file(
             _safe_log_name(input_path),
         )
         return False
+
+    # -- RETAG path: tags changed but audio/chapters identical ----------
+    if level == RegenLevel.RETAG:
+        try:
+            retag_album(**_retag_kwargs)
+        except OSError as exc:
+            if exc.errno in FATAL_DISK_ERRNOS:
+                raise
+            logger.warning(
+                'pipeline.retag: file=%s reason=failed error="%s"',
+                _safe_log_name(input_path), exc,
+            )
+            (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
+            level = RegenLevel.FULL
+        except Exception as exc:
+            logger.warning(
+                'pipeline.retag: file=%s reason=failed error="%s"',
+                _safe_log_name(input_path), exc,
+            )
+            (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
+            level = RegenLevel.FULL
+
+    if level == RegenLevel.RETAG:
+        primary_artist = album.albumartists[0] if album.albumartists else album.artist
+        dj_artwork_data = find_dj_artwork(input_path, artist=primary_artist)
+        artist_dir = output_dir / safe_filename(album.artist_folder)
+        refresh_artist_cover(
+            artist_dir,
+            artist_name=primary_artist,
+            dj_artwork_data=dj_artwork_data,
+            compose=compose_artist_cover,
+        )
+        logger.info(
+            "pipeline.retag_done: file=%s dir=%s",
+            _safe_log_name(input_path), album_dir.name,
+        )
+        if on_complete:
+            on_complete(album_dir, len(album.tracks))
+        return True
 
     # Dry run: log and return
     if dry_run:

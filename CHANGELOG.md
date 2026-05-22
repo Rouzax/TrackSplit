@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-05-22
+
+### Added
+
+- `ORIGINALDATE` and `RELEASEDATE` Vorbis comments are now written alongside
+  `DATE`, all with the same value. Navidrome (and other servers) use these to
+  populate the "original date" and "release date" fields, which were previously
+  empty.
+- `DISCTOTAL` Vorbis comment (always `1`) written alongside the existing
+  `DISCNUMBER`.
+- Retag-only pipeline path: when only album-level tags change (artist spelling
+  fix, date correction, genre update) but audio and timecodes are identical,
+  TrackSplit now retags existing files and rebuilds cover art without
+  re-extracting or re-splitting audio. This is significantly faster for
+  metadata corrections.
+- Tag schema versioning (`TAG_SCHEMA_VERSION`): existing albums are
+  automatically retagged on the next run when the output tag set evolves,
+  without needing `--force`. Mirrors the existing cover schema version
+  mechanism.
+
+### Changed
+
+- `should_regenerate` refactored into `check_regen_level`, returning a
+  tri-state `RegenLevel` (SKIP, RETAG, FULL) instead of a boolean. The track
+  filename check now runs before the tag comparison to prevent indirect
+  filename changes from being missed.
+
 ## [0.9.5] - 2026-05-16
 
 ### Added
