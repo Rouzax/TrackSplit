@@ -1243,6 +1243,10 @@
 <td><code>DISCNUMBER</code></td>
 <td>Always <code>1</code></td>
 </tr>
+<tr>
+<td><code>DISCTOTAL</code></td>
+<td>Always <code>1</code></td>
+</tr>
 </tbody>
 </table>
 <p>Additional tags are written when the information is available:</p>
@@ -1256,7 +1260,15 @@
 <tbody>
 <tr>
 <td><code>DATE</code></td>
-<td>When the source has a date</td>
+<td>When the source has a date (recording/event date)</td>
+</tr>
+<tr>
+<td><code>ORIGINALDATE</code></td>
+<td>Same value as <code>DATE</code>; Navidrome and other servers use this for the "original date" field</td>
+</tr>
+<tr>
+<td><code>RELEASEDATE</code></td>
+<td>Same value as <code>DATE</code>; Navidrome and other servers use this for the "release date" field</td>
 </tr>
 <tr>
 <td><code>TRACKTOTAL</code></td>
