@@ -13,6 +13,7 @@ import tempfile
 import threading
 from collections.abc import Callable
 from dataclasses import replace as dataclass_replace
+from enum import Enum
 from pathlib import Path
 
 from tracksplit.cover import (
@@ -60,6 +61,12 @@ logger = logging.getLogger(__name__)
 FATAL_DISK_ERRNOS = (errno.ENOSPC, errno.EDQUOT, errno.EROFS)
 
 INTRO_MIN_SECONDS = 5.0
+
+
+class RegenLevel(Enum):
+    SKIP = "skip"
+    RETAG = "retag"
+    FULL = "full"
 
 
 def _safe_log_name(path: Path) -> str:
@@ -344,7 +351,7 @@ def rebuild_cover_only(
     )
 
 
-def should_regenerate(
+def check_regen_level(
     album_dir: Path,
     source_path: Path,
     ffprobe_data: dict,
@@ -358,40 +365,44 @@ def should_regenerate(
     force: bool,
     manifest: AlbumManifest | None = None,
     track_filenames: list[str] | None = None,
-) -> bool:
-    """Return True when the album must be (re)generated.
+) -> RegenLevel:
+    """Return the level of regeneration needed for the album.
 
     ``manifest``: pre-loaded album manifest. If provided, the function
     reuses it instead of reading from disk so callers that also need the
     manifest (for example, to check ``cover_schema_version``) can avoid
     a second load.
+
+    Returns ``RegenLevel.FULL`` when audio, chapters, or structure changed,
+    ``RegenLevel.RETAG`` when only tags changed, and ``RegenLevel.SKIP``
+    when nothing changed.
     """
     name = source_path.name
     if force:
         logger.debug("pipeline.regenerate: file=%s reason=force", name)
-        return True
+        return RegenLevel.FULL
     if not album_dir.exists():
         logger.debug("pipeline.regenerate: file=%s reason=no_album_dir", name)
-        return True
+        return RegenLevel.FULL
 
     if manifest is None:
         manifest = load_album_manifest(album_dir)
     if manifest is None:
         logger.debug("pipeline.regenerate: file=%s reason=no_manifest", name)
-        return True
+        return RegenLevel.FULL
 
     try:
         current_source = SourceFingerprint.from_ffprobe(source_path, ffprobe_data)
     except ValueError as exc:
         logger.debug('pipeline.regenerate: file=%s reason=fingerprint_failed error="%s"', name, exc)
-        return True
+        return RegenLevel.FULL
 
     if manifest.source.path != current_source.path:
         logger.debug(
             "pipeline.regenerate: file=%s reason=source_path_changed",
             name,
         )
-        return True
+        return RegenLevel.FULL
     if manifest.source.audio != current_source.audio:
         for field in ("codec_name", "sample_rate", "channels",
                       "duration_ts", "time_base", "bit_rate"):
@@ -402,31 +413,31 @@ def should_regenerate(
                     "pipeline.regenerate: file=%s reason=audio_changed field=%s old=%r new=%r",
                     name, field, old, new,
                 )
-        return True
+        return RegenLevel.FULL
     if manifest.resolved_artist_folder != artist_folder:
         logger.debug(
             'pipeline.regenerate: file=%s reason=artist_folder_changed old="%s" new="%s"',
             name, manifest.resolved_artist_folder, artist_folder,
         )
-        return True
+        return RegenLevel.FULL
     if manifest.resolved_album_folder != album_folder:
         logger.debug(
             'pipeline.regenerate: file=%s reason=album_folder_changed old="%s" new="%s"',
             name, manifest.resolved_album_folder, album_folder,
         )
-        return True
+        return RegenLevel.FULL
     if manifest.output_format != output_format:
         logger.debug(
             "pipeline.regenerate: file=%s reason=output_format_changed old=%s new=%s",
             name, manifest.output_format, output_format,
         )
-        return True
+        return RegenLevel.FULL
     if manifest.codec_mode != codec_mode:
         logger.debug(
             "pipeline.regenerate: file=%s reason=codec_mode_changed old=%s new=%s",
             name, manifest.codec_mode, codec_mode,
         )
-        return True
+        return RegenLevel.FULL
     stored_intro = manifest.intro_min_seconds
     if stored_intro is None:
         first_start = chapter_dicts[0]["start"] if chapter_dicts else 0.0
@@ -435,13 +446,13 @@ def should_regenerate(
                 "pipeline.regenerate: file=%s reason=intro_policy_upgrade gap=%.3f threshold=%.1f",
                 name, first_start, INTRO_MIN_SECONDS,
             )
-            return True
+            return RegenLevel.FULL
     elif stored_intro != INTRO_MIN_SECONDS:
         logger.debug(
             "pipeline.regenerate: file=%s reason=intro_min_changed old=%s new=%.1f",
             name, stored_intro, INTRO_MIN_SECONDS,
         )
-        return True
+        return RegenLevel.FULL
     stored_chapters = manifest.chapters
     if stored_chapters and "tags" not in stored_chapters[0]:
         stored_chapters = [{**ch, "tags": {}} for ch in stored_chapters]
@@ -457,24 +468,25 @@ def should_regenerate(
                         "pipeline.regenerate: file=%s reason=chapter_detail index=%d",
                         name, i,
                     )
-        return True
+        return RegenLevel.FULL
+
+    if track_filenames is not None and manifest.track_filenames != track_filenames:
+        logger.debug(
+            "pipeline.regenerate: file=%s reason=track_filenames_changed",
+            name,
+        )
+        return RegenLevel.FULL
 
     for k in TAG_KEYS:
         old = manifest.tags.get(k, tag_default(k))
         new = tags.get(k, tag_default(k))
         if old != new:
             logger.debug(
-                "pipeline.regenerate: file=%s reason=tag_changed tag=%s",
+                "pipeline.retag: file=%s reason=tag_changed tag=%s",
                 name, k,
             )
-            return True
-    if track_filenames is not None and manifest.track_filenames != track_filenames:
-        logger.debug(
-            "pipeline.regenerate: file=%s reason=track_filenames_changed",
-            name,
-        )
-        return True
-    return False
+            return RegenLevel.RETAG
+    return RegenLevel.SKIP
 
 
 def _resolve_opus_copy_packet_ms(
@@ -573,12 +585,13 @@ def process_file(
     expected_filenames = [build_track_filename(t, ext) for t in album.tracks]
 
     skip_manifest = load_album_manifest(album_dir)
-    skip = not should_regenerate(
+    level = check_regen_level(
         album_dir, input_path, ffprobe_data, tags, chapter_dicts,
         artist_folder, album_folder, ext.lstrip("."), codec_mode,
         force=force, manifest=skip_manifest,
         track_filenames=expected_filenames,
     )
+    skip = level == RegenLevel.SKIP
     if skip:
         if (
             skip_manifest is not None

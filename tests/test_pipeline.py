@@ -142,40 +142,40 @@ class TestShouldRegenerate:
         return make_ffprobe(make_audio_fp(**audio_overrides))
 
     def test_no_existing_dir(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         src = self._mk_source(tmp_path)
-        assert should_regenerate(
+        assert check_regen_level(
             tmp_path / "nope", src, self._ffprobe(), {}, [],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_force_always_true(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), {}, [],
             "A", "B", "flac", "copy", force=True,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_unchanged_everything(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is False
+        ) == RegenLevel.SKIP
 
     def test_source_mtime_change_does_not_regenerate(self, tmp_path):
         """Regression test: mtime bump from a tag-only mkvpropedit must not invalidate."""
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         import os
         import time
@@ -185,164 +185,164 @@ class TestShouldRegenerate:
         self._write_manifest(album, source_path=str(src))
         future = time.time() + 100
         os.utime(src, (future, future))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is False
+        ) == RegenLevel.SKIP
 
     def test_audio_codec_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(codec_name="aac"), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_audio_sample_rate_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(sample_rate=44100), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_audio_channels_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(channels=1), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_audio_duration_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(duration_ts=99999), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_chapter_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
         new_chapters = [{"index": 1, "title": "T2", "start": 0.0, "end": 90.0, "tags": {}}]
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(), new_chapters,
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
-    def test_allowlisted_tag_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+    def test_allowlisted_tag_change_returns_retag(self, tmp_path):
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
         tags = {**default_tags(), "festival": "NEW"}
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), tags,
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.RETAG
 
     def test_genres_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
         tags = {**default_tags(), "genres": ["House"]}
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), tags,
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.RETAG
 
     def test_comment_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
         tags = {**default_tags(), "comment": "https://1001.tl/x"}
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), tags,
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.RETAG
 
     def test_albumartists_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
         tags = {**default_tags(), "albumartists": ["A", "B"]}
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), tags,
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.RETAG
 
     def test_albumartist_display_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
         tags = {**default_tags(), "albumartist_display": "DJ X"}
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), tags,
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.RETAG
 
     def test_albumartist_mbids_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
         tags = {**default_tags(), "albumartist_mbids": ["mbid-1"]}
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), tags,
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.RETAG
 
     def test_non_allowlisted_tag_change_does_not_regenerate(self, tmp_path):
         """dj_artwork and enriched_at must NOT trigger regen."""
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -353,53 +353,53 @@ class TestShouldRegenerate:
             "dj_artwork": "https://example.com/new.jpg",
             "enriched_at": "2026-04-25T12:00:00",
         }
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), tags,
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is False
+        ) == RegenLevel.SKIP
 
     def test_format_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(
             album, source_path=str(src), output_format="flac",
         )
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), {}, [], "A", "B", "opus", "libopus",
             force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_missing_manifest_triggers_regenerate_even_with_legacy_cache(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         (album / ".tracksplit_chapters.json").write_text(json.dumps([
             {"index": 1, "title": "T", "start": 0.0, "end": 60.0}
         ]))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), {}, [],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_corrupt_manifest_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         (album / ALBUM_MANIFEST_FILENAME).write_text("{not json")
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), {}, [],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_schema_2_manifest_triggers_regenerate(self, tmp_path):
         """Schema-2 manifests on disk after upgrade must force regen."""
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -411,13 +411,13 @@ class TestShouldRegenerate:
             "output_format": "flac", "codec_mode": "copy",
             "chapters": [], "tags": {}, "track_filenames": [], "cover_sha256": "",
         }))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), {}, [],
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_should_regenerate_skips_when_intro_policy_matches(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate, INTRO_MIN_SECONDS
+        from tracksplit.pipeline import check_regen_level, RegenLevel, INTRO_MIN_SECONDS
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -425,53 +425,53 @@ class TestShouldRegenerate:
         self._write_manifest(
             album, source_path=str(src), intro_min_seconds=INTRO_MIN_SECONDS,
         )
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is False
+        ) == RegenLevel.SKIP
 
     def test_should_regenerate_skips_legacy_manifest_with_zero_gap(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
-        ) is False
+        ) == RegenLevel.SKIP
 
     def test_should_regenerate_rebuilds_legacy_manifest_with_short_gap(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         chapters = [{"index": 1, "title": "T", "start": 2.0, "end": 60.0, "tags": {}}]
         self._write_manifest(album, source_path=str(src), chapters=chapters)
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(), chapters,
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_should_regenerate_skips_legacy_manifest_with_long_intro(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         chapters = [{"index": 1, "title": "T", "start": 15.0, "end": 60.0, "tags": {}}]
         self._write_manifest(album, source_path=str(src), chapters=chapters)
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(), chapters,
             "A", "B", "flac", "copy", force=False,
-        ) is False
+        ) == RegenLevel.SKIP
 
     def test_should_regenerate_rebuilds_when_stored_threshold_differs(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate, INTRO_MIN_SECONDS
+        from tracksplit.pipeline import check_regen_level, RegenLevel, INTRO_MIN_SECONDS
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -481,13 +481,13 @@ class TestShouldRegenerate:
         self._write_manifest(
             album, source_path=str(src), chapters=chapters, intro_min_seconds=3.0,
         )
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(), chapters,
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_chapter_tag_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -497,13 +497,13 @@ class TestShouldRegenerate:
         self._write_manifest(album, source_path=str(src), chapters=stored_chapters)
         current_chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0,
                              "tags": {"CRATEDIGGER_TRACK_PERFORMER": "New Artist"}}]
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(), current_chapters,
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_chapter_tag_added_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -511,14 +511,14 @@ class TestShouldRegenerate:
         self._write_manifest(album, source_path=str(src))
         current_chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0,
                              "tags": {"TITLE": "My Track", "CRATEDIGGER_TRACK_PERFORMER": "DJ X"}}]
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(), current_chapters,
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_legacy_manifest_no_tags_key_skips_when_no_current_tags(self, tmp_path):
         """Old manifests without chapter tags should not regenerate if current chapters also have no tags."""
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import default_tags, make_manifest_dict
         src = self._mk_source(tmp_path)
@@ -530,14 +530,14 @@ class TestShouldRegenerate:
         )
         (album / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(manifest_data))
         current_chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}]
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(), current_chapters,
             "A", "B", "flac", "copy", force=False,
-        ) is False
+        ) == RegenLevel.SKIP
 
     def test_legacy_manifest_no_tags_key_regenerates_when_tags_present(self, tmp_path):
         """Old manifests without chapter tags should regenerate if current chapters have tags."""
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import default_tags, make_manifest_dict
         src = self._mk_source(tmp_path)
@@ -550,38 +550,38 @@ class TestShouldRegenerate:
         (album / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(manifest_data))
         current_chapters = [{"index": 1, "title": "T", "start": 0.0, "end": 60.0,
                              "tags": {"TITLE": "My Track"}}]
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(), current_chapters,
             "A", "B", "flac", "copy", force=False,
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_track_filename_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
             track_filenames=["01 - DJ X - New Title.flac"],
-        ) is True
+        ) == RegenLevel.FULL
 
     def test_track_filename_unchanged_skips(self, tmp_path):
-        from tracksplit.pipeline import should_regenerate
+        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
         album.mkdir()
         self._write_manifest(album, source_path=str(src))
-        assert should_regenerate(
+        assert check_regen_level(
             album, src, self._ffprobe(), default_tags(),
             [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
             "A", "B", "flac", "copy", force=False,
             track_filenames=["01 - T.flac"],
-        ) is False
+        ) == RegenLevel.SKIP
 
 
 # ---------------------------------------------------------------------------
