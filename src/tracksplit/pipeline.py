@@ -659,6 +659,7 @@ def process_file(
         track_filenames=expected_filenames,
     )
 
+    _retag_done = False
     _retag_kwargs = dict(
         album_dir=album_dir,
         album=album,
@@ -696,6 +697,9 @@ def process_file(
                 )
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
                 level = RegenLevel.FULL
+            else:
+                level = RegenLevel.RETAG
+                _retag_done = True
         elif (
             skip_manifest is not None
             and skip_manifest.cover_schema_version < COVER_SCHEMA_VERSION
@@ -741,7 +745,7 @@ def process_file(
         return False
 
     # -- RETAG path: tags changed but audio/chapters identical ----------
-    if level == RegenLevel.RETAG:
+    if level == RegenLevel.RETAG and not _retag_done:
         try:
             retag_album(**_retag_kwargs)
         except OSError as exc:

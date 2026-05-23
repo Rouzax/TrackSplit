@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-05-23
+
+### Fixed
+
+- Tag schema version bump on the skip path now correctly reports "done"
+  instead of "skip (unchanged)". Files were being retagged but
+  `process_file` returned `False`, making the CLI display the wrong status.
+
 ## [0.10.0] - 2026-05-22
 
 ### Added

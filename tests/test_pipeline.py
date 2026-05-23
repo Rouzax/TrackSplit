@@ -1212,6 +1212,7 @@ class TestProcessFileRetag:
         manifest_path.write_text(json.dumps(data))
 
         result = process_file(src, tmp_path / "out")
+        assert result is True
         mock_retag.assert_called_once()
 
     @patch("tracksplit.pipeline.tag_all")
