@@ -363,9 +363,15 @@ def retag_album(
     album_folder: str,
     codec_mode: str,
     on_progress: Callable[[str, int, int], None] | None = None,
+    reuse_cover: bool = False,
 ) -> None:
     """Re-tag existing track files and rebuild cover art without
     re-extracting or re-splitting audio. Updates the on-disk manifest.
+
+    When ``reuse_cover`` is True and the cover schema is current, the
+    existing ``cover.jpg`` is read from disk instead of recomposing from
+    the source MKV. Falls back to recomposition when the cover schema is
+    outdated or ``cover.jpg`` is missing.
 
     Raises ``FileNotFoundError`` when any expected track file is missing.
     Callers should catch and fall through to a full regeneration.
@@ -381,22 +387,30 @@ def retag_album(
             f"{len(missing)} track(s) missing: {missing[0].name}"
         )
 
-    cover_data = extract_cover_from_mkv(source_path, ffprobe_data=ffprobe_data)
-    cover_bytes = compose_cover(
-        artist=album.artist,
-        festival=album.festival,
-        date=album.date,
-        stage=album.stage,
-        venue=album.venue or album.location,
-        background_data=cover_data,
+    cover_path = album_dir / "cover.jpg"
+    can_reuse = (
+        reuse_cover
+        and manifest.cover_schema_version >= COVER_SCHEMA_VERSION
+        and cover_path.exists()
     )
+    if can_reuse:
+        cover_bytes = cover_path.read_bytes()
+    else:
+        cover_data = extract_cover_from_mkv(source_path, ffprobe_data=ffprobe_data)
+        cover_bytes = compose_cover(
+            artist=album.artist,
+            festival=album.festival,
+            date=album.date,
+            stage=album.stage,
+            venue=album.venue or album.location,
+            background_data=cover_data,
+        )
+        atomic_write_bytes(cover_path, cover_bytes)
+        folder_jpg = album_dir / "folder.jpg"
+        if folder_jpg.exists():
+            atomic_write_bytes(folder_jpg, cover_bytes)
 
     tag_all(track_paths, album, cover_data=cover_bytes, on_progress=on_progress)
-
-    atomic_write_bytes(album_dir / "cover.jpg", cover_bytes)
-    folder_jpg = album_dir / "folder.jpg"
-    if folder_jpg.exists():
-        atomic_write_bytes(folder_jpg, cover_bytes)
 
     ext = Path(manifest.track_filenames[0]).suffix.lstrip(".")
     updated = build_album_manifest(
@@ -680,7 +694,7 @@ def process_file(
             and skip_manifest.tag_schema_version < TAG_SCHEMA_VERSION
         ):
             try:
-                retag_album(**_retag_kwargs)
+                retag_album(**_retag_kwargs, reuse_cover=True)
             except OSError as exc:
                 if exc.errno in FATAL_DISK_ERRNOS:
                     raise

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-05-23
+
+### Changed
+
+- Tag schema version bump retag path now reuses the existing `cover.jpg`
+  from disk instead of re-extracting the background from the source MKV
+  and recomposing via PIL. Falls back to recomposition when the cover
+  schema is also outdated or `cover.jpg` is missing. Reduces I/O
+  contention when retagging many albums in parallel.
+
 ## [0.10.1] - 2026-05-23
 
 ### Fixed

@@ -689,6 +689,166 @@ class TestRetagAlbum:
                 codec_mode="copy",
             )
 
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    def test_retag_album_reuses_cover_when_schema_current(
+        self, mock_extract, mock_compose, mock_tag, tmp_path,
+    ):
+        """reuse_cover=True with current cover schema reads cover.jpg
+        from disk instead of extracting from MKV and recomposing."""
+        from tracksplit.pipeline import retag_album
+        from tracksplit.cover import COVER_SCHEMA_VERSION
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tests._manifest_helpers import (
+            default_tags, make_manifest_dict, make_ffprobe, make_audio_fp,
+        )
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        album_dir = tmp_path / "album"
+        album_dir.mkdir()
+        (album_dir / "01 - T.flac").write_bytes(b"audio")
+        (album_dir / "cover.jpg").write_bytes(b"EXISTING-COVER")
+
+        data = make_manifest_dict(
+            source_path=str(src),
+            track_filenames=["01 - T.flac"],
+            tag_schema_version=0,
+            cover_schema_version=COVER_SCHEMA_VERSION,
+        )
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
+
+        album = AlbumMeta(
+            artist="A", album="B",
+            tracks=[TrackMeta(number=1, title="T", start=0.0, end=60.0)],
+        )
+        retag_album(
+            album_dir=album_dir,
+            album=album,
+            source_path=src,
+            ffprobe_data=make_ffprobe(make_audio_fp()),
+            tags=default_tags(),
+            chapter_dicts=[{"index": 1, "title": "T",
+                            "start": 0.0, "end": 60.0, "tags": {}}],
+            artist_folder="A",
+            album_folder="B",
+            codec_mode="copy",
+            reuse_cover=True,
+        )
+
+        mock_extract.assert_not_called()
+        mock_compose.assert_not_called()
+        call_kwargs = mock_tag.call_args
+        assert call_kwargs[1]["cover_data"] == b"EXISTING-COVER"
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    def test_retag_album_recomposes_cover_when_cover_schema_outdated(
+        self, mock_extract, mock_compose, mock_tag, tmp_path,
+    ):
+        """reuse_cover=True but cover_schema_version is outdated: must
+        recompose from MKV, not reuse cover.jpg."""
+        from tracksplit.pipeline import retag_album
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tests._manifest_helpers import (
+            default_tags, make_manifest_dict, make_ffprobe, make_audio_fp,
+        )
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        album_dir = tmp_path / "album"
+        album_dir.mkdir()
+        (album_dir / "01 - T.flac").write_bytes(b"audio")
+        (album_dir / "cover.jpg").write_bytes(b"OLD-COVER")
+
+        data = make_manifest_dict(
+            source_path=str(src),
+            track_filenames=["01 - T.flac"],
+            cover_schema_version=0,
+        )
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
+
+        mock_extract.return_value = None
+        mock_compose.return_value = b"NEW-COVER"
+
+        album = AlbumMeta(
+            artist="A", album="B",
+            tracks=[TrackMeta(number=1, title="T", start=0.0, end=60.0)],
+        )
+        retag_album(
+            album_dir=album_dir,
+            album=album,
+            source_path=src,
+            ffprobe_data=make_ffprobe(make_audio_fp()),
+            tags=default_tags(),
+            chapter_dicts=[{"index": 1, "title": "T",
+                            "start": 0.0, "end": 60.0, "tags": {}}],
+            artist_folder="A",
+            album_folder="B",
+            codec_mode="copy",
+            reuse_cover=True,
+        )
+
+        mock_extract.assert_called_once()
+        mock_compose.assert_called_once()
+        assert (album_dir / "cover.jpg").read_bytes() == b"NEW-COVER"
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    def test_retag_album_recomposes_cover_when_cover_jpg_missing(
+        self, mock_extract, mock_compose, mock_tag, tmp_path,
+    ):
+        """reuse_cover=True but cover.jpg does not exist on disk:
+        must recompose."""
+        from tracksplit.pipeline import retag_album
+        from tracksplit.cover import COVER_SCHEMA_VERSION
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tests._manifest_helpers import (
+            default_tags, make_manifest_dict, make_ffprobe, make_audio_fp,
+        )
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 10)
+        album_dir = tmp_path / "album"
+        album_dir.mkdir()
+        (album_dir / "01 - T.flac").write_bytes(b"audio")
+        # No cover.jpg on disk
+
+        data = make_manifest_dict(
+            source_path=str(src),
+            track_filenames=["01 - T.flac"],
+            cover_schema_version=COVER_SCHEMA_VERSION,
+        )
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
+
+        mock_extract.return_value = None
+        mock_compose.return_value = b"COMPOSED-COVER"
+
+        album = AlbumMeta(
+            artist="A", album="B",
+            tracks=[TrackMeta(number=1, title="T", start=0.0, end=60.0)],
+        )
+        retag_album(
+            album_dir=album_dir,
+            album=album,
+            source_path=src,
+            ffprobe_data=make_ffprobe(make_audio_fp()),
+            tags=default_tags(),
+            chapter_dicts=[{"index": 1, "title": "T",
+                            "start": 0.0, "end": 60.0, "tags": {}}],
+            artist_folder="A",
+            album_folder="B",
+            codec_mode="copy",
+            reuse_cover=True,
+        )
+
+        mock_extract.assert_called_once()
+        mock_compose.assert_called_once()
+        assert (album_dir / "cover.jpg").read_bytes() == b"COMPOSED-COVER"
+
     @pytest.mark.skipif(
         __import__("shutil").which("ffmpeg") is None, reason="ffmpeg required",
     )
