@@ -159,6 +159,7 @@ class FileProgress:
                  exc_val: BaseException | None,
                  exc_tb: object) -> None:
         if self._live is not None:
+            self._live.update("")
             self._live.__exit__(exc_type, exc_val, exc_tb)  # type: ignore[arg-type]
             self._live = None
 
@@ -239,5 +240,6 @@ class BatchProgress:
                  exc_val: BaseException | None,
                  exc_tb: object) -> None:
         if self._live is not None:
+            self._live.update("")
             self._live.__exit__(exc_type, exc_val, exc_tb)  # type: ignore[arg-type]
             self._live = None

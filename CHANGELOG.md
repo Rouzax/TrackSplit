@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Progress bar no longer leaves a ghost line in the terminal when all files
+  are skipped.
+
 ## [0.10.2] - 2026-05-23
 
 ### Changed
