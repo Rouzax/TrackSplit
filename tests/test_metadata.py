@@ -623,7 +623,7 @@ def test_structured_chapter_tags_drive_track_fields_new_names():
             0.0, 60.0,
             "Armin van Buuren & Alle Farben ft. ROSY - Lost In Time [ARMADA]",
             {
-                "TITLE": "Lost In Time",
+                "CRATEDIGGER_TRACK_TITLE": "Lost In Time",
                 "CRATEDIGGER_TRACK_PERFORMER": "Armin van Buuren & Alle Farben ft. ROSY",
                 "CRATEDIGGER_TRACK_PERFORMER_NAMES": "Armin van Buuren|Alle Farben",
                 "MUSICBRAINZ_ARTISTIDS": "mbid-arm|mbid-af",

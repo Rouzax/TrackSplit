@@ -130,7 +130,7 @@ class TestParseChapters:
                 "PERFORMER_NAMES": "A|B",
                 "MUSICBRAINZ_ARTISTIDS": "mbid-1|mbid-2",
                 "LABEL": "X",
-                "TITLE": "B",
+                "CRATEDIGGER_TRACK_TITLE": "B",
                 "GENRE": "Trance",
             },
         }])
@@ -139,7 +139,7 @@ class TestParseChapters:
         assert ch.tags["PERFORMER_NAMES"] == "A|B"
         assert ch.tags["MUSICBRAINZ_ARTISTIDS"] == "mbid-1|mbid-2"
         assert ch.tags["LABEL"] == "X"
-        assert ch.tags["TITLE"] == "B"
+        assert ch.tags["CRATEDIGGER_TRACK_TITLE"] == "B"
         assert ch.tags["GENRE"] == "Trance"
 
 

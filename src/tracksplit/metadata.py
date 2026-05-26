@@ -139,12 +139,13 @@ def build_album_meta(
 ) -> AlbumMeta:
     """Build album metadata from parsed tags and chapters.
 
-    Prefers structured per-chapter tags (TITLE, CRATEDIGGER_TRACK_PERFORMER,
-    CRATEDIGGER_TRACK_PERFORMER_NAMES, MUSICBRAINZ_ARTISTIDS,
-    CRATEDIGGER_TRACK_LABEL, CRATEDIGGER_TRACK_GENRE) when present; falls
-    back to the legacy unprefixed names (PERFORMER, PERFORMER_NAMES, LABEL,
-    GENRE) for files enriched before CrateDigger 0.12.5; falls back to the
-    legacy string-parser on Chapter.title when neither set is present.
+    Prefers structured per-chapter tags (CRATEDIGGER_TRACK_TITLE,
+    CRATEDIGGER_TRACK_PERFORMER, CRATEDIGGER_TRACK_PERFORMER_NAMES,
+    MUSICBRAINZ_ARTISTIDS, CRATEDIGGER_TRACK_LABEL,
+    CRATEDIGGER_TRACK_GENRE) when present; falls back to the legacy
+    unprefixed names (TITLE, PERFORMER, PERFORMER_NAMES, LABEL, GENRE) for
+    files enriched before CrateDigger 0.12.5; falls back to the legacy
+    string-parser on Chapter.title when neither set is present.
 
     ``cd_config`` is used to fill empty per-artist MBID slots from
     mbid_cache.json. When omitted, missing slots stay as empty strings.
@@ -240,7 +241,7 @@ def build_album_meta(
             )
 
         if has_structured:
-            title = ctags.get("TITLE") or ch.title
+            title = _ctag(ctags, "CRATEDIGGER_TRACK_TITLE", "TITLE") or ch.title
             title, _ = strip_label(title)
             display = _ctag(ctags, "CRATEDIGGER_TRACK_PERFORMER", "PERFORMER")
             names_raw = _ctag(
