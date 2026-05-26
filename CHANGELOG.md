@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Per-chapter title tag now prefers `CRATEDIGGER_TRACK_TITLE` with fallback
+  to legacy `TITLE`, matching the rename CrateDigger is making to prevent
+  VLC/MediaInfo from flattening the last chapter's title into the
+  file-level display.
+- Album cover art harmonized with CrateDigger v0.19.0 poster layout:
+  merged draw helpers (drop shadow removed), accent line glow matched,
+  `PAD_LINE_TO_ARTIST` 28 to 30, `glow_radius` 14 to 16, letter spacing
+  on hero text.
+- Long artist names on album covers now word-wrap at balanced boundaries
+  when the font would shrink below size 80 (e.g. "Swedish House Mafia"
+  renders as two lines instead of one cramped line).
+
 ### Fixed
 
 - Progress bar no longer leaves a ghost line in the terminal when all files

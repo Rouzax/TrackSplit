@@ -84,14 +84,50 @@ def split_artist(name: str) -> list[str]:
     splits.sort()
 
     if len(splits) == 1:
-        idx, _sep = splits[0]
+        idx, _ = splits[0]
         return [name[:idx].strip(), name[idx:].strip()]
 
     lines = [name[: splits[0][0]].strip()]
-    for i, (idx, _sep) in enumerate(splits):
+    for i, (idx, _) in enumerate(splits):
         end = splits[i + 1][0] if i + 1 < len(splits) else len(name)
         lines.append(name[idx:end].strip())
     return lines
+
+
+def _balanced_word_split(text: str) -> list[str] | None:
+    """Split text at the word boundary that best balances line widths.
+
+    Returns two lines, or None if the text has no interior spaces.
+    """
+    words = text.split()
+    if len(words) < 2:
+        return None
+    best: tuple[int, list[str]] | None = None
+    for i in range(1, len(words)):
+        a = " ".join(words[:i])
+        b = " ".join(words[i:])
+        diff = abs(len(a) - len(b))
+        if best is None or diff < best[0]:
+            best = (diff, [a, b])
+    return best[1] if best else None
+
+
+def _word_wrap_lines(
+    lines: list[str], bold: bool, max_width: int, min_size: int,
+) -> list[str]:
+    """Re-split any line that doesn't fit at min_size."""
+    result: list[str] = []
+    for line in lines:
+        probe = _load_font(min_size, bold=bold)
+        if _measure_w(probe, line) <= max_width:
+            result.append(line)
+            continue
+        wrapped = _balanced_word_split(line)
+        if wrapped is None:
+            result.append(line)
+            continue
+        result.extend(wrapped)
+    return result
 
 
 def _auto_fit(
@@ -224,27 +260,33 @@ def _draw_centered(
     text: str,
     font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
     fill: tuple[int, ...],
+    stroke_width: int = 0,
+    stroke_fill: tuple[int, ...] | None = None,
+    letter_spacing: int = 0,
 ) -> None:
-    """Draw centered text WITH drop shadow."""
-    tw = _measure_w(font, text)
-    x = (canvas_w - tw) // 2
-    # Drop shadow
-    draw.text((x + 2, y + 3), text, font=font, fill=(0, 0, 0, 160))
-    draw.text((x, y), text, font=font, fill=fill)
-
-
-def _draw_centered_no_shadow(
-    draw: ImageDraw.ImageDraw,
-    canvas_w: int,
-    y: int,
-    text: str,
-    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
-    fill: tuple[int, ...],
-) -> None:
-    """Draw centered text without shadow."""
-    tw = _measure_w(font, text)
-    x = (canvas_w - tw) // 2
-    draw.text((x, y), text, font=font, fill=fill)
+    """Draw centered text with optional stroke outline and letter spacing."""
+    sw = stroke_width if stroke_fill else 0
+    sf = stroke_fill if sw else None
+    if letter_spacing == 0:
+        tw = _measure_w(font, text)
+        x = (canvas_w - tw) // 2
+        draw.text(
+            (x, y), text, font=font, fill=fill,
+            stroke_width=sw, stroke_fill=sf,
+        )
+    else:
+        total_w = (
+            sum(_measure_w(font, c) for c in text)
+            + letter_spacing * (len(text) - 1)
+        )
+        x = (canvas_w - total_w) // 2
+        for c in text:
+            cw = _measure_w(font, c)
+            draw.text(
+                (x, y), c, fill=fill, font=font,
+                stroke_width=sw, stroke_fill=sf,
+            )
+            x += cw + letter_spacing
 
 
 def _draw_glow_line(
@@ -259,32 +301,27 @@ def _draw_glow_line(
     canvas_w = base_img.size[0]
     x_start = (canvas_w - width) // 2
 
-    # Create glow overlay
-    overlay = Image.new("RGBA", base_img.size, (0, 0, 0, 0))
-    glow_draw = ImageDraw.Draw(overlay)
+    glow = Image.new("RGBA", base_img.size, (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow)
 
-    # Thick rectangle for glow source
-    glow_draw.rectangle(
+    for offset in range(-2, 3):
+        glow_draw.rectangle(
+            [x_start, y + offset, x_start + width, y + height + offset],
+            fill=(*color, 220),
+        )
+
+    glow = glow.filter(ImageFilter.GaussianBlur(radius=glow_radius))
+    glow2 = glow.filter(ImageFilter.GaussianBlur(radius=glow_radius // 2))
+    glow = Image.alpha_composite(glow, glow2)
+
+    result = Image.alpha_composite(base_img.convert("RGBA"), glow)
+    result_draw = ImageDraw.Draw(result)
+    result_draw.rectangle(
         [x_start, y, x_start + width, y + height],
-        fill=(*color, 200),
+        fill=color,
     )
 
-    # Blur twice for soft glow
-    overlay = overlay.filter(ImageFilter.GaussianBlur(radius=glow_radius))
-    overlay = overlay.filter(ImageFilter.GaussianBlur(radius=glow_radius // 2))
-
-    # Composite glow onto base
-    base_rgba = base_img.convert("RGBA")
-    composited = Image.alpha_composite(base_rgba, overlay)
-
-    # Draw sharp line on top
-    sharp_draw = ImageDraw.Draw(composited)
-    sharp_draw.rectangle(
-        [x_start, y, x_start + width, y + height],
-        fill=(*color, 255),
-    )
-
-    return composited.convert("RGB")
+    return result.convert("RGB")
 
 
 def _prepare_background(
@@ -440,7 +477,7 @@ def _layout_album_cover(
     line_w = int(400 * s)
     photo_h = int(size * PHOTO_HEIGHT_FRAC)
 
-    PAD_LINE_TO_ARTIST = int(28 * s)
+    PAD_LINE_TO_ARTIST = int(30 * s)
     PAD_LINE_TO_FEST = int(20 * s)
     PAD_FEST_TO_DATE = int(14 * s)
     PAD_DATE_TO_DETAIL = int(14 * s)
@@ -452,8 +489,9 @@ def _layout_album_cover(
     first_stage = stage.split(",")[0].strip() if stage else ""
 
     PAD_ARTIST_LINES = int(6 * s)
+    min_hero = int(80 * s)
     artist_lines = [line.upper() for line in split_artist(artist)]
-    # Size the shared font to the widest line so all lines align visually.
+    artist_lines = _word_wrap_lines(artist_lines, True, max_text_w, min_hero)
     longest = max(artist_lines, key=len) if artist_lines else ""
     artist_font = _auto_fit(
         longest, True, max_text_w, start=int(100 * s), minimum=int(54 * s)
@@ -573,27 +611,39 @@ def compose_cover(
     _apply_dark_gradient(canvas)
 
     draw = ImageDraw.Draw(canvas)
+    max_text_w = int(size * 0.85)
+    s = size / 1000.0
     cursor = L["artist_block_top"]
     for line in L["artist_lines"]:
-        _draw_centered(draw, size, cursor, line, L["artist_font"], (255, 255, 255, 255))
+        sp = max(int(2 * s), min(
+            int(14 * s),
+            (max_text_w - _measure_w(L["artist_font"], line))
+            // max(len(line), 1),
+        ))
+        _draw_centered(
+            draw, size, cursor, line, L["artist_font"], (255, 255, 255, 255),
+            letter_spacing=sp,
+        )
         cursor += L["artist_line_h"] + L["artist_pad_lines"]
 
     result = canvas.convert("RGB")
-    result = _draw_glow_line(result, L["line_y"], L["line_w"], L["line_h"], accent)
+    result = _draw_glow_line(
+        result, L["line_y"], L["line_w"], L["line_h"], accent, glow_radius=16,
+    )
 
     draw = ImageDraw.Draw(result)
     cursor_y = L["line_y"] + L["line_h"] + L["pad_line_to_fest"]
 
     if L["fest_font"] is not None:
-        _draw_centered_no_shadow(draw, size, cursor_y, L["fest_text"], L["fest_font"], accent)
+        _draw_centered(draw, size, cursor_y, L["fest_text"], L["fest_font"], accent)
         cursor_y += L["fest_h"] + L["pad_fest_to_date"]
 
     if L["date_font"] is not None:
-        _draw_centered_no_shadow(draw, size, cursor_y, L["date_text"], L["date_font"], (255, 255, 255))
+        _draw_centered(draw, size, cursor_y, L["date_text"], L["date_font"], (255, 255, 255))
         cursor_y += L["date_h"] + L["pad_date_to_detail"]
 
     for part, sf, sh in zip(L["stage_parts"], L["stage_fonts"], L["stage_heights"]):
-        _draw_centered_no_shadow(draw, size, cursor_y, part, sf, (255, 255, 255))
+        _draw_centered(draw, size, cursor_y, part, sf, (255, 255, 255))
         cursor_y += sh + L["pad_detail_lines"]
 
     buf = io.BytesIO()
@@ -677,7 +727,7 @@ def compose_artist_cover(
 
     LINE_H = max(1, int(4 * s))
     LINE_W = int(400 * s)
-    PAD_LINE_TO_ARTIST = int(28 * s)
+    PAD_LINE_TO_ARTIST = int(30 * s)
     PHOTO_SIZE = int(550 * s)
     PAD_PHOTO_TO_ARTIST = int(24 * s)
 
@@ -724,12 +774,19 @@ def compose_artist_cover(
         except Exception:
             logger.warning("cover.dj_artwork_fail: error=processing_failed")
 
-    # Artist name: NO shadow for artist cover
-    _draw_centered_no_shadow(draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255))
+    sp = max(int(2 * s), min(
+        int(14 * s),
+        (max_text_w - _measure_w(artist_font, artist_text))
+        // max(len(artist_text), 1),
+    ))
+    _draw_centered(
+        draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255),
+        letter_spacing=sp,
+    )
 
     # Glow line
     result = canvas.convert("RGB")
-    result = _draw_glow_line(result, LINE_Y, LINE_W, LINE_H, accent)
+    result = _draw_glow_line(result, LINE_Y, LINE_W, LINE_H, accent, glow_radius=16)
 
     buf = io.BytesIO()
     result.save(buf, format="JPEG", quality=90)
