@@ -459,3 +459,31 @@ class TestSafeArtistName:
 
     def test_strips_whitespace(self):
         assert paths.safe_artist_name("  Garrix  ") == "Garrix"
+
+
+class TestDetectLibraryInterior:
+    def test_root_with_artist_subfolders_is_not_flagged(self, tmp_path: Path):
+        # A real library root: artist folders live *under* it, the root itself
+        # holds no manifest sidecar.
+        artist = tmp_path / "AFROJACK"
+        artist.mkdir()
+        (artist / ".tracksplit_artist.json").write_text("{}")
+        assert paths.detect_library_interior(tmp_path) is None
+
+    def test_artist_folder_is_flagged_with_parent_root(self, tmp_path: Path):
+        artist = tmp_path / "AFROJACK"
+        artist.mkdir()
+        (artist / ".tracksplit_artist.json").write_text("{}")
+        assert paths.detect_library_interior(artist) == (tmp_path, "artist")
+
+    def test_album_folder_is_flagged_with_grandparent_root(self, tmp_path: Path):
+        album = tmp_path / "AFROJACK" / "EDC Las Vegas 2025 (kineticFIELD)"
+        album.mkdir(parents=True)
+        (album / ".tracksplit_manifest.json").write_text("{}")
+        assert paths.detect_library_interior(album) == (tmp_path, "album")
+
+    def test_plain_directory_is_not_flagged(self, tmp_path: Path):
+        assert paths.detect_library_interior(tmp_path) is None
+
+    def test_nonexistent_directory_is_not_flagged(self, tmp_path: Path):
+        assert paths.detect_library_interior(tmp_path / "nope") is None

@@ -529,6 +529,22 @@ def main(
 
     output_dir = output if output is not None else Path.cwd()
 
+    interior = paths.detect_library_interior(output_dir)
+    if interior is not None:
+        interior_root, kind = interior
+        label = "an album folder" if kind == "album" else "an artist folder"
+        out = make_console(file=sys.stdout)
+        print_error(
+            f"--output points inside an existing TrackSplit library.\n"
+            f"  '{output_dir}' is {label}; "
+            f"the library root is '{interior_root}'.\n"
+            f"Pass the library root instead:\n"
+            f'  tracksplit "<input>" --output "{interior_root}"\n'
+            f"TrackSplit creates the <artist>/<album> folders for you.",
+            console=out,
+        )
+        raise typer.Exit(code=1)
+
     # Install signal handler for clean Ctrl+C
     is_main_thread = threading.current_thread() is threading.main_thread()
     original_handler = signal.getsignal(signal.SIGINT) if is_main_thread else None

@@ -42,6 +42,11 @@ from pathlib import Path
 
 import platformdirs
 
+from tracksplit.manifest import (
+    ALBUM_MANIFEST_FILENAME,
+    ARTIST_MANIFEST_FILENAME,
+)
+
 APP_NAME = "TrackSplit"
 CRATEDIGGER_APP_NAME = "CrateDigger"
 _WALK_UP_LIMIT = 10
@@ -259,3 +264,21 @@ def _write_legacy_stamp() -> None:
             raise
     except OSError as e:
         logger.debug("Failed to write legacy-warning stamp at %s: %s", target, e)
+
+
+def detect_library_interior(output_dir: Path) -> tuple[Path, str] | None:
+    """Detect when ``output_dir`` points *inside* a TrackSplit library.
+
+    ``output_dir`` is meant to be a library *root*; TrackSplit appends
+    ``<artist>/<album>`` to it. If the user instead points it at an artist or
+    album folder, the run would silently create a doubled path. Recognize that
+    case by TrackSplit's private marker files and return the library root the
+    user almost certainly meant, paired with the kind of folder detected
+    (``"artist"`` or ``"album"``). Return ``None`` for a plausible root or any
+    non-library directory (including one that does not exist).
+    """
+    if (output_dir / ARTIST_MANIFEST_FILENAME).is_file():
+        return output_dir.parent, "artist"
+    if (output_dir / ALBUM_MANIFEST_FILENAME).is_file():
+        return output_dir.parent.parent, "album"
+    return None

@@ -88,6 +88,36 @@ The full output path for an album is: `<output>/<Artist>/<Festival Year (Stage)>
 
 ---
 
+## TrackSplit refuses, saying output is inside a library
+
+**What you see:** TrackSplit exits immediately with an error like:
+
+```
+--output points inside an existing TrackSplit library.
+  '<path you gave>' is an artist folder; the library root is '<correct root>'.
+Pass the library root instead:
+  tracksplit "<input>" --output "<correct root>"
+TrackSplit creates the <artist>/<album> folders for you.
+```
+
+(For an album folder it says "is an album folder" instead.)
+
+**What is happening:** You passed `--output` pointing at a folder TrackSplit has already filled as an artist or album folder, rather than the library root that contains it. If TrackSplit proceeded it would create a doubled path such as `.../Audio/AFROJACK/AFROJACK/<album>` instead of `.../Audio/AFROJACK/<album>`.
+
+This check runs even under `--dry-run`. No files are written.
+
+**Fix:** Re-run using the library root that the error message reports:
+
+```bash
+tracksplit video.mkv --output ~/music/library/
+```
+
+TrackSplit creates the `Artist/Album/` folder structure itself. You do not need to pre-create or navigate into those folders.
+
+**Limit to be aware of:** The check only triggers for folders TrackSplit has already created and populated. A brand-new, empty folder that merely happens to share a name with an artist is not detected.
+
+---
+
 ## Files are rebuilt every run even though nothing changed
 
 **What you see:** TrackSplit processes the same files repeatedly instead of skipping them.

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.12.0] - 2026-06-11
+
+### Added
+
+- `--output` now refuses a path that points inside an existing TrackSplit library (an artist or album folder), printing the correct library root and exiting without writing files. This prevents accidentally creating a nested `Artist/Artist/...` path when the library root was intended.
+
 ## [0.11.0] - 2026-05-26
 
 ### Changed

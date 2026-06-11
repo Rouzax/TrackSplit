@@ -244,3 +244,22 @@ def test_check_update_status_row_suppressed(monkeypatch):
     result = runner.invoke(cli.app, ["--check"])
     assert "Update status" in result.stdout
     assert "suppressed" in result.stdout
+
+
+def test_cli_refuses_output_inside_library(tmp_path):
+    """--output pointed at an artist folder is refused with guidance."""
+    # Build a fake library: <root>/AFROJACK is an artist folder.
+    artist = tmp_path / "Audio" / "AFROJACK"
+    artist.mkdir(parents=True)
+    (artist / ".tracksplit_artist.json").write_text("{}")
+
+    # A real input file so argument validation (exists=True) passes.
+    video = tmp_path / "set.mkv"
+    video.write_bytes(b"\x00")
+
+    result = runner.invoke(
+        app, [str(video), "--output", str(artist), "--format", "opus"]
+    )
+    assert result.exit_code == 1
+    assert "inside an existing TrackSplit library" in result.output
+    assert str(tmp_path / "Audio") in result.output

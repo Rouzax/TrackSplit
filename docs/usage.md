@@ -30,13 +30,15 @@ Both modes write the same output structure. The difference is that directory mod
 
 ### `--output` / `-o`
 
-Where to write the albums. TrackSplit creates an `Artist/Album/` folder structure inside this directory.
+Where to write the albums. TrackSplit creates an `Artist/Album/` folder structure inside this directory, so `--output` must point at the library root, not at an artist or album folder inside it.
 
 ```bash
 tracksplit video.mkv --output ~/music/library/
 ```
 
 If you leave this out, TrackSplit writes into your current working directory. On a first run you almost always want to set this explicitly so your music ends up where your server can find it.
+
+If you accidentally point `--output` one level too deep (at a folder TrackSplit has already filled as an artist or album folder), TrackSplit refuses, prints the correct library root, and exits without writing any files. Re-run with the path it reports and it will place the artist and album folders for you.
 
 ### `--format` / `-f`
 
