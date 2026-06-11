@@ -3,6 +3,10 @@ site_url: https://rouzax.github.io/TrackSplit/docs/
 repo_url: https://github.com/Rouzax/TrackSplit
 repo_name: Rouzax/TrackSplit
 
+# Build into a dedicated, gitignored directory. The tracked `site/` holds the
+# hand-curated landing page; mkdocs must not overwrite it.
+site_dir: site_build
+
 theme:
   name: material
   palette:
