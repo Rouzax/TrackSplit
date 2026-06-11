@@ -47,6 +47,8 @@ The top-level folder is named after the artist. Inside it, two image files are p
 
 Both files contain the same image. TrackSplit writes both so the artist looks correct in whichever server you use.
 
+The DJ photo is placed as a rounded square thumbnail, center-cropped from the source image so faces keep natural proportions. A landscape source (such as `fanart.jpg`) is cropped to its center square rather than squashed to fit.
+
 **Multi-artist (B2B) sets go under the primary artist's folder.** When a set has more than one headliner (as listed in the CrateDigger `CRATEDIGGER_1001TL_ARTISTS` tag), TrackSplit places the album inside the first-listed artist's folder rather than creating a combined folder like `Martin Garrix & Alesso/`. The artist artwork (`folder.jpg`, `artist.jpg`) reflects the primary artist.
 
 ### Album folder
@@ -80,6 +82,8 @@ The album cover image, placed at the album level. It is also embedded inside eve
 This file is always created.
 
 **What's on the cover:** the artist name above an accent rail, with the festival (or closest available location) below the rail, then the date, then the stage. The accent color is sampled from the background image.
+
+**Background image source:** the cover uses the embedded video cover image as a blurred full-bleed background. The source must be landscape (aspect ratio at least 1.2). If the embedded image is portrait or near-square, TrackSplit falls back to a generated gradient background and logs a warning. When an MKV carries multiple image attachments, an attachment named `cover_land` is preferred over one named `cover` as the background source.
 
 **Multi-artist names break across lines.** If the artist field contains ` & `, ` B2B `, ` VS `, or ` X ` (with spaces around the connector, case-insensitive), the cover stacks one artist per line with the connector carried to each subsequent line, so a three-way B2B like `"Axwell & Sebastian Ingrosso & Steve Angello"` renders as three stacked lines. The shared font is sized to fit the longest line so the stack stays visually aligned. A parenthetical credit like `"Everything Always (Dom Dolla & John Summit)"` splits into the act on the first line and the inner artists on the second.
 

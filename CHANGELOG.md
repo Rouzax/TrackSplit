@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Artist photo (`folder.jpg` / `artist.jpg`) is now center-cropped to a square
+  before compositing, so faces keep natural proportions. Previously a landscape
+  source (for example a 1920x1080 `fanart.jpg`) was scaled directly to the
+  square canvas, squashing it horizontally. Square source images are unaffected.
+- Album cover background now requires a landscape source (aspect ratio >= 1.2).
+  A portrait or near-square image is rejected in favor of the generated gradient
+  background (with a logged warning) rather than producing a distorted cover.
+  Artist covers are unaffected; a square portrait is still used as the
+  artist-card background.
+- When an MKV carries multiple image attachments, an attachment named
+  `cover_land` is now preferred over one named `cover` as the album cover
+  background source.
+- Cover schema version bumped: on the next run, existing libraries regenerate
+  affected album and artist covers automatically (only covers whose rendering
+  changes are rewritten). Artist cards now also honor the cover schema version;
+  previously they refreshed only when the source artwork itself changed.
+
 ## [0.12.0] - 2026-06-11
 
 ### Added

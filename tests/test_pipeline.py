@@ -1635,6 +1635,7 @@ class TestRefreshArtistCover:
         assert calls and calls[0]["artist"] == "A"
 
     def test_skips_when_artwork_hash_unchanged(self, tmp_path):
+        from tracksplit.cover import COVER_SCHEMA_VERSION
         from tracksplit.manifest import (
             ArtistManifest, MANIFEST_SCHEMA, artwork_sha256, save_artist_manifest,
         )
@@ -1648,6 +1649,7 @@ class TestRefreshArtistCover:
             ArtistManifest(
                 schema=MANIFEST_SCHEMA, artist="A",
                 dj_artwork_sha256=artwork_sha256(b"jpg1"),
+                cover_schema_version=COVER_SCHEMA_VERSION,
             ),
         )
         calls = []
@@ -1661,6 +1663,36 @@ class TestRefreshArtistCover:
         assert calls == []
         assert (artist / "folder.jpg").read_bytes() == b"OLD"
         assert (artist / "artist.jpg").read_bytes() == b"OLD"
+
+    def test_rewrites_when_cover_schema_outdated(self, tmp_path):
+        """A stale cover_schema_version rebuilds the card even if the artwork
+        hash is unchanged, so cover-rendering changes reach existing libraries."""
+        from tracksplit.cover import COVER_SCHEMA_VERSION
+        from tracksplit.manifest import (
+            ArtistManifest, MANIFEST_SCHEMA, artwork_sha256,
+            load_artist_manifest, save_artist_manifest,
+        )
+        from tracksplit.pipeline import refresh_artist_cover
+        assert COVER_SCHEMA_VERSION > 0
+        artist = tmp_path / "A"
+        artist.mkdir()
+        (artist / "folder.jpg").write_bytes(b"OLD")
+        (artist / "artist.jpg").write_bytes(b"OLD")
+        save_artist_manifest(
+            artist,
+            ArtistManifest(
+                schema=MANIFEST_SCHEMA, artist="A",
+                dj_artwork_sha256=artwork_sha256(b"jpg1"),
+                cover_schema_version=0,
+            ),
+        )
+        refresh_artist_cover(
+            artist, artist_name="A", dj_artwork_data=b"jpg1",
+            compose=lambda **kw: b"NEW",
+        )
+        assert (artist / "folder.jpg").read_bytes() == b"NEW"
+        m = load_artist_manifest(artist)
+        assert m.cover_schema_version == COVER_SCHEMA_VERSION
 
     def test_rewrites_when_artwork_hash_changes(self, tmp_path):
         from tracksplit.manifest import (

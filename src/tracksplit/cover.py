@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps, UnidentifiedImageError
 
 from tracksplit.cratedigger import find_cratedigger_dirs
 from tracksplit.fonts import get_font_path
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # fonts, accent logic, gradient math, etc). TrackSplit uses the stored
 # vs current value of this constant to decide whether an existing album
 # needs a cover-only rebuild on the skip path.
-COVER_SCHEMA_VERSION = 1
+COVER_SCHEMA_VERSION = 2
 
 # ---------------------------------------------------------------------------
 # Font helpers
@@ -324,47 +324,73 @@ def _draw_glow_line(
     return result.convert("RGB")
 
 
+_LANDSCAPE_MIN_RATIO = 1.2
+
+
+def _gradient_background(size: int) -> tuple[Image.Image, tuple[int, int, int]]:
+    """Fallback background: dark gradient with the default warm purple accent."""
+    bg = create_gradient(size, size)
+    accent = _ensure_contrast(180, 100, 220)
+    return bg, accent
+
+
 def _prepare_background(
-    background_data: bytes | None, size: int, darkness: float = 0.4
+    background_data: bytes | None,
+    size: int,
+    darkness: float = 0.4,
+    reject_non_landscape: bool = False,
 ) -> tuple[Image.Image, tuple[int, int, int]]:
     """Blur+darken background or create gradient. Returns (image, accent_color).
 
     darkness: 0.0 = black, 1.0 = no darkening. Album covers use 0.4,
     artist covers use 0.18 (CrateDigger style).
+
+    When reject_non_landscape is set (album covers), a source whose aspect
+    ratio is below _LANDSCAPE_MIN_RATIO is not used as a full-bleed background
+    (it would be blown up and center-cropped into a poor cover); the gradient
+    is used instead. Artist covers leave this off so a square portrait can
+    serve as its own blurred background.
     """
-    if background_data is not None:
-        try:
-            bg = Image.open(io.BytesIO(background_data)).convert("RGB")
-        except (UnidentifiedImageError, OSError) as exc:
-            logger.warning('cover.source_fail: method=decode error="%s"', exc)
-            bg = create_gradient(size, size)
-            accent = _ensure_contrast(180, 100, 220)
-            return bg, accent
+    if background_data is None:
+        return _gradient_background(size)
 
-        # Cover-fit resize and center crop
-        src_w, src_h = bg.size
-        scale = max(size / src_w, size / src_h)
-        new_w = int(src_w * scale)
-        new_h = int(src_h * scale)
-        bg = bg.resize((new_w, new_h), Image.Resampling.LANCZOS)
+    try:
+        bg = Image.open(io.BytesIO(background_data)).convert("RGB")
+    except (UnidentifiedImageError, OSError) as exc:
+        logger.warning('cover.source_fail: method=decode error="%s"', exc)
+        return _gradient_background(size)
 
-        left = (new_w - size) // 2
-        top = (new_h - size) // 2
-        bg = bg.crop((left, top, left + size, top + size))
+    src_w, src_h = bg.size
+    if reject_non_landscape and src_w / max(src_h, 1) < _LANDSCAPE_MIN_RATIO:
+        logger.warning(
+            "cover.bg_reject: reason=not_landscape ratio=%.2f size=%dx%d",
+            src_w / max(src_h, 1), src_w, src_h,
+        )
+        return _gradient_background(size)
 
-        # Get accent before blurring
-        accent = get_accent_color(bg)
+    # Cover-fit resize and center crop
+    scale = max(size / src_w, size / src_h)
+    new_w = int(src_w * scale)
+    new_h = int(src_h * scale)
+    bg = bg.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
-        # Blur and darken
-        bg = bg.filter(ImageFilter.GaussianBlur(radius=40))
-        bg = ImageEnhance.Brightness(bg).enhance(darkness)
+    left = (new_w - size) // 2
+    top = (new_h - size) // 2
+    bg = bg.crop((left, top, left + size, top + size))
 
-        return bg, accent
-    else:
-        bg = create_gradient(size, size)
-        # Default accent: a warm purple/magenta
-        accent = _ensure_contrast(180, 100, 220)
-        return bg, accent
+    # Get accent before blurring
+    accent = get_accent_color(bg)
+
+    # Blur and darken
+    bg = bg.filter(ImageFilter.GaussianBlur(radius=40))
+    bg = ImageEnhance.Brightness(bg).enhance(darkness)
+
+    return bg, accent
+
+
+def _fit_square(photo: Image.Image, size: int) -> Image.Image:
+    """Center-crop and resize a photo to a square, without aspect distortion."""
+    return ImageOps.fit(photo, (size, size), Image.Resampling.LANCZOS)
 
 
 # ---------------------------------------------------------------------------
@@ -603,7 +629,9 @@ def compose_cover(
     """
     L = _layout_album_cover(artist, festival, date, stage, venue, size)
 
-    bg, accent = _prepare_background(background_data, size, darkness=0.18)
+    bg, accent = _prepare_background(
+        background_data, size, darkness=0.18, reject_non_landscape=True
+    )
     canvas = bg.convert("RGBA")
 
     if background_data is not None:
@@ -754,7 +782,7 @@ def compose_artist_cover(
     if dj_artwork_data is not None:
         try:
             photo = Image.open(io.BytesIO(dj_artwork_data)).convert("RGBA")
-            photo = photo.resize((PHOTO_SIZE, PHOTO_SIZE), Image.Resampling.LANCZOS)
+            photo = _fit_square(photo, PHOTO_SIZE)
 
             # Rounded corners mask
             corner_radius = int(PHOTO_SIZE * 0.1)
@@ -921,14 +949,22 @@ def _is_image_attachment(att: dict) -> bool:
     return name.endswith(_IMAGE_EXTS)
 
 
+def _attachment_priority(att: dict) -> int:
+    """Sort priority for image attachments: cover_land first, then cover, then rest."""
+    name = (att.get("file_name") or "").lower()
+    if name.startswith("cover_land"):
+        return 0
+    if name.startswith("cover"):
+        return 1
+    return 2
+
+
 def _pick_image_attachment(attachments: list[dict]) -> dict | None:
-    """Pick the best image attachment, preferring one named cover.*."""
+    """Pick the best image attachment, preferring cover_land.* then cover.*."""
     images = [a for a in attachments if _is_image_attachment(a)]
     if not images:
         return None
-    images.sort(
-        key=lambda a: not (a.get("file_name") or "").lower().startswith("cover"),
-    )
+    images.sort(key=_attachment_priority)
     return images[0]
 
 

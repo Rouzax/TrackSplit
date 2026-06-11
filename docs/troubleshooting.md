@@ -215,6 +215,16 @@ Run `opusinfo` on a few consecutive output tracks and open an issue, including t
 
 ---
 
+## Artist image looks squashed, or album cover shows a plain gradient instead of artwork
+
+**What you see:** The artist photo on `folder.jpg` / `artist.jpg` looks stretched or squashed, or `cover.jpg` shows a gradient background instead of the source image you expected.
+
+**Artist photo squashing:** this was fixed in a recent release. TrackSplit now center-crops the source image to a square before compositing, so a landscape `fanart.jpg` no longer gets squashed horizontally. Covers regenerate automatically on the next run (no `--force` needed).
+
+**Album cover gradient fallback:** TrackSplit requires a landscape source image (aspect ratio at least 1.2) for the album cover background. A portrait or near-square embedded image is rejected in favor of the generated gradient, and a warning is logged. To get an image background, provide a landscape cover. If your MKV has multiple image attachments, the one named `cover_land` is used in preference to `cover`.
+
+---
+
 ## Cover art looks wrong or fonts are missing
 
 **What you see:** An error mentioning a missing font file, or generated artwork looks broken.

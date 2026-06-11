@@ -236,6 +236,7 @@ class ArtistManifest:
     schema: int
     artist: str
     dj_artwork_sha256: str
+    cover_schema_version: int = 0
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -256,6 +257,7 @@ def load_artist_manifest(artist_dir: Path) -> ArtistManifest | None:
         return ArtistManifest(
             schema=d["schema"], artist=d["artist"],
             dj_artwork_sha256=d["dj_artwork_sha256"],
+            cover_schema_version=d.get("cover_schema_version", 0),
         )
     except (json.JSONDecodeError, OSError, KeyError) as exc:
         logger.warning('manifest.unreadable: file=%s error="%s"', path.name, exc)
