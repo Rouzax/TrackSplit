@@ -37,6 +37,7 @@ def _full_album():
         stage="Mainstage",
         venue="Bayfront Park",
         comment="Full set recording",
+        country="Belgium",
         albumartists=["Armin van Buuren"],
         albumartist_mbids=["test-mbid-1234"],
         tracks=tracks,
@@ -67,6 +68,7 @@ def test_build_tag_dict_all_fields():
     assert tags["FESTIVAL"] == ["Ultra Music Festival"]
     assert tags["STAGE"] == ["Mainstage"]
     assert tags["VENUE"] == ["Bayfront Park"]
+    assert tags["RELEASECOUNTRY"] == ["Belgium"]
 
 
 def test_build_tag_dict_album_genre_fallback():
@@ -98,6 +100,7 @@ def test_build_tag_dict_minimal():
         "TRACKTOTAL", "DATE", "ORIGINALDATE", "RELEASEDATE", "GENRE",
         "PUBLISHER", "COMMENT",
         "MUSICBRAINZ_ALBUMARTISTID", "FESTIVAL", "STAGE", "VENUE",
+        "RELEASECOUNTRY",
     ):
         assert key not in tags, f"{key} should not be present when empty"
 

@@ -13,7 +13,7 @@ from tracksplit.models import AlbumMeta, TrackMeta
 
 logger = logging.getLogger(__name__)
 
-TAG_SCHEMA_VERSION = 1
+TAG_SCHEMA_VERSION = 2
 
 
 def _count_tag_deltas(
@@ -115,6 +115,8 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
         tags["STAGE"] = [album.stage]
     if album.venue:
         tags["VENUE"] = [album.venue]
+    if album.country:
+        tags["RELEASECOUNTRY"] = [album.country]
 
     return tags
 

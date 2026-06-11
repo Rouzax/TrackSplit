@@ -321,6 +321,7 @@ def build_album_meta(
         venue=tags.get("venue", ""),
         location=tags.get("location", ""),
         comment=tags.get("comment", ""),
+        country=tags.get("country", ""),
         tracks=tracks,
         albumartists=albumartists,
         albumartist_mbids=albumartist_mbids,

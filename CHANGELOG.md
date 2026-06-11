@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `RELEASECOUNTRY` tag is now written to every track when the source carries a country (from the CrateDigger `CRATEDIGGER_1001TL_COUNTRY` tag). The value is written as-is (for example `"United States"` or `"Belgium"`). The tag is omitted when no country is present. The tag schema version was bumped, so existing libraries will rewrite tags on the next run to pick up the new field (audio is not re-extracted).
+
 ## [0.12.0] - 2026-06-11
 
 ### Added

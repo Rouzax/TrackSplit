@@ -273,6 +273,7 @@ def test_build_album_meta_propagates_fields():
         "stage": "Mainstage",
         "venue": "Boom",
         "comment": "https://1001tl.com/abc",
+        "country": "Belgium",
     }
     chapters = _make_chapters(["Track A"])
     meta = build_album_meta(tags, chapters, "", tier=2)
@@ -280,6 +281,7 @@ def test_build_album_meta_propagates_fields():
     assert meta.stage == "Mainstage"
     assert meta.venue == "Boom"
     assert meta.comment == "https://1001tl.com/abc"
+    assert meta.country == "Belgium"
 
 
 def test_build_album_meta_tier2_no_festival():

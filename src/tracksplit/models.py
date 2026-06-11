@@ -42,6 +42,7 @@ class AlbumMeta:
     venue: str = ""
     location: str = ""
     comment: str = ""
+    country: str = ""
     tracks: list[TrackMeta] = field(default_factory=list)
     cover_data: bytes | None = None
     albumartists: list[str] = field(default_factory=list)
