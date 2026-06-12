@@ -245,6 +245,7 @@ def refresh_artist_cover(
     if (
         existing is not None
         and existing.dj_artwork_sha256 == new_hash
+        and existing.cover_schema_version >= COVER_SCHEMA_VERSION
         and folder_jpg.exists()
         and artist_jpg.exists()
     ):
@@ -260,6 +261,7 @@ def refresh_artist_cover(
             artist_dir,
             ArtistManifest(
                 schema=MANIFEST_SCHEMA, artist=artist_name, dj_artwork_sha256=new_hash,
+                cover_schema_version=COVER_SCHEMA_VERSION,
             ),
         )
         logger.info("pipeline.cover_refresh: artist=%s", artist_dir.name)

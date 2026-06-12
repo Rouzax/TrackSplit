@@ -592,8 +592,74 @@ class TestPickImageAttachment:
         assert result is not None
         assert result["id"] == 2
 
+    def test_prefers_cover_land_over_cover(self):
+        atts = [
+            {"id": 1, "content_type": "image/jpeg", "file_name": "cover.jpg"},
+            {"id": 2, "content_type": "image/jpeg", "file_name": "cover_land.jpg"},
+        ]
+        result = _pick_image_attachment(atts)
+        assert result is not None
+        assert result["id"] == 2
+
     def test_empty(self):
         assert _pick_image_attachment([]) is None
+
+
+class TestFitSquare:
+    """Item 5: the artist photo is center-cropped to square, not stretched."""
+
+    def test_returns_square(self):
+        from tracksplit.cover import _fit_square
+
+        img = Image.new("RGB", (1920, 1080), (10, 20, 30))
+        out = _fit_square(img, 550)
+        assert out.size == (550, 550)
+
+    def test_center_crops_not_stretches(self):
+        from tracksplit.cover import _fit_square
+
+        # Red center band with green far-left/far-right vertical strips.
+        # A center-crop to square keeps only the red center (the green edges
+        # fall outside the 1:1 crop); a naive resize would squeeze the green
+        # edges into the result's left/right edges instead.
+        img = Image.new("RGB", (1920, 1080), (220, 30, 30))
+        green = Image.new("RGB", (420, 1080), (30, 220, 30))
+        img.paste(green, (0, 0))
+        img.paste(green, (1500, 0))
+        out = _fit_square(img, 550).convert("RGB")
+        px = out.getpixel((5, 275))
+        assert isinstance(px, tuple)
+        assert px[0] > px[1], "left edge should be the cropped-in red center, not stretched green"
+
+
+class TestPrepareBackgroundRatioGuard:
+    """Item 4: a non-landscape source is rejected as a full-bleed album background."""
+
+    def test_landscape_used(self):
+        from tracksplit.cover import _ensure_contrast, _prepare_background
+
+        data = _make_image_bytes((40, 80, 200), 1000, 400)
+        _bg, accent = _prepare_background(data, 1000, reject_non_landscape=True)
+        assert accent != _ensure_contrast(180, 100, 220)
+
+    def test_portrait_rejected_to_gradient(self, caplog):
+        import logging
+
+        from tracksplit.cover import _ensure_contrast, _prepare_background
+
+        data = _make_image_bytes((40, 80, 200), 400, 500)
+        with caplog.at_level(logging.WARNING):
+            _bg, accent = _prepare_background(data, 1000, reject_non_landscape=True)
+        assert accent == _ensure_contrast(180, 100, 220)
+        assert any("bg_reject" in r.getMessage() for r in caplog.records)
+
+    def test_square_not_rejected_when_guard_off(self):
+        """Artist covers (default reject_non_landscape=False) keep square sources."""
+        from tracksplit.cover import _ensure_contrast, _prepare_background
+
+        data = _make_image_bytes((40, 80, 200), 600, 600)
+        _bg, accent = _prepare_background(data, 1000)
+        assert accent != _ensure_contrast(180, 100, 220)
 
 
 class TestMkvtoolsTempFileUnique:
