@@ -2,6 +2,8 @@
 
 TrackSplit writes one album folder per video into your output directory. This page explains what every file is, what it is for, and what changes when your source files carry CrateDigger metadata.
 
+> Want to see it first? The [interactive library browser](https://rouzax.github.io/TrackSplit/#library-browser) lets you click through real artists, albums, cover art, and tracklists.
+
 ## What you get
 
 After a successful run you will find a folder structure like this inside your output directory:

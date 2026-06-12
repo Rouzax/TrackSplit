@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Interactive library browser on the landing page. Click an artist, then an album, to see its cover art and full tracklist. This is a documentation/site change only; TrackSplit's behaviour is unchanged.
+
+### Changed
+
+- Refreshed the landing-page showcase (hero, gallery, hero and social banners) with real album covers and artist images from the library, and reworded the tagline to "Turn chaptered videos into gapless, tagged albums".
+- Improved landing-page and docs colour contrast to meet WCAG AA. The muted body/label text (was 2.8:1) and the docs Material header (white on the teal primary, was 2.6:1) now pass; the palette's contrast ratios are codified in the site CSS.
+
 ### Removed
 
 - Internal: dropped the write-only `tags["edition"]` field. It was set during festival canonicalization but never read; the edition is already reflected in the festival display string (and thus the album name and folder), so there is no user-visible change.

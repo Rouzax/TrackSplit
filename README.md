@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/version-v0.6.1-orange" alt="v0.6.1">
 </p>
 
-<p align="center"><em>Chapter-based audio extractor for music servers. Turn your chaptered video library into gapless, tagged FLAC or Opus albums ready for Jellyfin and Lyrion.</em></p>
+<p align="center"><em>Turn chaptered videos into gapless, tagged albums. Lossless FLAC or Opus, fully tagged with cover art, ready for Jellyfin, Lyrion, Navidrome, and Plex.</em></p>
 
 ## What is TrackSplit?
 
