@@ -174,6 +174,7 @@ Additional tags are written when the information is available:
 | `FESTIVAL` | Festival name (CrateDigger sources only) |
 | `STAGE` | Stage name (CrateDigger sources only) |
 | `VENUE` | Venue name (CrateDigger sources only) |
+| `RELEASECOUNTRY` | The festival's country, written as-is (for example `"United States"` or `"Belgium"`). Uses the MusicBrainz/Picard field name so servers such as Navidrome recognize it automatically. CrateDigger sources only; omitted when no country is present. |
 
 Tags are omitted entirely when the information is not available. Empty tags are never written.
 

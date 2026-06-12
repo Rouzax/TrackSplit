@@ -318,7 +318,7 @@ def test_tag_keys_match_build_tag_dict_inputs():
     from tracksplit.manifest import TAG_KEYS
     expected = {
         "artist", "festival", "date", "stage", "venue",
-        "genres", "comment",
+        "genres", "comment", "country",
         "albumartist_display", "albumartists", "albumartist_mbids",
     }
     assert set(TAG_KEYS) == expected

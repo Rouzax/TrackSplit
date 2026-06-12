@@ -29,6 +29,7 @@ TAG_KEYS = (
     "venue",
     "genres",
     "comment",
+    "country",
     "albumartist_display",
     "albumartists",
     "albumartist_mbids",

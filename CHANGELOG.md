@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `RELEASECOUNTRY` tag is now written to every track when the source carries a country (from the CrateDigger `CRATEDIGGER_1001TL_COUNTRY` tag). The value is written as-is (for example `"United States"` or `"Belgium"`). The tag is omitted when no country is present. The tag schema version was bumped, so existing libraries will rewrite tags on the next run to pick up the new field (audio is not re-extracted).
+
 ### Changed
 
 - Artist photo (`folder.jpg` / `artist.jpg`) is now center-cropped to a square

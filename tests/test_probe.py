@@ -179,6 +179,7 @@ class TestParseTags:
             "CRATEDIGGER_1001TL_VENUE": "Boom, Belgium",
             "CRATEDIGGER_1001TL_DATE": "2024-07-21",
             "CRATEDIGGER_1001TL_DJ_ARTWORK": "/path/to/art.jpg",
+            "CRATEDIGGER_1001TL_COUNTRY": "Belgium",
         })
         tags = parse_tags(data)
         assert tags["artist"] == "Tiesto"
@@ -189,6 +190,7 @@ class TestParseTags:
         assert tags["venue"] == "Boom, Belgium"
         assert tags["comment"] == "https://www.1001tracklists.com/tracklist/abc"
         assert tags["dj_artwork"] == "/path/to/art.jpg"
+        assert tags["country"] == "Belgium"
         assert tags["cratedigger"] is True
 
     def test_no_cratedigger_tags(self):
@@ -205,6 +207,7 @@ class TestParseTags:
         assert tags["location"] == ""
         assert tags["comment"] == ""
         assert tags["dj_artwork"] == ""
+        assert tags["country"] == ""
         assert tags["cratedigger"] is False
 
     def test_case_insensitive_lookup(self):
