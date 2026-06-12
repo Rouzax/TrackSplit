@@ -1103,6 +1103,7 @@
 <li><code>artist.jpg</code>: the same image under a different name, used by Kodi and other players that look for <code>artist.jpg</code> specifically.</li>
 </ul>
 <p>Both files contain the same image. TrackSplit writes both so the artist looks correct in whichever server you use.</p>
+<p>The DJ photo is placed as a rounded square thumbnail, center-cropped from the source image so faces keep natural proportions. A landscape source (such as <code>fanart.jpg</code>) is cropped to its center square rather than squashed to fit.</p>
 <p><strong>Multi-artist (B2B) sets go under the primary artist's folder.</strong> When a set has more than one headliner (as listed in the CrateDigger <code>CRATEDIGGER_1001TL_ARTISTS</code> tag), TrackSplit places the album inside the first-listed artist's folder rather than creating a combined folder like <code>Martin Garrix &amp; Alesso/</code>. The artist artwork (<code>folder.jpg</code>, <code>artist.jpg</code>) reflects the primary artist.</p>
 <h3 id="album-folder">Album folder</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Festival Year (Stage)/
@@ -1125,6 +1126,7 @@
 <p>The album cover image, placed at the album level. It is also embedded inside every track file, so your music server sees it whether it reads the folder image or the file tags.</p>
 <p>This file is always created.</p>
 <p><strong>What's on the cover:</strong> the artist name above an accent rail, with the festival (or closest available location) below the rail, then the date, then the stage. The accent color is sampled from the background image.</p>
+<p><strong>Background image source:</strong> the cover uses the embedded video cover image as a blurred full-bleed background. The source must be landscape (aspect ratio at least 1.2). If the embedded image is portrait or near-square, TrackSplit falls back to a generated gradient background and logs a warning. When an MKV carries multiple image attachments, an attachment named <code>cover_land</code> is preferred over one named <code>cover</code> as the background source.</p>
 <p><strong>Multi-artist names break across lines.</strong> If the artist field contains <code>&amp;</code>, <code>B2B</code>, <code>VS</code>, or <code>X</code> (with spaces around the connector, case-insensitive), the cover stacks one artist per line with the connector carried to each subsequent line, so a three-way B2B like <code>"Axwell &amp; Sebastian Ingrosso &amp; Steve Angello"</code> renders as three stacked lines. The shared font is sized to fit the longest line so the stack stays visually aligned. A parenthetical credit like <code>"Everything Always (Dom Dolla &amp; John Summit)"</code> splits into the act on the first line and the inner artists on the second.</p>
 <p><strong>Keeping a group name on one line.</strong> Some duos and trios ("Dimitri Vegas &amp; Like Mike", "Swedish House Mafia") read best as a single unit. TrackSplit does not detect these automatically; it splits on any <code>&amp;</code>. To keep a group on one line, add an alias in the CrateDigger <code>artists.json</code> file that maps the long form to a short canonical form. This file lives in the CrateDigger data directory:</p>
 <table>
@@ -1314,6 +1316,10 @@
 <td><code>VENUE</code></td>
 <td>Venue name (CrateDigger sources only)</td>
 </tr>
+<tr>
+<td><code>RELEASECOUNTRY</code></td>
+<td>The festival's country, written as-is (for example <code>"United States"</code> or <code>"Belgium"</code>). Uses the MusicBrainz/Picard field name so servers such as Navidrome recognize it automatically. CrateDigger sources only; omitted when no country is present.</td>
+</tr>
 </tbody>
 </table>
 <p>Tags are omitted entirely when the information is not available. Empty tags are never written.</p>
@@ -1394,12 +1400,12 @@
 <td>Fills missing MusicBrainz artist IDs. For Tier-1 sources (no CrateDigger tags) the <code>ALBUMARTIST</code> is looked up here to populate <code>MUSICBRAINZ_ALBUMARTISTID</code>. For Tier-2 sources, any empty slot in the positional MBID list (per-track <code>MUSICBRAINZ_ARTISTID</code> and album-level <code>MUSICBRAINZ_ALBUMARTISTID</code>) is backfilled from this cache. Unknown names stay empty.</td>
 </tr>
 <tr>
-<td><code>artists/{Artist}/dj-artwork.jpg</code></td>
-<td>DJ portrait used to compose the artist cover (<code>folder.jpg</code> / <code>artist.jpg</code>). Looked up by the canonical artist name.</td>
+<td><code>artists/{slug}/dj-artwork.jpg</code></td>
+<td>DJ portrait used to compose the artist cover (<code>folder.jpg</code> / <code>artist.jpg</code>). Looked up by the CrateDigger canonical slug (from the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag, index 0). For files without that tag, the slug is derived from the artist name using the same <code>slugify</code> logic CrateDigger uses. This means artwork is found correctly even when the displayed artist name was truncated, cased differently, or stored with Unicode differences.</td>
 </tr>
 <tr>
-<td><code>artists/{Artist}/fanart.jpg</code></td>
-<td>Fallback portrait used when <code>dj-artwork.jpg</code> is not present.</td>
+<td><code>artists/{slug}/fanart.jpg</code></td>
+<td>Fallback portrait used when <code>dj-artwork.jpg</code> is not present. Resolved by the same slug.</td>
 </tr>
 </tbody>
 </table>

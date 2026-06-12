@@ -703,10 +703,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#artist-image-looks-squashed-or-album-cover-shows-a-plain-gradient-instead-of-artwork" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Artist image looks squashed, or album cover shows a plain gradient instead of artwork
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cover-art-looks-wrong-or-fonts-are-missing" class="md-nav__link">
     <span class="md-ellipsis">
       
         Cover art looks wrong or fonts are missing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#artist-image-is-missing-or-shows-a-placeholder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Artist image is missing or shows a placeholder
       
     </span>
   </a>
@@ -940,10 +962,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#artist-image-looks-squashed-or-album-cover-shows-a-plain-gradient-instead-of-artwork" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Artist image looks squashed, or album cover shows a plain gradient instead of artwork
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cover-art-looks-wrong-or-fonts-are-missing" class="md-nav__link">
     <span class="md-ellipsis">
       
         Cover art looks wrong or fonts are missing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#artist-image-is-missing-or-shows-a-placeholder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Artist image is missing or shows a placeholder
       
     </span>
   </a>
@@ -1152,12 +1196,27 @@
 <p><strong>What is happening:</strong> Earlier versions had no way to detect that the cover renderer had changed, so existing albums kept their old cover files until you forced a full rebuild. Since version 0.6.7, TrackSplit tracks which cover layout was used for each album and detects the mismatch automatically on the next normal run.</p>
 <p><strong>What to do:</strong> Nothing. On the first run after upgrading, TrackSplit recomposes and re-embeds the cover for each affected album and logs either <code>Cover-only rebuild for &lt;album&gt;: N track(s) re-embedded</code> or <code>Cover already current for &lt;album&gt;; schema version bumped</code>. Audio is not re-extracted or re-encoded during this refresh, so it completes quickly. You do not need to pass <code>--force</code>.</p>
 <hr />
+<h2 id="artist-image-looks-squashed-or-album-cover-shows-a-plain-gradient-instead-of-artwork">Artist image looks squashed, or album cover shows a plain gradient instead of artwork</h2>
+<p><strong>What you see:</strong> The artist photo on <code>folder.jpg</code> / <code>artist.jpg</code> looks stretched or squashed, or <code>cover.jpg</code> shows a gradient background instead of the source image you expected.</p>
+<p><strong>Artist photo squashing:</strong> this was fixed in a recent release. TrackSplit now center-crops the source image to a square before compositing, so a landscape <code>fanart.jpg</code> no longer gets squashed horizontally. Covers regenerate automatically on the next run (no <code>--force</code> needed).</p>
+<p><strong>Album cover gradient fallback:</strong> TrackSplit requires a landscape source image (aspect ratio at least 1.2) for the album cover background. A portrait or near-square embedded image is rejected in favor of the generated gradient, and a warning is logged. To get an image background, provide a landscape cover. If your MKV has multiple image attachments, the one named <code>cover_land</code> is used in preference to <code>cover</code>.</p>
+<hr />
 <h2 id="cover-art-looks-wrong-or-fonts-are-missing">Cover art looks wrong or fonts are missing</h2>
 <p><strong>What you see:</strong> An error mentioning a missing font file, or generated artwork looks broken.</p>
 <p><strong>What is happening:</strong> A font file bundled with TrackSplit is missing or corrupt.</p>
 <p><strong>Fix:</strong> Reinstall the package:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span>--force-reinstall
 </code></pre></div>
+<hr />
+<h2 id="artist-image-is-missing-or-shows-a-placeholder">Artist image is missing or shows a placeholder</h2>
+<p><strong>What you see:</strong> The <code>folder.jpg</code> / <code>artist.jpg</code> for an artist is absent or falls back to a generic placeholder, even though CrateDigger has a profile for that artist.</p>
+<p><strong>What is happening:</strong> TrackSplit looks up the artist image by the CrateDigger canonical slug, read from the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag embedded in the source file. It then looks for <code>cache/artists/&lt;slug&gt;/dj-artwork.jpg</code> (or <code>fanart.jpg</code>) in the CrateDigger data directory. The image is missing if:</p>
+<ul>
+<li>CrateDigger has no cached artwork for that artist yet. Run CrateDigger on the source file to fetch it, then re-run TrackSplit.</li>
+<li>The source file predates the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag. TrackSplit falls back to deriving the slug from the artist name, which works for most artists but may miss one if the cache folder name differs from what <code>slugify</code> produces. Re-enriching the file with a current version of CrateDigger embeds the slug tag and removes the ambiguity.</li>
+<li>The CrateDigger data directory is not found. Check that <code>CRATEDIGGER_DATA_DIR</code> is set correctly, or that CrateDigger is installed in its default location.</li>
+</ul>
+<p><strong>Fix:</strong> Re-run CrateDigger on the source video to refresh its artwork cache and embed the slug tag, then re-run TrackSplit.</p>
 <hr />
 <h2 id="where-are-my-logs">Where are my logs?</h2>
 <p>TrackSplit creates a new log file for each CLI invocation, named with the timestamp and a short random suffix (for example, <code>split-2026-05-08T14-22-01-a3f2.log</code>). Log files are stored in:</p>
