@@ -2,6 +2,8 @@
 
 Turn your chaptered video library into a tagged music library, ready for Jellyfin, Lyrion, or any music server that reads standard audio files.
 
+> Want to see it first? The [interactive library browser](https://rouzax.github.io/TrackSplit/#library-browser) lets you click through real artists, albums, cover art, and tracklists.
+
 ## What it does
 
 Point TrackSplit at a video file with chapter markers and it splits the audio into one file per chapter, tags every track, generates album and artist cover art, and lays everything out in an `Artist/Album/` folder structure your music server can scan immediately. Lossless sources stay lossless. Repeat runs skip albums that have not changed.
