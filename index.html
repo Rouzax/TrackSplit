@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TrackSplit - Chapter-based audio extractor for music servers</title>
+  <title>TrackSplit - Turn chaptered videos into gapless, tagged albums</title>
   <meta name="description" content="Turn your chaptered video library into gapless, tagged FLAC or Opus albums ready for Jellyfin and Lyrion.">
   <meta property="og:title" content="TrackSplit">
-  <meta property="og:description" content="Chapter-based audio extractor for music servers">
+  <meta property="og:description" content="Turn chaptered videos into gapless, tagged albums">
   <meta property="og:image" content="assets/social-preview.jpg">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="style.css">
@@ -22,6 +22,7 @@
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#gallery">Gallery</a>
+      <a href="#library-browser">Browse</a>
       <a href="#workflow">Workflow</a>
       <a href="#install">Install</a>
       <a href="docs/">Docs</a>
@@ -39,8 +40,8 @@
       <h1 class="hero-title">
         <span class="hero-title-track">Track</span><span class="hero-title-split">Split</span>
       </h1>
-      <p class="hero-subtitle">Chapter-based audio extractor for music servers</p>
-      <p class="hero-desc">Turn your chaptered video library into gapless, tagged FLAC or Opus albums ready for Jellyfin and Lyrion.</p>
+      <p class="hero-subtitle">Turn chaptered videos into gapless, tagged albums</p>
+      <p class="hero-desc">Lossless FLAC or Opus, fully tagged with cover art, ready for Jellyfin, Lyrion, Navidrome, and Plex.</p>
       <div class="hero-actions">
         <a href="#install" class="btn btn-primary">Get Started</a>
         <a href="docs/" class="btn btn-outline">Documentation</a>
@@ -48,11 +49,25 @@
       </div>
     </div>
     <div class="hero-posters">
-      <div class="hero-poster" style="--delay: 0.1s"><img src="assets/album-01.jpg" alt="Album cover" loading="lazy"></div>
-      <div class="hero-poster" style="--delay: 0.2s"><img src="assets/artist-01.jpg" alt="Artist cover" loading="lazy"></div>
-      <div class="hero-poster" style="--delay: 0.3s"><img src="assets/album-02.jpg" alt="Album cover" loading="lazy"></div>
-      <div class="hero-poster" style="--delay: 0.15s"><img src="assets/artist-02.jpg" alt="Artist cover" loading="lazy"></div>
-      <div class="hero-poster" style="--delay: 0.25s"><img src="assets/album-03.jpg" alt="Album cover" loading="lazy"></div>
+      <div class="hero-poster" style="--delay: 0.1s"><img src="assets/album-armin-van-buuren-tomorrowland-2025-mainstage.jpg" alt="Armin van Buuren at Tomorrowland album cover" loading="lazy"></div>
+      <div class="hero-poster" style="--delay: 0.2s"><img src="assets/album-martin-garrix-red-rocks-2025.jpg" alt="Martin Garrix at Red Rocks album cover" loading="lazy"></div>
+      <div class="hero-poster" style="--delay: 0.3s"><img src="assets/album-swedish-house-mafia-tomorrowland-2025-mainstage.jpg" alt="Swedish House Mafia at Tomorrowland album cover" loading="lazy"></div>
+      <div class="hero-poster" style="--delay: 0.15s"><img src="assets/album-tiesto-dreamstate-socal-2025-the-dream-stage.jpg" alt="Tiesto at Dreamstate SoCal album cover" loading="lazy"></div>
+      <div class="hero-poster" style="--delay: 0.25s"><img src="assets/album-david-guetta-unvrs-ibiza-2025.jpg" alt="David Guetta at UNVRS Ibiza album cover" loading="lazy"></div>
+    </div>
+  </section>
+
+  <!-- Library browser -->
+  <section id="library-browser" class="browser reveal">
+    <div class="section-header">
+      <span class="section-label">Explore a library</span>
+      <h2>Browse a TrackSplit library</h2>
+      <p class="section-desc">Click an artist, then an album, to see its cover and full tracklist.</p>
+    </div>
+    <div class="browser-grid">
+      <nav id="browser-tree" class="browser-tree" aria-label="Artists and albums"></nav>
+      <figure class="browser-stage"><img id="browser-cover" alt="" loading="lazy"></figure>
+      <aside id="browser-meta" class="browser-meta" hidden></aside>
     </div>
   </section>
 
@@ -105,21 +120,21 @@
       <div class="gallery-group">
         <span class="gallery-label">Album Covers</span>
         <div class="gallery-items">
-          <div class="gallery-item"><img src="assets/album-01.jpg" alt="Album cover" loading="lazy"></div>
-          <div class="gallery-item"><img src="assets/album-02.jpg" alt="Album cover" loading="lazy"></div>
-          <div class="gallery-item"><img src="assets/album-03.jpg" alt="Album cover" loading="lazy"></div>
-          <div class="gallery-item"><img src="assets/album-04.jpg" alt="Album cover" loading="lazy"></div>
-          <div class="gallery-item"><img src="assets/album-05.jpg" alt="Album cover" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/album-anyma-tomorrowland-2025-mainstage.jpg" alt="Anyma - Tomorrowland" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/album-hardwell-tomorrowland-2025-mainstage.jpg" alt="Hardwell - Tomorrowland" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/album-armin-van-buuren-edc-las-vegas-2025-kineticfield.jpg" alt="Armin van Buuren - EDC Las Vegas" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/album-martin-garrix-edc-las-vegas-2025-kineticfield.jpg" alt="Martin Garrix - EDC Las Vegas" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/album-swedish-house-mafia-umf-miami-2026-mainstage.jpg" alt="Swedish House Mafia - UMF Miami" loading="lazy"></div>
         </div>
       </div>
       <div class="gallery-group">
-        <span class="gallery-label">Artist Covers</span>
+        <span class="gallery-label">Artist Images</span>
         <div class="gallery-items">
-          <div class="gallery-item"><img src="assets/artist-01.jpg" alt="Artist cover" loading="lazy"></div>
-          <div class="gallery-item"><img src="assets/artist-02.jpg" alt="Artist cover" loading="lazy"></div>
-          <div class="gallery-item"><img src="assets/artist-03.jpg" alt="Artist cover" loading="lazy"></div>
-          <div class="gallery-item"><img src="assets/artist-04.jpg" alt="Artist cover" loading="lazy"></div>
-          <div class="gallery-item"><img src="assets/artist-05.jpg" alt="Artist cover" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/artist-armin-van-buuren.jpg" alt="Armin van Buuren" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/artist-martin-garrix.jpg" alt="Martin Garrix" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/artist-tiesto.jpg" alt="Tiesto" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/artist-hardwell.jpg" alt="Hardwell" loading="lazy"></div>
+          <div class="gallery-item"><img src="assets/artist-swedish-house-mafia.jpg" alt="Swedish House Mafia" loading="lazy"></div>
         </div>
       </div>
     </div>
@@ -219,7 +234,7 @@
     <div class="footer-content">
       <div class="footer-brand">
         <span class="footer-logo">TrackSplit</span>
-        <p>Chapter-based audio extractor for music servers</p>
+        <p>Turn chaptered videos into gapless, tagged albums</p>
       </div>
       <div class="footer-links">
         <a href="https://github.com/Rouzax/TrackSplit" target="_blank" rel="noopener">GitHub</a>
@@ -280,20 +295,6 @@
       nav.classList.toggle('nav-scrolled', window.scrollY > 40);
     }, { passive: true });
 
-    const heroDesc = document.querySelector('.hero-desc');
-    const fullText = heroDesc.textContent;
-    heroDesc.textContent = '';
-    heroDesc.style.opacity = '1';
-    let charIndex = 0;
-    function typeChar() {
-      if (charIndex < fullText.length) {
-        heroDesc.textContent += fullText[charIndex];
-        charIndex++;
-        setTimeout(typeChar, 18);
-      }
-    }
-    setTimeout(typeChar, 1200);
-
     const stepObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -323,5 +324,6 @@
       });
     });
   </script>
+  <script src="assets/browser.js" defer></script>
 </body>
 </html>

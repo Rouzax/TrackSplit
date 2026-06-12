@@ -1,0 +1,4637 @@
+{
+  "artists": [
+    {
+      "name": "Armin van Buuren",
+      "slug": "armin-van-buuren",
+      "image": "artist-armin-van-buuren.jpg",
+      "albums": [
+        {
+          "title": "Tomorrowland 2025 (Mainstage)",
+          "slug": "tomorrowland-2025-mainstage",
+          "cover": "album-armin-van-buuren-tomorrowland-2025-mainstage.jpg",
+          "trackCount": 23,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Heavy",
+              "performer": "Armin van Buuren & JOA",
+              "genre": "Melodic House/Techno",
+              "label": "ARMADA",
+              "duration": "3:50"
+            },
+            {
+              "n": 2,
+              "title": "Give It To Me vs. Kick Out The Epic Motherfucker (Armin van Buuren Mashup)",
+              "performer": "Hel:sløwed & Nina de Koning vs. Dada Life",
+              "genre": "",
+              "label": "SO MUCH DADA",
+              "duration": "2:37"
+            },
+            {
+              "n": 3,
+              "title": "Rocking With The Best vs. Great Spirit (Armin van Buuren Mashup)",
+              "performer": "Laidback Luke & Vion Konger vs. Armin van Buuren & Vini Vici & Hilight Tribe",
+              "genre": "",
+              "label": "ARMIND(ARMADA)",
+              "duration": "1:53"
+            },
+            {
+              "n": 4,
+              "title": "Sleepless Nights",
+              "performer": "Armin van Buuren & Martin Garrix ft. Libby Whitehouse",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "3:08"
+            },
+            {
+              "n": 5,
+              "title": "Let It Be For Love (138 Mix)",
+              "performer": "Armin van Buuren ft. JAI RYU",
+              "genre": "",
+              "label": "ARMADA",
+              "duration": "2:26"
+            },
+            {
+              "n": 6,
+              "title": "FE!N vs. Love (Fafaq Edit)",
+              "performer": "Travis Scott & Playboi Carti vs. Armin van Buuren & Omnia",
+              "genre": "",
+              "label": "CACTUS JACK",
+              "duration": "1:44"
+            },
+            {
+              "n": 7,
+              "title": "Xplode (Yoel Lewis & Graham Bell Remix / Andrew Rayel Rework)",
+              "performer": "Avancada vs. Darius & Finlay",
+              "genre": "Trance",
+              "label": "ARMIND(ARMADA)",
+              "duration": "1:55"
+            },
+            {
+              "n": 8,
+              "title": "Techno Trance",
+              "performer": "Armin van Buuren & Adam Beyer vs. D-Shake",
+              "genre": "Techno",
+              "label": "DRUMCODE",
+              "duration": "3:15"
+            },
+            {
+              "n": 9,
+              "title": "Ring Ring",
+              "performer": "Armin van Buuren",
+              "genre": "",
+              "label": "ARMADA",
+              "duration": "3:00"
+            },
+            {
+              "n": 10,
+              "title": "Set Me Free (Rising Star Remix)",
+              "performer": "Armin van Buuren ft. SACHA",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "4:11"
+            },
+            {
+              "n": 11,
+              "title": "Better Off Alone (Olly James Techno Rework)",
+              "performer": "Alice Deejay",
+              "genre": "Techno",
+              "label": "",
+              "duration": "1:23"
+            },
+            {
+              "n": 12,
+              "title": "Always You (ASOT 2026 ELEVATION Anthem)",
+              "performer": "Armin van Buuren & Richard Durand & Dicosis",
+              "genre": "Trance",
+              "label": "ASOT(ARMADA)",
+              "duration": "3:21"
+            },
+            {
+              "n": 13,
+              "title": "Aria (onTune & Indecent Noise Remix)",
+              "performer": "Argy & Omnya",
+              "genre": "",
+              "label": "AFTERLIFE",
+              "duration": "1:52"
+            },
+            {
+              "n": 14,
+              "title": "Lost In Time",
+              "performer": "Armin van Buuren & Alle Farben ft. ROSY",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "3:22"
+            },
+            {
+              "n": 15,
+              "title": "Dior (Bassjackers Remix)",
+              "performer": "MK ft. CHRYSTAL",
+              "genre": "Techno",
+              "label": "FREE",
+              "duration": "2:07"
+            },
+            {
+              "n": 16,
+              "title": "Time To Burn (David Forbes Remix)",
+              "performer": "Storm",
+              "genre": "Trance",
+              "label": "BLACK HOLE",
+              "duration": "1:19"
+            },
+            {
+              "n": 17,
+              "title": "Rockafeller Skank (onTune & Indecent Noise Bootleg)",
+              "performer": "Fatboy Slim",
+              "genre": "Trance",
+              "label": "",
+              "duration": "2:36"
+            },
+            {
+              "n": 18,
+              "title": "Strange World",
+              "performer": "The Rocketman & Push",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "2:17"
+            },
+            {
+              "n": 19,
+              "title": "Go All Night",
+              "performer": "Armin van Buuren ft. Mary Jensen",
+              "genre": "",
+              "label": "ARMADA",
+              "duration": "2:17"
+            },
+            {
+              "n": 20,
+              "title": "Mouth Go LaLa",
+              "performer": "Armin van Buuren & Maddix ft. Caroline Roxy",
+              "genre": "Techno",
+              "label": "ARMADA",
+              "duration": "3:31"
+            },
+            {
+              "n": 21,
+              "title": "Ready To Phatt Bass (Warp Brothers Mashup)",
+              "performer": "W&W & Armin van Buuren vs. Wolfpack & Warp Brothers",
+              "genre": "",
+              "label": "SMASH THE HOUSE",
+              "duration": "1:44"
+            },
+            {
+              "n": 22,
+              "title": "Blah Blah Blah (Lilly Palmer Remix)",
+              "performer": "Armin van Buuren",
+              "genre": "Techno",
+              "label": "ARMIND(ARMADA)",
+              "duration": "2:12"
+            },
+            {
+              "n": 23,
+              "title": "This Is What It Feels Like (Benwal Remix)",
+              "performer": "Armin van Buuren ft. Trevor Guthrie",
+              "genre": "",
+              "label": "ARMIND(ARMADA)",
+              "duration": "3:28"
+            }
+          ]
+        },
+        {
+          "title": "EDC Las Vegas 2025 (kineticFIELD)",
+          "slug": "edc-las-vegas-2025-kineticfield",
+          "cover": "album-armin-van-buuren-edc-las-vegas-2025-kineticfield.jpg",
+          "trackCount": 26,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Love (138 Psy Mix)",
+              "performer": "Armin van Buuren & Omnia",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "1:46"
+            },
+            {
+              "n": 2,
+              "title": "FE!N vs. Love (Fafaq Edit)",
+              "performer": "Travis Scott & Playboi Carti vs. Armin van Buuren & Omnia",
+              "genre": "",
+              "label": "CACTUS JACK",
+              "duration": "1:59"
+            },
+            {
+              "n": 3,
+              "title": "Need You By My Side",
+              "performer": "Armin van Buuren & Andrew Bayer",
+              "genre": "Trance",
+              "label": "ARMIND(ARMADA)",
+              "duration": "2:40"
+            },
+            {
+              "n": 4,
+              "title": "Bach To The Future",
+              "performer": "Armin van Buuren & BLR",
+              "genre": "Techno",
+              "label": "ARMIND(ARMADA)",
+              "duration": "2:47"
+            },
+            {
+              "n": 5,
+              "title": "Techno Trance",
+              "performer": "Armin van Buuren & Adam Beyer vs. D-Shake",
+              "genre": "Techno",
+              "label": "DRUMCODE",
+              "duration": "3:01"
+            },
+            {
+              "n": 6,
+              "title": "Move (Bassjackers Remix)",
+              "performer": "Adam Port & Stryv ft. Malachiii",
+              "genre": "",
+              "label": "",
+              "duration": "2:43"
+            },
+            {
+              "n": 7,
+              "title": "Song In My Heart",
+              "performer": "Armin van Buuren ft. Sylvia Tosun",
+              "genre": "",
+              "label": "",
+              "duration": "3:41"
+            },
+            {
+              "n": 8,
+              "title": "Set Me Free (Rising Star Remix)",
+              "performer": "Armin van Buuren ft. SACHA",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "2:29"
+            },
+            {
+              "n": 9,
+              "title": "Better Off Alone (Olly James Techno Rework)",
+              "performer": "Alice Deejay",
+              "genre": "Techno",
+              "label": "",
+              "duration": "1:37"
+            },
+            {
+              "n": 10,
+              "title": "Always You (ASOT 2026 ELEVATION Anthem)",
+              "performer": "Armin van Buuren & Richard Durand & Dicosis",
+              "genre": "Trance",
+              "label": "ASOT(ARMADA)",
+              "duration": "3:20"
+            },
+            {
+              "n": 11,
+              "title": "Follow The Light",
+              "performer": "Armin van Buuren & Hardwell",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "3:21"
+            },
+            {
+              "n": 12,
+              "title": "Dreamin (Olly James Rework)",
+              "performer": "Dom Dolla ft. Daya",
+              "genre": "Techno",
+              "label": "FREE",
+              "duration": "1:28"
+            },
+            {
+              "n": 13,
+              "title": "Gimme The Love",
+              "performer": "Armin van Buuren & Seth Hills ft. Alessia Labate",
+              "genre": "Trance",
+              "label": "ARMIND(ARMADA)",
+              "duration": "3:13"
+            },
+            {
+              "n": 14,
+              "title": "Put Your Bassline",
+              "performer": "Armin van Buuren & KI/KI",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "2:36"
+            },
+            {
+              "n": 15,
+              "title": "What Took You So Long",
+              "performer": "Armin van Buuren & Gryffin",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "2:41"
+            },
+            {
+              "n": 16,
+              "title": "Computers Take Over The World vs. In And Out Of Love vs. Sidewinder (Armin van Buuren Mashup)",
+              "performer": "Armin van Buuren & Maddix vs. Sharon Den Adel vs. David Forbes",
+              "genre": "",
+              "label": "ARMADA",
+              "duration": "2:33"
+            },
+            {
+              "n": 17,
+              "title": "Heavy",
+              "performer": "Armin van Buuren & JOA",
+              "genre": "Melodic House/Techno",
+              "label": "ARMADA",
+              "duration": "2:45"
+            },
+            {
+              "n": 18,
+              "title": "Wavey",
+              "performer": "Eli Brown",
+              "genre": "Trance",
+              "label": "INSOMNIAC",
+              "duration": "1:22"
+            },
+            {
+              "n": 19,
+              "title": "Hoipolloi vs. Stephanie (Armin van Buuren Mashup)",
+              "performer": "Kay D. Smith & Marc Tall & Ben Gold vs. Cloonee & InntRaw & Young M.A",
+              "genre": "",
+              "label": "HIGH CONTRAST(BE YOURSELF)",
+              "duration": "1:55"
+            },
+            {
+              "n": 20,
+              "title": "Go All Night",
+              "performer": "Armin van Buuren ft. Mary Jensen",
+              "genre": "",
+              "label": "ARMADA",
+              "duration": "3:26"
+            },
+            {
+              "n": 21,
+              "title": "Mouth Go LaLa",
+              "performer": "Armin van Buuren & Maddix ft. Caroline Roxy",
+              "genre": "Techno",
+              "label": "ARMADA",
+              "duration": "4:13"
+            },
+            {
+              "n": 22,
+              "title": "Adagio For Strings",
+              "performer": "Brennan Heart & HI-LO & Project Zeitgeist",
+              "genre": "Techno",
+              "label": "HILOMATIK",
+              "duration": "2:10"
+            },
+            {
+              "n": 23,
+              "title": "Late Checkout (Will Atkinson Remix)",
+              "performer": "Armin van Buuren & W&W",
+              "genre": "Mainstage",
+              "label": "ARMADA",
+              "duration": "2:55"
+            },
+            {
+              "n": 24,
+              "title": "Insomnia vs. Siren (Armin van Buuren Mashup)",
+              "performer": "Faithless & Ben Nicky & Luke Bond vs. Paul Denton",
+              "genre": "Trance",
+              "label": "SONY BMG",
+              "duration": "2:09"
+            },
+            {
+              "n": 25,
+              "title": "Blah Blah Blah (Lilly Palmer Remix)",
+              "performer": "Armin van Buuren",
+              "genre": "Techno",
+              "label": "ARMIND(ARMADA)",
+              "duration": "2:26"
+            },
+            {
+              "n": 26,
+              "title": "Euphoria (Sound Rush Remix)",
+              "performer": "Armin van Buuren & ALOK & Norma Jean Martine & LAWRENT",
+              "genre": "",
+              "label": "ARMADA",
+              "duration": "4:19"
+            }
+          ]
+        },
+        {
+          "title": "AMF 2025",
+          "slug": "amf-2025",
+          "cover": "album-armin-van-buuren-amf-2025.jpg",
+          "trackCount": 25,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Lost In Time",
+              "performer": "Armin van Buuren & Alle Farben ft. ROSY",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "7:15"
+            },
+            {
+              "n": 2,
+              "title": "Heavy (DJ KUBA & NEITAN Remix)",
+              "performer": "Armin van Buuren & JOA",
+              "genre": "Techno",
+              "label": "ARMADA",
+              "duration": "2:12"
+            },
+            {
+              "n": 3,
+              "title": "Amsterdam",
+              "performer": "Armin van Buuren & R3HAB",
+              "genre": "",
+              "label": "ARMADA",
+              "duration": "3:33"
+            },
+            {
+              "n": 4,
+              "title": "Techno Trance",
+              "performer": "Armin van Buuren & Adam Beyer vs. D-Shake",
+              "genre": "Techno",
+              "label": "DRUMCODE",
+              "duration": "3:20"
+            },
+            {
+              "n": 5,
+              "title": "Ring Ring",
+              "performer": "Armin van Buuren",
+              "genre": "",
+              "label": "ARMADA",
+              "duration": "2:35"
+            },
+            {
+              "n": 6,
+              "title": "Love Parade",
+              "performer": "Cassian & YOTTO & Da Hool",
+              "genre": "Melodic House/Techno",
+              "label": "AFTERLIFE",
+              "duration": "2:02"
+            },
+            {
+              "n": 7,
+              "title": "ID - ID",
+              "performer": "",
+              "genre": "",
+              "label": "",
+              "duration": "3:44"
+            },
+            {
+              "n": 8,
+              "title": "Sonic Samba (Rising Star Remix)",
+              "performer": "Armin van Buuren",
+              "genre": "Trance",
+              "label": "ARMIND(ARMADA)",
+              "duration": "3:56"
+            },
+            {
+              "n": 9,
+              "title": "Xplode (Yoel Lewis & Graham Bell Remix / Andrew Rayel Rework)",
+              "performer": "Avancada vs. Darius & Finlay",
+              "genre": "Trance",
+              "label": "ARMIND(ARMADA)",
+              "duration": "1:13"
+            },
+            {
+              "n": 10,
+              "title": "Set Me Free (Rising Star Remix)",
+              "performer": "Armin van Buuren ft. SACHA",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "4:20"
+            },
+            {
+              "n": 11,
+              "title": "Better Off Alone (Olly James Techno Rework)",
+              "performer": "Alice Deejay",
+              "genre": "Techno",
+              "label": "",
+              "duration": "1:37"
+            },
+            {
+              "n": 12,
+              "title": "Always You (ASOT 2026 ELEVATION Anthem)",
+              "performer": "Armin van Buuren & Richard Durand & Dicosis",
+              "genre": "Trance",
+              "label": "ASOT(ARMADA)",
+              "duration": "3:33"
+            },
+            {
+              "n": 13,
+              "title": "Who We'd Become vs. Aria vs. Communication (Armin van Buuren Mashup)",
+              "performer": "Ahmed Helmy & Doppenberg pres. HEL:BRG vs. Argy & Omnya vs. Armin van Buuren",
+              "genre": "",
+              "label": "ARMIND(ARMADA)",
+              "duration": "2:34"
+            },
+            {
+              "n": 14,
+              "title": "DELUSIONAL. (Armin van Buuren Remix)",
+              "performer": "Kesha",
+              "genre": "Dance/Electro Pop",
+              "label": "KESHA",
+              "duration": "3:20"
+            },
+            {
+              "n": 15,
+              "title": "Pitchin' (In Every Direction) (Shugz & Trance Wax Remix)",
+              "performer": "Hi-Gate",
+              "genre": "Trance",
+              "label": "ALL WAYS DANCE",
+              "duration": "3:06"
+            },
+            {
+              "n": 16,
+              "title": "The Sound Of E",
+              "performer": "Giuseppe Ottaviani & Ultra Shock",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "2:18"
+            },
+            {
+              "n": 17,
+              "title": "Mouth Go LaLa",
+              "performer": "Armin van Buuren & Maddix ft. Caroline Roxy",
+              "genre": "Techno",
+              "label": "ARMADA",
+              "duration": "2:42"
+            },
+            {
+              "n": 18,
+              "title": "Exploration Of Space (Olly James Remix)",
+              "performer": "Cosmic Gate",
+              "genre": "Techno",
+              "label": "FREE",
+              "duration": "2:30"
+            },
+            {
+              "n": 19,
+              "title": "Sandstorm vs. Kick Out The Epic Motherfucker (Armin van Buuren Mashup)",
+              "performer": "Darude & Skytech vs. Dada Life",
+              "genre": "Dance/Electro Pop",
+              "label": "SO MUCH DADA",
+              "duration": "3:55"
+            },
+            {
+              "n": 20,
+              "title": "Dopamine Machine",
+              "performer": "Armin van Buuren & Lilly Palmer",
+              "genre": "Techno",
+              "label": "ARMADA",
+              "duration": "2:15"
+            },
+            {
+              "n": 21,
+              "title": "Time To Burn (David Forbes Remix)",
+              "performer": "Storm",
+              "genre": "Trance",
+              "label": "BLACK HOLE",
+              "duration": "1:50"
+            },
+            {
+              "n": 22,
+              "title": "Burn It Up",
+              "performer": "Armin van Buuren & DIØN",
+              "genre": "",
+              "label": "",
+              "duration": "4:10"
+            },
+            {
+              "n": 23,
+              "title": "Taka Tribe",
+              "performer": "DIØN",
+              "genre": "Techno",
+              "label": "ARMADA",
+              "duration": "2:03"
+            },
+            {
+              "n": 24,
+              "title": "Blah Blah Blah (Lilly Palmer Remix)",
+              "performer": "Armin van Buuren",
+              "genre": "Techno",
+              "label": "ARMIND(ARMADA)",
+              "duration": "3:04"
+            },
+            {
+              "n": 25,
+              "title": "This Is What It Feels Like (Benwal Remix)",
+              "performer": "Armin van Buuren ft. Trevor Guthrie",
+              "genre": "",
+              "label": "ARMIND(ARMADA)",
+              "duration": "3:20"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Martin Garrix",
+      "slug": "martin-garrix",
+      "image": "artist-martin-garrix.jpg",
+      "albums": [
+        {
+          "title": "Red Rocks 2025",
+          "slug": "red-rocks-2025",
+          "cover": "album-martin-garrix-red-rocks-2025.jpg",
+          "trackCount": 50,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Voodoo vs. Walking On A Dream (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & R3HAB & Skytech vs. Empire Of The Sun",
+              "genre": "",
+              "label": "SOUKSONIC",
+              "duration": "3:44"
+            },
+            {
+              "n": 2,
+              "title": "Latency",
+              "performer": "Martin Garrix & Dyro",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "0:59"
+            },
+            {
+              "n": 3,
+              "title": "Pull Up",
+              "performer": "Matisse & Sadko & Vion Konger ft. Scrufizzer",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "2:50"
+            },
+            {
+              "n": 4,
+              "title": "Make Up Your Mind vs. Glitch (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Florian Picasso vs. Julian Jordan",
+              "genre": "",
+              "label": "EPIC AMSTERDAM",
+              "duration": "2:13"
+            },
+            {
+              "n": 5,
+              "title": "flight fm",
+              "performer": "Joy Orbison",
+              "genre": "Breaks",
+              "label": "XL",
+              "duration": "2:12"
+            },
+            {
+              "n": 6,
+              "title": "Won't Let You Go (Eleganto Remix)",
+              "performer": "Martin Garrix & Matisse & Sadko ft. John Martin",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "2:42"
+            },
+            {
+              "n": 7,
+              "title": "Hold On vs. Freed From Desire (Matisse & Sadko Mashup)",
+              "performer": "Martin Garrix & Matisse & Sadko & Michel Zitron vs. Gala",
+              "genre": "",
+              "label": "DO IT YOURSELF",
+              "duration": "2:00"
+            },
+            {
+              "n": 8,
+              "title": "Somebody That I Used To Know (SIDEPIECE Treat)",
+              "performer": "Gotye ft. Kimbra",
+              "genre": "",
+              "label": "INTERSCOPE",
+              "duration": "2:57"
+            },
+            {
+              "n": 9,
+              "title": "Something To Believe In vs. Stephanie (Martin Garrix Mashup)",
+              "performer": "Julian Jordan vs. Cloonee & InntRaw & Young M.A & HNTR",
+              "genre": "",
+              "label": "HELLBENT",
+              "duration": "2:13"
+            },
+            {
+              "n": 10,
+              "title": "Peace Of Mind",
+              "performer": "Martin Garrix & Citadelle",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "2:12"
+            },
+            {
+              "n": 11,
+              "title": "Something vs. Burn Out (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Breathe Carolina vs. Justin Mylo & Dewain Whitmore",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:16"
+            },
+            {
+              "n": 12,
+              "title": "Calling vs. Scared To Be Lonely (Martin Garrix Mashup)",
+              "performer": "Sebastian Ingrosso & Alesso & Ryan Tedder vs. Martin Garrix & Dua Lipa",
+              "genre": "",
+              "label": "REFUNE",
+              "duration": "2:14"
+            },
+            {
+              "n": 13,
+              "title": "Jungle vs. Scared To Be Lonely (Martin Garrix Mashup)",
+              "performer": "ALOK & The Chainsmokers & Arcando vs. Martin Garrix & Dua Lipa",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:36"
+            },
+            {
+              "n": 14,
+              "title": "Set Me Free",
+              "performer": "Martin Garrix & Arcando ft. Bonn",
+              "genre": "Drum & Bass",
+              "label": "STMPD",
+              "duration": "2:38"
+            },
+            {
+              "n": 15,
+              "title": "Limitless",
+              "performer": "Martin Garrix & Mesto",
+              "genre": "Bass House",
+              "label": "STMPD",
+              "duration": "2:16"
+            },
+            {
+              "n": 16,
+              "title": "Breakaway",
+              "performer": "Martin Garrix & Mesto ft. WILHELM",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "2:28"
+            },
+            {
+              "n": 17,
+              "title": "Caramelle vs. Antidote (Mesto Mashup)",
+              "performer": "Mesto vs. Swedish House Mafia & Knife Party & ADL",
+              "genre": "",
+              "label": "VIRGIN",
+              "duration": "2:06"
+            },
+            {
+              "n": 18,
+              "title": "Diamonds",
+              "performer": "Julian Jordan & Martin Garrix ft. Tinie Tempah",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:14"
+            },
+            {
+              "n": 19,
+              "title": "Summer Days",
+              "performer": "Martin Garrix ft. Macklemore & Patrick Stump of Fall Out Boy",
+              "genre": "Dance/Electro Pop",
+              "label": "EPIC AMSTERDAM",
+              "duration": "6:20"
+            },
+            {
+              "n": 20,
+              "title": "Breach (Walk Alone)",
+              "performer": "Martin Garrix & Blinders ft. Ilsey Juber",
+              "genre": "Mainstage",
+              "label": "EPIC AMSTERDAM",
+              "duration": "1:14"
+            },
+            {
+              "n": 21,
+              "title": "Carry You",
+              "performer": "Martin Garrix & Third ≡ Party ft. Oaks & Declan J Donovan",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "2:47"
+            },
+            {
+              "n": 22,
+              "title": "Live Forever vs. Apologize (Third ≡ Party Mashup)",
+              "performer": "Third ≡ Party & Max McElligott vs. Timbaland & OneRepublic",
+              "genre": "",
+              "label": "INTERSCOPE",
+              "duration": "2:26"
+            },
+            {
+              "n": 23,
+              "title": "Wherever You Are",
+              "performer": "Martin Garrix & DubVision ft. Shaun Farrugia",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "1:15"
+            },
+            {
+              "n": 24,
+              "title": "Lions In The Wild",
+              "performer": "Martin Garrix & Third ≡ Party ft. Max McElligott",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:36"
+            },
+            {
+              "n": 25,
+              "title": "Allein vs. Dragon (Matisse & Sadko Mashup)",
+              "performer": "Pryda vs. Martin Garrix & Matisse & Sadko",
+              "genre": "",
+              "label": "VIRGIN",
+              "duration": "3:11"
+            },
+            {
+              "n": 26,
+              "title": "Run",
+              "performer": "DubVision",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:00"
+            },
+            {
+              "n": 27,
+              "title": "Proxy",
+              "performer": "Martin Garrix",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "3:19"
+            },
+            {
+              "n": 28,
+              "title": "Loop",
+              "performer": "Martin Garrix & DallasK ft. Sasha Alex Sloan",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "1:29"
+            },
+            {
+              "n": 29,
+              "title": "Alive",
+              "performer": "YTRAM & Citadelle",
+              "genre": "Dance/Electro Pop",
+              "label": "EPIC AMSTERDAM",
+              "duration": "2:05"
+            },
+            {
+              "n": 30,
+              "title": "Once Again",
+              "performer": "Matisse & Sadko & Sentinel",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "2:42"
+            },
+            {
+              "n": 31,
+              "title": "Waiting For Love",
+              "performer": "Avicii ft. Simon Aldred",
+              "genre": "Progressive House",
+              "label": "PRMD",
+              "duration": "2:35"
+            },
+            {
+              "n": 32,
+              "title": "Tremor vs. Waiting For Love (Martin Garrix Mashup)",
+              "performer": "Martin Garrix vs. Dimitri Vegas & Like Mike vs. Avicii ft. Simon Aldred",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "2:15"
+            },
+            {
+              "n": 33,
+              "title": "Told You So (jeonghyeon & Wwings Remix)",
+              "performer": "Martin Garrix & Jex",
+              "genre": "",
+              "label": "",
+              "duration": "2:56"
+            },
+            {
+              "n": 34,
+              "title": "Like That vs. Turn Up The Speakers (Martin Garrix Mashup)",
+              "performer": "Bassjackers vs. AFROJACK & Martin Garrix",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "1:42"
+            },
+            {
+              "n": 35,
+              "title": "Heads Will Roll (A-Trak Remix)",
+              "performer": "Yeah Yeah Yeahs",
+              "genre": "Indie Dance",
+              "label": "DGC",
+              "duration": "2:06"
+            },
+            {
+              "n": 36,
+              "title": "Our Time vs. A Sky Full Of Stars (AFROJACK Mashup)",
+              "performer": "AFROJACK & Martin Garrix & David Guetta & Amél vs. Coldplay",
+              "genre": "",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "4:18"
+            },
+            {
+              "n": 37,
+              "title": "Hurricane vs. Fade Into Darkness (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Sentinel vs. Avicii & Andreas Moe",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:28"
+            },
+            {
+              "n": 38,
+              "title": "Ain't Letting You Down",
+              "performer": "Martin Garrix & Saksham ft. Scott Quinn",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "4:16"
+            },
+            {
+              "n": 39,
+              "title": "Someone You Loved (Martin Garrix & Matisse & Sadko Remix)",
+              "performer": "Lewis Capaldi",
+              "genre": "House",
+              "label": "VIRGIN",
+              "duration": "3:31"
+            },
+            {
+              "n": 40,
+              "title": "Biochemical vs. I Want Your Soul (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Seth Hills vs. Armand van Helden & Ape Rave Club",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "2:53"
+            },
+            {
+              "n": 41,
+              "title": "Higher Ground",
+              "performer": "Martin Garrix ft. John Martin",
+              "genre": "Dance/Electro Pop",
+              "label": "EPIC AMSTERDAM",
+              "duration": "1:17"
+            },
+            {
+              "n": 42,
+              "title": "Rise Again vs. In The Name Of Love (DubVision Mashup)",
+              "performer": "DubVision vs. Martin Garrix & Bebe Rexha",
+              "genre": "Mainstage",
+              "label": "EPIC AMSTERDAM",
+              "duration": "1:34"
+            },
+            {
+              "n": 43,
+              "title": "Aurora vs. In The Name Of Love (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Blinders vs. Bebe Rexha",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:50"
+            },
+            {
+              "n": 44,
+              "title": "Starlight (Keep Me Afloat)",
+              "performer": "Martin Garrix & DubVision ft. Shaun Farrugia",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "1:36"
+            },
+            {
+              "n": 45,
+              "title": "High On Life",
+              "performer": "Martin Garrix ft. Bonn",
+              "genre": "Mainstage",
+              "label": "EPIC AMSTERDAM",
+              "duration": "4:22"
+            },
+            {
+              "n": 46,
+              "title": "Quantum vs. I Love It (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Brooks vs. Icona Pop & Charli XCX",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:19"
+            },
+            {
+              "n": 47,
+              "title": "Follow",
+              "performer": "Martin Garrix & Zedd ft. Emily Warren",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:42"
+            },
+            {
+              "n": 48,
+              "title": "Turn It Around vs. Break Through The Silence (Martin Garrix Mashup)",
+              "performer": "DubVision vs. Martin Garrix & Matisse & Sadko",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "1:28"
+            },
+            {
+              "n": 49,
+              "title": "Butterflies vs. Gold Skies (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Matisse & Sadko & BARBZ vs. Sander van Doorn & DVBBS & Aleesia",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "3:11"
+            },
+            {
+              "n": 50,
+              "title": "Inside Our Hearts",
+              "performer": "Martin Garrix & Alesso ft. Shaun Farrugia",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "4:01"
+            }
+          ]
+        },
+        {
+          "title": "EDC Las Vegas 2025 (kineticFIELD)",
+          "slug": "edc-las-vegas-2025-kineticfield",
+          "cover": "album-martin-garrix-edc-las-vegas-2025-kineticfield.jpg",
+          "trackCount": 41,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Gravity",
+              "performer": "Martin Garrix & Sem Vox ft. Jaimes",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "4:00"
+            },
+            {
+              "n": 2,
+              "title": "Latency",
+              "performer": "Martin Garrix & Dyro",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:30"
+            },
+            {
+              "n": 3,
+              "title": "WTHELLY (Julian Jordan Remix)",
+              "performer": "ROB49",
+              "genre": "House",
+              "label": "FREE",
+              "duration": "2:15"
+            },
+            {
+              "n": 4,
+              "title": "Carry You",
+              "performer": "Martin Garrix & Third ≡ Party ft. Oaks & Declan J Donovan",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "3:00"
+            },
+            {
+              "n": 5,
+              "title": "Wherever You Are",
+              "performer": "Martin Garrix & DubVision ft. Shaun Farrugia",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "1:05"
+            },
+            {
+              "n": 6,
+              "title": "Animals",
+              "performer": "Martin Garrix",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "3:55"
+            },
+            {
+              "n": 7,
+              "title": "Something To Believe In vs. Stephanie (Martin Garrix Mashup)",
+              "performer": "Julian Jordan vs. Cloonee & InntRaw & Young M.A & HNTR",
+              "genre": "",
+              "label": "HELLBENT",
+              "duration": "2:30"
+            },
+            {
+              "n": 8,
+              "title": "Something vs. Burn Out (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Breathe Carolina vs. Justin Mylo & Dewain Whitmore",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:15"
+            },
+            {
+              "n": 9,
+              "title": "Peace Of Mind",
+              "performer": "Martin Garrix & Citadelle",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "2:15"
+            },
+            {
+              "n": 10,
+              "title": "Diamonds",
+              "performer": "Julian Jordan & Martin Garrix ft. Tinie Tempah",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:15"
+            },
+            {
+              "n": 11,
+              "title": "Our Time vs. A Sky Full Of Stars (AFROJACK Mashup)",
+              "performer": "AFROJACK & Martin Garrix & David Guetta & Amél vs. Coldplay",
+              "genre": "",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "3:52"
+            },
+            {
+              "n": 12,
+              "title": "Hurricane vs. Fade Into Darkness (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Sentinel vs. Avicii & Andreas Moe",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:31"
+            },
+            {
+              "n": 13,
+              "title": "Rise Again vs. In The Name Of Love (DubVision Mashup)",
+              "performer": "DubVision vs. Martin Garrix & Bebe Rexha",
+              "genre": "Mainstage",
+              "label": "EPIC AMSTERDAM",
+              "duration": "1:35"
+            },
+            {
+              "n": 14,
+              "title": "Aurora vs. In The Name Of Love (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Blinders vs. Bebe Rexha",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:46"
+            },
+            {
+              "n": 15,
+              "title": "Someone You Loved (Martin Garrix & Matisse & Sadko Remix)",
+              "performer": "Lewis Capaldi",
+              "genre": "House",
+              "label": "VIRGIN",
+              "duration": "3:31"
+            },
+            {
+              "n": 16,
+              "title": "Sleepless Nights",
+              "performer": "Armin van Buuren & Martin Garrix ft. Libby Whitehouse",
+              "genre": "Trance",
+              "label": "ARMADA",
+              "duration": "3:31"
+            },
+            {
+              "n": 17,
+              "title": "Breakaway",
+              "performer": "Martin Garrix & Mesto ft. WILHELM",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "2:47"
+            },
+            {
+              "n": 18,
+              "title": "ID - ID",
+              "performer": "",
+              "genre": "",
+              "label": "",
+              "duration": "1:00"
+            },
+            {
+              "n": 19,
+              "title": "Insomnia vs. Spectrum (Say My Name) vs. Into The Fire vs. Sweet Disposition (Matisse & Sadko Mashup)",
+              "performer": "Faithless vs. Florence + The Machine vs. Matisse & Sadko & Arsnøvä vs. The Temper Trap & Axwell & Dirty South",
+              "genre": "",
+              "label": "CHEEKY",
+              "duration": "3:09"
+            },
+            {
+              "n": 20,
+              "title": "Follow",
+              "performer": "Martin Garrix & Zedd ft. Emily Warren",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:58"
+            },
+            {
+              "n": 21,
+              "title": "Quantum vs. Summer Days (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Brooks vs. Macklemore & Patrick Stump of Fall Out Boy",
+              "genre": "",
+              "label": "EPIC AMSTERDAM",
+              "duration": "1:35"
+            },
+            {
+              "n": 22,
+              "title": "Told You So (Brooks Remix)",
+              "performer": "Martin Garrix & Jex",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "2:42"
+            },
+            {
+              "n": 23,
+              "title": "High On Life",
+              "performer": "Martin Garrix ft. Bonn",
+              "genre": "Mainstage",
+              "label": "EPIC AMSTERDAM",
+              "duration": "3:53"
+            },
+            {
+              "n": 24,
+              "title": "MAD",
+              "performer": "Martin Garrix & Lauv",
+              "genre": "Dance/Electro Pop",
+              "label": "VIRGIN",
+              "duration": "3:15"
+            },
+            {
+              "n": 25,
+              "title": "Waiting For Love",
+              "performer": "Avicii ft. Simon Aldred",
+              "genre": "Progressive House",
+              "label": "PRMD",
+              "duration": "0:45"
+            },
+            {
+              "n": 26,
+              "title": "Tremor vs. Waiting For Love (Martin Garrix Mashup)",
+              "performer": "Martin Garrix vs. Dimitri Vegas & Like Mike vs. Avicii ft. Simon Aldred",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "2:13"
+            },
+            {
+              "n": 27,
+              "title": "Limitless vs. Scared To Be Lonely (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Mesto vs. Dua Lipa",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:12"
+            },
+            {
+              "n": 28,
+              "title": "Limitless vs. Scared To Be Lonely vs. Ultrasound (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Mesto & Arcando vs. Dua Lipa vs. Pirapus",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:15"
+            },
+            {
+              "n": 29,
+              "title": "Set Me Free",
+              "performer": "Martin Garrix & Arcando ft. Bonn",
+              "genre": "Drum & Bass",
+              "label": "STMPD",
+              "duration": "2:45"
+            },
+            {
+              "n": 30,
+              "title": "Empty",
+              "performer": "Martin Garrix & DubVision ft. Jaimes",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:25"
+            },
+            {
+              "n": 31,
+              "title": "Lions In The Wild",
+              "performer": "Martin Garrix & Third ≡ Party ft. Max McElligott",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:40"
+            },
+            {
+              "n": 32,
+              "title": "Poison vs. No Sleep (Martin Garrix Mashup)",
+              "performer": "Martin Garrix vs. Bonn",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:59"
+            },
+            {
+              "n": 33,
+              "title": "Byte vs. Heads Will Roll (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Brooks vs. Yeah Yeah Yeahs & A-Trak",
+              "genre": "",
+              "label": "DGC",
+              "duration": "1:29"
+            },
+            {
+              "n": 34,
+              "title": "Make Up Your Mind vs. Glitch (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Florian Picasso vs. Julian Jordan",
+              "genre": "",
+              "label": "EPIC AMSTERDAM",
+              "duration": "0:59"
+            },
+            {
+              "n": 35,
+              "title": "flight fm",
+              "performer": "Joy Orbison",
+              "genre": "Breaks",
+              "label": "XL",
+              "duration": "1:13"
+            },
+            {
+              "n": 36,
+              "title": "Hold On vs. Freed From Desire (Matisse & Sadko Mashup)",
+              "performer": "Martin Garrix & Matisse & Sadko & Michel Zitron vs. Gala",
+              "genre": "",
+              "label": "DO IT YOURSELF",
+              "duration": "2:15"
+            },
+            {
+              "n": 37,
+              "title": "Cocoon (Martin Garrix & Space Ducks Remix)",
+              "performer": "070 Shake",
+              "genre": "Bass House",
+              "label": "GETTING OUT OUR DREAMS",
+              "duration": "0:45"
+            },
+            {
+              "n": 38,
+              "title": "Like That vs. Turn Up The Speakers (Martin Garrix Mashup)",
+              "performer": "Bassjackers vs. AFROJACK & Martin Garrix",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "1:00"
+            },
+            {
+              "n": 39,
+              "title": "Virus (How About Now)",
+              "performer": "Martin Garrix & MOTi ft. Jenny Wahlström",
+              "genre": "Mainstage",
+              "label": "SPINNIN'",
+              "duration": "2:05"
+            },
+            {
+              "n": 40,
+              "title": "Butterflies vs. Don't Look Down (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Matisse & Sadko vs. Usher",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "2:20"
+            },
+            {
+              "n": 41,
+              "title": "Starlight (Keep Me Afloat)",
+              "performer": "Martin Garrix & DubVision ft. Shaun Farrugia",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "4:04"
+            }
+          ]
+        },
+        {
+          "title": "AMF 2024",
+          "slug": "amf-2024",
+          "cover": "album-martin-garrix-amf-2024.jpg",
+          "trackCount": 55,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Gravity",
+              "performer": "Martin Garrix & Sem Vox ft. Jaimes",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "4:48"
+            },
+            {
+              "n": 2,
+              "title": "Breach (Walk Alone)",
+              "performer": "Martin Garrix & Blinders ft. Ilsey Juber",
+              "genre": "Mainstage",
+              "label": "EPIC AMSTERDAM",
+              "duration": "1:14"
+            },
+            {
+              "n": 3,
+              "title": "ID",
+              "performer": "Matisse & Sadko",
+              "genre": "",
+              "label": "",
+              "duration": "2:00"
+            },
+            {
+              "n": 4,
+              "title": "Animals (Botnek Edit)",
+              "performer": "Martin Garrix",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "1:36"
+            },
+            {
+              "n": 5,
+              "title": "Out Of Time vs. In My Mind (Martin Garrix Mashup)",
+              "performer": "Justin Mylo & Ryos & Alessia Labate vs. Ivan Gough & Feenixpawl & Georgi Kay",
+              "genre": "",
+              "label": "AXTONE",
+              "duration": "1:33"
+            },
+            {
+              "n": 6,
+              "title": "Butterflies vs. Gold Skies (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Matisse & Sadko & BARBZ vs. Sander van Doorn & DVBBS & Aleesia",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "1:45"
+            },
+            {
+              "n": 7,
+              "title": "Hero vs. Escape (DubVision Mashup)",
+              "performer": "Martin Garrix & JVKE & DubVision vs. Kx5 & Hayla & John Summit",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "2:44"
+            },
+            {
+              "n": 8,
+              "title": "ILY vs. Heroes (Martin Garrix Mashup)",
+              "performer": "Merow vs. Alesso & Tove Lo",
+              "genre": "",
+              "label": "REFUNE",
+              "duration": "1:22"
+            },
+            {
+              "n": 9,
+              "title": "Like That vs. Turn Up The Speakers (Martin Garrix Mashup)",
+              "performer": "Bassjackers vs. AFROJACK & Martin Garrix",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "1:46"
+            },
+            {
+              "n": 10,
+              "title": "Our Time vs. A Sky Full Of Stars (AFROJACK Mashup)",
+              "performer": "AFROJACK & Martin Garrix & David Guetta & Amél vs. Coldplay",
+              "genre": "",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "2:27"
+            },
+            {
+              "n": 11,
+              "title": "Hurricane vs. Fade Into Darkness (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Sentinel vs. Avicii & Andreas Moe",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "2:54"
+            },
+            {
+              "n": 12,
+              "title": "Hypnotising",
+              "performer": "R3HAB & Skytech",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:14"
+            },
+            {
+              "n": 13,
+              "title": "Biochemical vs. I Want Your Soul (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Seth Hills vs. Armand van Helden & Ape Rave Club",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "2:45"
+            },
+            {
+              "n": 14,
+              "title": "Someone You Loved (Martin Garrix & Matisse & Sadko Remix)",
+              "performer": "Lewis Capaldi",
+              "genre": "House",
+              "label": "VIRGIN",
+              "duration": "4:05"
+            },
+            {
+              "n": 15,
+              "title": "Carry You",
+              "performer": "Martin Garrix & Third ≡ Party ft. Oaks & Declan J Donovan",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "2:48"
+            },
+            {
+              "n": 16,
+              "title": "Himalaya",
+              "performer": "Matisse & Sadko",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "2:00"
+            },
+            {
+              "n": 17,
+              "title": "Wherever You Are",
+              "performer": "Martin Garrix & DubVision ft. Shaun Farrugia",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "1:50"
+            },
+            {
+              "n": 18,
+              "title": "Paradise vs. Demons (Third ≡ Party Mashup)",
+              "performer": "Third ≡ Party & Romeo Blanco vs. Imagine Dragons",
+              "genre": "",
+              "label": "INTERSCOPE",
+              "duration": "2:32"
+            },
+            {
+              "n": 19,
+              "title": "Lions In The Wild",
+              "performer": "Martin Garrix & Third ≡ Party ft. Max McElligott",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:53"
+            },
+            {
+              "n": 20,
+              "title": "Run vs. Hey Boy, Hey Girl (DubVision Mashup)",
+              "performer": "DubVision vs. The Chemical Brothers & ARTBAT",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "2:32"
+            },
+            {
+              "n": 21,
+              "title": "Crackin vs. Byte (Martin Garrix Mashup)",
+              "performer": "Martin Garrix vs. Bassjackers & Brooks",
+              "genre": "",
+              "label": "EPIC AMSTERDAM",
+              "duration": "1:10"
+            },
+            {
+              "n": 22,
+              "title": "Loop",
+              "performer": "Martin Garrix & DallasK ft. Sasha Alex Sloan",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "1:29"
+            },
+            {
+              "n": 23,
+              "title": "Arsonist",
+              "performer": "NOME. ft. Kris Kiss",
+              "genre": "House",
+              "label": "STMPD",
+              "duration": "2:14"
+            },
+            {
+              "n": 24,
+              "title": "Drop The Pressure",
+              "performer": "Mike Williams & Brooks",
+              "genre": "",
+              "label": "STORYLINES",
+              "duration": "2:29"
+            },
+            {
+              "n": 25,
+              "title": "In The Name Of Love",
+              "performer": "Martin Garrix & Bebe Rexha",
+              "genre": "Dance/Electro Pop",
+              "label": "EPIC AMSTERDAM",
+              "duration": "1:15"
+            },
+            {
+              "n": 26,
+              "title": "Aurora vs. In The Name Of Love (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Blinders vs. Bebe Rexha",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "1:42"
+            },
+            {
+              "n": 27,
+              "title": "Champion Sound vs. Footrocker vs. Spotless (Martin Garrix Mashup)",
+              "performer": "Nicky Romero & Teamworx vs. Mightyfools vs. Martin Garrix & Jay Hardway",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "1:01"
+            },
+            {
+              "n": 28,
+              "title": "Can You Feel It",
+              "performer": "RetroVision",
+              "genre": "Tech House",
+              "label": "STMPD",
+              "duration": "1:30"
+            },
+            {
+              "n": 29,
+              "title": "Cocoon (Martin Garrix & Space Ducks Remix)",
+              "performer": "070 Shake",
+              "genre": "Bass House",
+              "label": "GETTING OUT OUR DREAMS",
+              "duration": "0:58"
+            },
+            {
+              "n": 30,
+              "title": "I'll Be There vs. Habits (DubVision Mashup)",
+              "performer": "DubVision vs. Tove Lo",
+              "genre": "",
+              "label": "UMG",
+              "duration": "1:31"
+            },
+            {
+              "n": 31,
+              "title": "Mistaken",
+              "performer": "Martin Garrix & Matisse & Sadko ft. Alex Aris",
+              "genre": "Mainstage",
+              "label": "EPIC AMSTERDAM",
+              "duration": "2:42"
+            },
+            {
+              "n": 32,
+              "title": "Told You So",
+              "performer": "Martin Garrix & Jex",
+              "genre": "Pop",
+              "label": "STMPD",
+              "duration": "3:07"
+            },
+            {
+              "n": 33,
+              "title": "High On Life",
+              "performer": "Martin Garrix ft. Bonn",
+              "genre": "Mainstage",
+              "label": "EPIC AMSTERDAM",
+              "duration": "4:03"
+            },
+            {
+              "n": 34,
+              "title": "Smile",
+              "performer": "Martin Garrix ft. Carolina Liar",
+              "genre": "Pop",
+              "label": "STMPD",
+              "duration": "1:37"
+            },
+            {
+              "n": 35,
+              "title": "Quantum vs. I Love It (Martin Garrix Mashup)",
+              "performer": "Martin Garrix & Brooks vs. Icona Pop & Charli XCX",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "2:54"
+            },
+            {
+              "n": 36,
+              "title": "Lonely Heart",
+              "performer": "Alesso & John Alto",
+              "genre": "House",
+              "label": "BODY HI",
+              "duration": "2:58"
+            },
+            {
+              "n": 37,
+              "title": "Waiting For Love",
+              "performer": "Avicii ft. Simon Aldred",
+              "genre": "Progressive House",
+              "label": "PRMD",
+              "duration": "1:34"
+            },
+            {
+              "n": 38,
+              "title": "Tremor vs. Waiting For Love (Martin Garrix Mashup)",
+              "performer": "Martin Garrix vs. Dimitri Vegas & Like Mike vs. Avicii ft. Simon Aldred",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "1:58"
+            },
+            {
+              "n": 39,
+              "title": "Satisfaction",
+              "performer": "David Guetta vs. Benny Benassi",
+              "genre": "Techno",
+              "label": "SPINNIN'",
+              "duration": "2:37"
+            },
+            {
+              "n": 40,
+              "title": "Breakaway",
+              "performer": "Martin Garrix & Mesto ft. WILHELM",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "2:29"
+            },
+            {
+              "n": 41,
+              "title": "Calling vs. Scared To Be Lonely (Martin Garrix Mashup)",
+              "performer": "Sebastian Ingrosso & Alesso & Ryan Tedder vs. Martin Garrix & Dua Lipa",
+              "genre": "",
+              "label": "REFUNE",
+              "duration": "2:33"
+            },
+            {
+              "n": 42,
+              "title": "Jungle vs. Scared To Be Lonely (Martin Garrix Mashup)",
+              "performer": "ALOK & The Chainsmokers & Arcando vs. Martin Garrix & Dua Lipa",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "2:33"
+            },
+            {
+              "n": 43,
+              "title": "Empty",
+              "performer": "Martin Garrix & DubVision ft. Jaimes",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:15"
+            },
+            {
+              "n": 44,
+              "title": "Once Again",
+              "performer": "Matisse & Sadko & Sentinel",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "0:57"
+            },
+            {
+              "n": 45,
+              "title": "Virus (How About Now)",
+              "performer": "Martin Garrix & MOTi ft. Jenny Wahlström",
+              "genre": "Mainstage",
+              "label": "SPINNIN'",
+              "duration": "2:12"
+            },
+            {
+              "n": 46,
+              "title": "Bring It Down vs. Virus vs. Game Over (Martin Garrix Mashup)",
+              "performer": "Dyro vs. Martin Garrix & MOTi & Jenny Wahlström vs. LOOPERS",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "1:30"
+            },
+            {
+              "n": 47,
+              "title": "NEVER STOPPIN'",
+              "performer": "Julian Jordan & Nouni",
+              "genre": "Tech House",
+              "label": "STMPD",
+              "duration": "2:18"
+            },
+            {
+              "n": 48,
+              "title": "Take My Mind vs. Infinity (DubVision Mashup)",
+              "performer": "DubVision vs. Jaymes Young",
+              "genre": "",
+              "label": "STMPD",
+              "duration": "2:43"
+            },
+            {
+              "n": 49,
+              "title": "Follow",
+              "performer": "Martin Garrix & Zedd ft. Emily Warren",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:45"
+            },
+            {
+              "n": 50,
+              "title": "Turn It Around vs. Break Through The Silence (Martin Garrix Mashup)",
+              "performer": "DubVision vs. Martin Garrix & Matisse & Sadko",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "3:46"
+            },
+            {
+              "n": 51,
+              "title": "Oxygen",
+              "performer": "Martin Garrix & DubVision ft. Jordan Grace",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "1:30"
+            },
+            {
+              "n": 52,
+              "title": "Dragon",
+              "performer": "Martin Garrix & Matisse & Sadko",
+              "genre": "Mainstage",
+              "label": "SPINNIN'",
+              "duration": "1:46"
+            },
+            {
+              "n": 53,
+              "title": "Mind CNTRL",
+              "performer": "jaakob",
+              "genre": "Mainstage",
+              "label": "STMPD",
+              "duration": "1:45"
+            },
+            {
+              "n": 54,
+              "title": "Poison",
+              "performer": "Martin Garrix",
+              "genre": "House",
+              "label": "STMPD",
+              "duration": "1:31"
+            },
+            {
+              "n": 55,
+              "title": "Starlight (Keep Me Afloat)",
+              "performer": "Martin Garrix & DubVision ft. Shaun Farrugia",
+              "genre": "Dance/Electro Pop",
+              "label": "STMPD",
+              "duration": "5:35"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tiësto",
+      "slug": "tiesto",
+      "image": "artist-tiesto.jpg",
+      "albums": [
+        {
+          "title": "EDC Las Vegas 2025 (In Search Of Sunrise, kineticFIELD)",
+          "slug": "edc-las-vegas-2025-in-search-of-sunrise-kineticfield",
+          "cover": "album-tiesto-edc-las-vegas-2025-in-search-of-sunrise-kineticfield.jpg",
+          "trackCount": 19,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Reachers Of Civilization (Tiësto Remix)",
+              "performer": "York",
+              "genre": "",
+              "label": "",
+              "duration": "4:41"
+            },
+            {
+              "n": 2,
+              "title": "Hide & Seek (Tiësto 2025 Remix)",
+              "performer": "Imogen Heap",
+              "genre": "",
+              "label": "SONGBIRD",
+              "duration": "3:42"
+            },
+            {
+              "n": 3,
+              "title": "Lonely",
+              "performer": "Reeves ft. Alanah",
+              "genre": "Trance",
+              "label": "SONGBIRD(BLACK HOLE)",
+              "duration": "4:48"
+            },
+            {
+              "n": 4,
+              "title": "Your Loving Arms",
+              "performer": "Karen Overton",
+              "genre": "Progressive House",
+              "label": "SUPRA",
+              "duration": "4:26"
+            },
+            {
+              "n": 5,
+              "title": "The Storm (Inpetto Remix)",
+              "performer": "Jerry Ropero ft. Cozi",
+              "genre": "Trance",
+              "label": "SONGBIRD(BLACK HOLE)",
+              "duration": "3:04"
+            },
+            {
+              "n": 6,
+              "title": "Touch Me (Tiësto Remix)",
+              "performer": "Rui Da Silva ft. Cassandra Fox",
+              "genre": "",
+              "label": "KISMET",
+              "duration": "2:57"
+            },
+            {
+              "n": 7,
+              "title": "Moonlight Party",
+              "performer": "Fonzerelli",
+              "genre": "Progressive House",
+              "label": "BIG IN IBIZA",
+              "duration": "3:27"
+            },
+            {
+              "n": 8,
+              "title": "Falling",
+              "performer": "First State ft. Anita Kelsey",
+              "genre": "Trance",
+              "label": "ITWT(BLACK HOLE)",
+              "duration": "2:12"
+            },
+            {
+              "n": 9,
+              "title": "Diamondback (Tiësto Remix)",
+              "performer": "Mekka",
+              "genre": "",
+              "label": "PERFECTO",
+              "duration": "2:10"
+            },
+            {
+              "n": 10,
+              "title": "Eugina (Michael Woods Remix / Tiesto Edit)",
+              "performer": "Salt Tank",
+              "genre": "",
+              "label": "LOST LANGUAGE",
+              "duration": "3:07"
+            },
+            {
+              "n": 11,
+              "title": "Mercury & Solace (Tiësto Edit)",
+              "performer": "BT ft. Jan Johnston",
+              "genre": "",
+              "label": "",
+              "duration": "4:01"
+            },
+            {
+              "n": 12,
+              "title": "High Glow",
+              "performer": "Taxigirl",
+              "genre": "Trance",
+              "label": "SONGBIRD(BLACK HOLE)",
+              "duration": "7:30"
+            },
+            {
+              "n": 13,
+              "title": "Open Your Eyes (Tiësto Edit)",
+              "performer": "Nalin & Kane",
+              "genre": "",
+              "label": "",
+              "duration": "4:26"
+            },
+            {
+              "n": 14,
+              "title": "Mindcircus (Gabriel & Dresden Club Mix)",
+              "performer": "Way Out West",
+              "genre": "Progressive House",
+              "label": "DISTINCTIVE",
+              "duration": "7:32"
+            },
+            {
+              "n": 15,
+              "title": "Southern Sun (Tiësto 2025 Remix)",
+              "performer": "Paul Oakenfold ft. Carla Werner",
+              "genre": "",
+              "label": "NEW STATE",
+              "duration": "4:06"
+            },
+            {
+              "n": 16,
+              "title": "Wounded Soul",
+              "performer": "Existone",
+              "genre": "Trance",
+              "label": "BLACK HOLE",
+              "duration": "5:09"
+            },
+            {
+              "n": 17,
+              "title": "Netherworld (Oliver Prime Remix)",
+              "performer": "L.S.G.",
+              "genre": "Trance",
+              "label": "JOOF",
+              "duration": "1:37"
+            },
+            {
+              "n": 18,
+              "title": "Silence (Tiësto In Search Of Sunrise Remix)",
+              "performer": "Delerium ft. Sarah McLachlan",
+              "genre": "Trance",
+              "label": "NETTWERK",
+              "duration": "4:19"
+            },
+            {
+              "n": 19,
+              "title": "Tanz Der Seele (Y.O.M.C. Club Mix)",
+              "performer": "DJ Eremit",
+              "genre": "Trance",
+              "label": "BLACK HOLE",
+              "duration": "1:00"
+            }
+          ]
+        },
+        {
+          "title": "Dreamstate SoCal 2025 (The Dream Stage)",
+          "slug": "dreamstate-socal-2025-the-dream-stage",
+          "cover": "album-tiesto-dreamstate-socal-2025-the-dream-stage.jpg",
+          "trackCount": 23,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Bring Me To Life",
+              "performer": "Tiësto & FORS",
+              "genre": "Trance",
+              "label": "MUSICAL FREEDOM",
+              "duration": "3:38"
+            },
+            {
+              "n": 2,
+              "title": "Lost In The Ocean",
+              "performer": "Tiësto",
+              "genre": "",
+              "label": "MUSICAL FREEDOM",
+              "duration": "2:56"
+            },
+            {
+              "n": 3,
+              "title": "Lueur (Tiësto Remix)",
+              "performer": "Worakls",
+              "genre": "",
+              "label": "UMG",
+              "duration": "2:58"
+            },
+            {
+              "n": 4,
+              "title": "Tears In My Blood",
+              "performer": "Tiësto",
+              "genre": "",
+              "label": "MUSICAL FREEDOM",
+              "duration": "3:22"
+            },
+            {
+              "n": 5,
+              "title": "Beautiful Places",
+              "performer": "Tiësto & Brieanna Grace",
+              "genre": "Dance/Electro Pop",
+              "label": "MUSICAL FREEDOM",
+              "duration": "3:20"
+            },
+            {
+              "n": 6,
+              "title": "Sixty Nine Ways (Tiësto Remix)",
+              "performer": "Airwave pres. Cloud 69",
+              "genre": "Trance",
+              "label": "XTC",
+              "duration": "4:17"
+            },
+            {
+              "n": 7,
+              "title": "Stampedo",
+              "performer": "Nemke",
+              "genre": "Trance",
+              "label": "MONSTER FORCE",
+              "duration": "3:53"
+            },
+            {
+              "n": 8,
+              "title": "The Legacy vs. The Way We Were / Try To Remember (Tiësto Mashup)",
+              "performer": "Saltwater & Alphazone vs. Gladys Knight & The Pips",
+              "genre": "",
+              "label": "ZENITH",
+              "duration": "2:24"
+            },
+            {
+              "n": 9,
+              "title": "Nyana",
+              "performer": "Tiësto",
+              "genre": "Trance",
+              "label": "BLACK HOLE",
+              "duration": "3:26"
+            },
+            {
+              "n": 10,
+              "title": "Suburban Train vs. Fair (Tiësto Mashup)",
+              "performer": "Tiësto vs. Billy Gillies & Betsy",
+              "genre": "",
+              "label": "",
+              "duration": "2:21"
+            },
+            {
+              "n": 11,
+              "title": "As The Rush Comes (Tiësto 2025 Remix)",
+              "performer": "Motorcycle",
+              "genre": "",
+              "label": "",
+              "duration": "3:39"
+            },
+            {
+              "n": 12,
+              "title": "Silence (Tiësto In Search Of Sunrise 2025 Remix)",
+              "performer": "Delerium ft. Sarah McLachlan",
+              "genre": "",
+              "label": "JOYTIME COLLECTIVE",
+              "duration": "4:14"
+            },
+            {
+              "n": 13,
+              "title": "Dive",
+              "performer": "Benwal",
+              "genre": "Electronica",
+              "label": "NOUW",
+              "duration": "2:17"
+            },
+            {
+              "n": 14,
+              "title": "What Music Felt Like In 2007",
+              "performer": "DJ HEARTSTRING & Baugruppe90",
+              "genre": "Trance",
+              "label": "STEEL CITY DANCE DISCS",
+              "duration": "2:31"
+            },
+            {
+              "n": 15,
+              "title": "FLY",
+              "performer": "Ryan Case",
+              "genre": "House",
+              "label": "R&R",
+              "duration": "2:58"
+            },
+            {
+              "n": 16,
+              "title": "Azul",
+              "performer": "Funk Tribu",
+              "genre": "Trance",
+              "label": "TRIBE REC",
+              "duration": "4:05"
+            },
+            {
+              "n": 17,
+              "title": "Berghain vs. Traffic (Tiësto Mashup)",
+              "performer": "ROSALÍA & Björk & Yves Tumor vs. Tiësto",
+              "genre": "",
+              "label": "MAGIK MUZIK(BLACK HOLE)",
+              "duration": "4:11"
+            },
+            {
+              "n": 18,
+              "title": "Universal Nation (Tiësto Techrave Mix)",
+              "performer": "Push",
+              "genre": "",
+              "label": "BONZAI",
+              "duration": "2:12"
+            },
+            {
+              "n": 19,
+              "title": "Electronic Malfunction",
+              "performer": "CIRCA96 & Ton TB",
+              "genre": "Trance",
+              "label": "BLACK HOLE",
+              "duration": "3:35"
+            },
+            {
+              "n": 20,
+              "title": "Love Comes Again (Mark Sherry Remix)",
+              "performer": "Tiësto ft. BT",
+              "genre": "",
+              "label": "MUSICAL FREEDOM",
+              "duration": "3:13"
+            },
+            {
+              "n": 21,
+              "title": "Sunrise (Here I Am) (Tiësto Remix)",
+              "performer": "Ratty",
+              "genre": "",
+              "label": "SHEFFIELD TUNES(KONTOR)",
+              "duration": "3:07"
+            },
+            {
+              "n": 22,
+              "title": "Elements Of Life",
+              "performer": "Tiësto",
+              "genre": "Trance",
+              "label": "MAGIK MUZIK(BLACK HOLE)",
+              "duration": "3:26"
+            },
+            {
+              "n": 23,
+              "title": "Adagio For Strings",
+              "performer": "Tiësto",
+              "genre": "Trance",
+              "label": "MAGIK MUZIK(BLACK HOLE)",
+              "duration": "6:19"
+            }
+          ]
+        },
+        {
+          "title": "AMF 2024",
+          "slug": "amf-2024",
+          "cover": "album-tiesto-amf-2024.jpg",
+          "trackCount": 26,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Dance Life Control Dreams",
+              "performer": "Tiësto",
+              "genre": "",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:16"
+            },
+            {
+              "n": 2,
+              "title": "Last Night (Tiësto Remix)",
+              "performer": "Loofy",
+              "genre": "",
+              "label": "NERVOUS",
+              "duration": "2:40"
+            },
+            {
+              "n": 3,
+              "title": "Dudada",
+              "performer": "Tiësto & Goldcher & Irina Rimes",
+              "genre": "Dance/Electro Pop",
+              "label": "MUSICAL FREEDOM",
+              "duration": "2:30"
+            },
+            {
+              "n": 4,
+              "title": "Tantalizing",
+              "performer": "Tiësto ft. Soaky Siren",
+              "genre": "Afro House",
+              "label": "MUSICAL FREEDOM",
+              "duration": "3:39"
+            },
+            {
+              "n": 5,
+              "title": "I Follow Rivers",
+              "performer": "Tiësto ft. Oaks",
+              "genre": "Dance/Electro Pop",
+              "label": "ATLANTIC",
+              "duration": "1:06"
+            },
+            {
+              "n": 6,
+              "title": "I Want U In Amsterdam (Tiësto Mashup)",
+              "performer": "La Fuente vs. Mau P",
+              "genre": "",
+              "label": "FULL COLOUR",
+              "duration": "1:15"
+            },
+            {
+              "n": 7,
+              "title": "OMG! (From F1® The Movie)",
+              "performer": "Tiësto & Sexyy Red",
+              "genre": "Dance/Electro Pop",
+              "label": "ATLANTIC",
+              "duration": "2:32"
+            },
+            {
+              "n": 8,
+              "title": "Alibi (Tiësto Remix)",
+              "performer": "Sevdaliza & Pabllo Vittar & Yseult",
+              "genre": "Dance/Electro Pop",
+              "label": "TWISTED ELEGANCE",
+              "duration": "0:58"
+            },
+            {
+              "n": 9,
+              "title": "ZENLESS",
+              "performer": "Tiësto & Lucas & Steve & Silent Child & Sān-Z",
+              "genre": "Mainstage",
+              "label": "MUSICAL FREEDOM",
+              "duration": "1:00"
+            },
+            {
+              "n": 10,
+              "title": "Free Your Mind",
+              "performer": "Tiësto & Lucas & Steve",
+              "genre": "Mainstage",
+              "label": "MUSICAL FREEDOM",
+              "duration": "2:45"
+            },
+            {
+              "n": 11,
+              "title": "10:35 vs. Let Me See Those Hands (Tiësto Mashup)",
+              "performer": "Tiësto & Tate McRae vs. NLW & R3HAB & MC Ambush",
+              "genre": "",
+              "label": "WALL",
+              "duration": "1:05"
+            },
+            {
+              "n": 12,
+              "title": "Show Me",
+              "performer": "Tiësto & DallasK",
+              "genre": "Mainstage",
+              "label": "MUSICAL FREEDOM",
+              "duration": "1:55"
+            },
+            {
+              "n": 13,
+              "title": "Turn On The Lights Again.. (GORDO Remix / Tiësto Edit)",
+              "performer": "Fred again.. & Swedish House Mafia ft. Future",
+              "genre": "",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:55"
+            },
+            {
+              "n": 14,
+              "title": "Everlight",
+              "performer": "Tiësto & Mathame",
+              "genre": "Dance/Electro Pop",
+              "label": "MUSICAL FREEDOM",
+              "duration": "3:38"
+            },
+            {
+              "n": 15,
+              "title": "Flood vs. United In Grief (Tiësto Mashup)",
+              "performer": "Sebastian Ingrosso vs. Kendrick Lamar",
+              "genre": "",
+              "label": "TOP DAWG",
+              "duration": "3:42"
+            },
+            {
+              "n": 16,
+              "title": "Lethal Industry (Rose Ringed Remix)",
+              "performer": "Tiësto",
+              "genre": "Trance",
+              "label": "MUSICAL FREEDOM",
+              "duration": "2:30"
+            },
+            {
+              "n": 17,
+              "title": "Silence (Tiësto 2022 Remix)",
+              "performer": "Delerium ft. Sarah McLachlan",
+              "genre": "",
+              "label": "NETTWERK",
+              "duration": "3:00"
+            },
+            {
+              "n": 18,
+              "title": "Universal Nation (Tiësto Techrave Mix)",
+              "performer": "Push",
+              "genre": "",
+              "label": "BONZAI",
+              "duration": "0:30"
+            },
+            {
+              "n": 19,
+              "title": "Suburban Train vs. Shiver (Tiësto Mashup)",
+              "performer": "Tiësto vs. John Summit & HAYLA",
+              "genre": "",
+              "label": "EXPERTS ONLY",
+              "duration": "3:24"
+            },
+            {
+              "n": 20,
+              "title": "Kids vs. Too Sweet (Tiësto Mashup)",
+              "performer": "MGMT & Tiësto vs. Hozier",
+              "genre": "",
+              "label": "SONY",
+              "duration": "3:26"
+            },
+            {
+              "n": 21,
+              "title": "Red Lights vs. Cannonball (Tiësto Mashup)",
+              "performer": "Tiësto & Michel Zitron vs. Showtek & Justin Prime",
+              "genre": "",
+              "label": "PM:AM(UMG)",
+              "duration": "2:08"
+            },
+            {
+              "n": 22,
+              "title": "More Than You Know vs. Get Loose (Tiësto Mashup)",
+              "performer": "Axwell Λ Ingrosso & Kristoffer Fogelmark vs. Noisecontrollers & Showtek & Tiësto",
+              "genre": "",
+              "label": "2DUTCH",
+              "duration": "1:22"
+            },
+            {
+              "n": 23,
+              "title": "Meet Her vs. Lazer Beams (Tiësto Mashup)",
+              "performer": "Tiësto vs. Da Hool vs. Green Velvet & Harvard Bass",
+              "genre": "",
+              "label": "RELIEF",
+              "duration": "2:20"
+            },
+            {
+              "n": 24,
+              "title": "Smack Yo' (HAWK. VIP Mix)",
+              "performer": "Beltran",
+              "genre": "Tech House",
+              "label": "SOLID GROOVES RAW",
+              "duration": "1:25"
+            },
+            {
+              "n": 25,
+              "title": "Sprinter (Tiësto Remix)",
+              "performer": "Dave & Central Cee",
+              "genre": "",
+              "label": "",
+              "duration": "2:55"
+            },
+            {
+              "n": 26,
+              "title": "Feel Free (Tiësto Edit)",
+              "performer": "Yves Deruyter",
+              "genre": "",
+              "label": "BONZAI",
+              "duration": "1:31"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hardwell",
+      "slug": "hardwell",
+      "image": "artist-hardwell.jpg",
+      "albums": [
+        {
+          "title": "Tomorrowland 2025 (Mainstage)",
+          "slug": "tomorrowland-2025-mainstage",
+          "cover": "album-hardwell-tomorrowland-2025-mainstage.jpg",
+          "trackCount": 22,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Sanctuary",
+              "performer": "Hardwell",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "4:43"
+            },
+            {
+              "n": 2,
+              "title": "Flatline vs. Spaceman vs. Water (Hardwell Mashup)",
+              "performer": "Hardwell & Olly James vs. Hardwell vs. Tyla",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "2:55"
+            },
+            {
+              "n": 3,
+              "title": "KUTMUG vs. Stephanie vs. Pursuit Of Happiness (Hardwell Mashup)",
+              "performer": "Julian Cross & FISION & Hardwell & AFROJACK vs. Cloonee & InntRaw & Young M.A vs. Kid Cudi & MGMT & Ratatat & Steve Aoki",
+              "genre": "",
+              "label": "REPUBLIC",
+              "duration": "2:30"
+            },
+            {
+              "n": 4,
+              "title": "Levels",
+              "performer": "Avicii",
+              "genre": "Dance/Electro Pop",
+              "label": "LE7ELS",
+              "duration": "1:29"
+            },
+            {
+              "n": 5,
+              "title": "Speculations",
+              "performer": "Hardwell & AFROJACK",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "2:31"
+            },
+            {
+              "n": 6,
+              "title": "Follow The Beat Of The Drum (Hardwell Mashup)",
+              "performer": "Armin van Buuren & Hardwell vs. Blasterjaxx",
+              "genre": "",
+              "label": "MIXMASH",
+              "duration": "2:07"
+            },
+            {
+              "n": 7,
+              "title": "Don't Stop The Madness (Hardwell Rework)",
+              "performer": "Hardwell & W&W ft. Fatman Scoop",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "1:36"
+            },
+            {
+              "n": 8,
+              "title": "Rise Again",
+              "performer": "Hardwell & RYOS",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "2:17"
+            },
+            {
+              "n": 9,
+              "title": "Destination Calabria (Hardwell Remix)",
+              "performer": "Alex Gaudino ft. Crystal Waters",
+              "genre": "",
+              "label": "TIME REC.",
+              "duration": "3:52"
+            },
+            {
+              "n": 10,
+              "title": "Life Is Calling vs. Earthquake vs. High On Life (Hardwell Mashup)",
+              "performer": "JoeySuki & Kill The Buzz & Josh Le Tissier vs. Hardwell & Harrison vs. Martin Garrix & Bonn",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "2:48"
+            },
+            {
+              "n": 11,
+              "title": "Crazy People 2026",
+              "performer": "Hardwell & Vini Vici & MR.BLACK ft. Liquid Soul",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "2:58"
+            },
+            {
+              "n": 12,
+              "title": "Everytime We Touch (Hardwell & Maurice West Remix)",
+              "performer": "Cascada",
+              "genre": "Mainstage",
+              "label": "ZOO DIGITAL(ZOOLAND)",
+              "duration": "1:44"
+            },
+            {
+              "n": 13,
+              "title": "Not Alone",
+              "performer": "Hardwell & Dyro",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "3:19"
+            },
+            {
+              "n": 14,
+              "title": "Tsunami vs. Power (Hardwell Mashup)",
+              "performer": "DVBBS & BORGEOUS & Hardwell vs. KSHMR & Jarrad Kritzstein",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "3:14"
+            },
+            {
+              "n": 15,
+              "title": "You & Me",
+              "performer": "MARSJONE",
+              "genre": "Techno",
+              "label": "REVEALED RADAR",
+              "duration": "2:18"
+            },
+            {
+              "n": 16,
+              "title": "That Acid Operation Blade (Hardwell Tomorrowland Smashup)",
+              "performer": "Marie Vaunt vs. Public Domain vs. DJ Daddy Trance vs. Hardwell & Maddix & Luciana",
+              "genre": "",
+              "label": "XTRAVAGANZA",
+              "duration": "2:21"
+            },
+            {
+              "n": 17,
+              "title": "Rave Till My Grave",
+              "performer": "Hardwell & Maddix ft. Villain",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "3:36"
+            },
+            {
+              "n": 18,
+              "title": "Obey The Code",
+              "performer": "Nifra",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "1:20"
+            },
+            {
+              "n": 19,
+              "title": "Move It 2 The Drum",
+              "performer": "Maddix",
+              "genre": "Techno",
+              "label": "EXTATIC(REVEALED)",
+              "duration": "1:37"
+            },
+            {
+              "n": 20,
+              "title": "Ready Or Not",
+              "performer": "Ghost Stories",
+              "genre": "Hard Dance",
+              "label": "SCANTRAXX",
+              "duration": "2:10"
+            },
+            {
+              "n": 21,
+              "title": "Hideaway",
+              "performer": "Hardwell & Atmozfears ft. JAiMES",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "3:34"
+            },
+            {
+              "n": 22,
+              "title": "Brace For Impact",
+              "performer": "Hardwell & Sub Zero Project ft. Lil Jon",
+              "genre": "Hard Dance",
+              "label": "REVEALED",
+              "duration": "4:17"
+            }
+          ]
+        },
+        {
+          "title": "EDC Las Vegas 2026 (kineticFIELD)",
+          "slug": "edc-las-vegas-2026-kineticfield",
+          "cover": "album-hardwell-edc-las-vegas-2026-kineticfield.jpg",
+          "trackCount": 22,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Believe",
+              "performer": "Hardwell & braev",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "5:30"
+            },
+            {
+              "n": 2,
+              "title": "ID",
+              "performer": "Hardwell & W&W",
+              "genre": "",
+              "label": "",
+              "duration": "3:10"
+            },
+            {
+              "n": 3,
+              "title": "Flatline vs. Spaceman vs. The Nights (Hardwell Mashup)",
+              "performer": "Hardwell & Olly James vs. Hardwell vs. Avicii & Ras",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "3:00"
+            },
+            {
+              "n": 4,
+              "title": "Show Me A Sign",
+              "performer": "Retrika & Alex Mueller",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "3:55"
+            },
+            {
+              "n": 5,
+              "title": "Don't Stop The Madness (Hardwell Rework)",
+              "performer": "Hardwell & W&W ft. Fatman Scoop",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "1:55"
+            },
+            {
+              "n": 6,
+              "title": "Out Of My Mind (Hardwell Bootleg)",
+              "performer": "JOSHWA",
+              "genre": "",
+              "label": "",
+              "duration": "3:25"
+            },
+            {
+              "n": 7,
+              "title": "Without Me (Hardwell 2023 Bootleg)",
+              "performer": "Eminem",
+              "genre": "",
+              "label": "",
+              "duration": "3:15"
+            },
+            {
+              "n": 8,
+              "title": "Countdown 2026",
+              "performer": "Hardwell & MAKJ",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "2:50"
+            },
+            {
+              "n": 9,
+              "title": "Turn Up The Bass",
+              "performer": "Hardwell & W&W",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "3:15"
+            },
+            {
+              "n": 10,
+              "title": "Talk To You (Hardwell Bootleg)",
+              "performer": "ANOTR ft. 54 Ultra",
+              "genre": "",
+              "label": "",
+              "duration": "3:05"
+            },
+            {
+              "n": 11,
+              "title": "ID - ID",
+              "performer": "",
+              "genre": "",
+              "label": "",
+              "duration": "3:30"
+            },
+            {
+              "n": 12,
+              "title": "Better Off Alone (Hardwell Bootleg)",
+              "performer": "Alice Deejay",
+              "genre": "",
+              "label": "",
+              "duration": "1:55"
+            },
+            {
+              "n": 13,
+              "title": "LOW",
+              "performer": "Hardwell & Azteck & Dr Phunk",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "2:45"
+            },
+            {
+              "n": 14,
+              "title": "ACID Voices (Hardwell Mashup)",
+              "performer": "IOA vs. Hardwell & Maddix & Luciana vs. Anyma & Argy & Son Of Son",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "2:45"
+            },
+            {
+              "n": 15,
+              "title": "Calling (Lose My Mind) (Hardwell & W&W Bootleg)",
+              "performer": "Sebastian Ingrosso & Alesso ft. Ryan Tedder",
+              "genre": "",
+              "label": "",
+              "duration": "3:05"
+            },
+            {
+              "n": 16,
+              "title": "Cannonball (Hardwell & W&W Remix)",
+              "performer": "Showtek & Justin Prime",
+              "genre": "",
+              "label": "2DUTCH",
+              "duration": "1:40"
+            },
+            {
+              "n": 17,
+              "title": "Tsunami vs. Power (Hardwell Mashup)",
+              "performer": "DVBBS & BORGEOUS & Hardwell vs. KSHMR & Jarrad Kritzstein",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "1:45"
+            },
+            {
+              "n": 18,
+              "title": "Bang On The Drums",
+              "performer": "Hardwell & Bassjackers",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "3:00"
+            },
+            {
+              "n": 19,
+              "title": "AI CARALHO",
+              "performer": "Hardwell & Maddix",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "3:00"
+            },
+            {
+              "n": 20,
+              "title": "Not Alone (Bass Modulators Remix)",
+              "performer": "Hardwell & Dyro",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "3:55"
+            },
+            {
+              "n": 21,
+              "title": "Brace For Impact",
+              "performer": "Hardwell & Sub Zero Project ft. Lil Jon",
+              "genre": "Hard Dance",
+              "label": "REVEALED",
+              "duration": "3:35"
+            },
+            {
+              "n": 22,
+              "title": "Iris",
+              "performer": "Hardwell & Sound Rush",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "3:36"
+            }
+          ]
+        },
+        {
+          "title": "AMF 2025",
+          "slug": "amf-2025",
+          "cover": "album-hardwell-amf-2025.jpg",
+          "trackCount": 22,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Sanctuary",
+              "performer": "Hardwell",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "3:58"
+            },
+            {
+              "n": 2,
+              "title": "Flatline vs. Spaceman vs. The Nights (Hardwell Mashup)",
+              "performer": "Hardwell & Olly James vs. Hardwell vs. Avicii & Ras",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "3:03"
+            },
+            {
+              "n": 3,
+              "title": "Lights Out",
+              "performer": "Hardwell & Olly James",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "3:01"
+            },
+            {
+              "n": 4,
+              "title": "Live The Night",
+              "performer": "W&W & Hardwell & Lil Jon",
+              "genre": "Mainstage",
+              "label": "MAINSTAGE(ARMADA)",
+              "duration": "3:22"
+            },
+            {
+              "n": 5,
+              "title": "Sweet Dreams (Are Made of This) vs. Titanium (Hardwell Mashup)",
+              "performer": "Eurythmics & Hardwell vs. David Guetta & Sia",
+              "genre": "",
+              "label": "FMIF",
+              "duration": "1:44"
+            },
+            {
+              "n": 6,
+              "title": "Lift Me Up vs. Give Me Everything vs. Eternity vs. If I Lose Myself vs. Moombah (Hardwell Mashup)",
+              "performer": "JAXX & VEGA X Lockdown vs. Pitbull & Ne-Yo & Afrojack & Nayer vs. Anyma & Chris Avantgarde vs. OneRepublic vs. Silvio Ecomo & Chuckie",
+              "genre": "",
+              "label": "MR. 305",
+              "duration": "1:56"
+            },
+            {
+              "n": 7,
+              "title": "Follow The Beat Of The Drum (Hardwell Mashup)",
+              "performer": "Armin van Buuren & Hardwell vs. Blasterjaxx",
+              "genre": "",
+              "label": "MIXMASH",
+              "duration": "2:06"
+            },
+            {
+              "n": 8,
+              "title": "Don't Stop The Madness (Hardwell Rework)",
+              "performer": "Hardwell & W&W ft. Fatman Scoop",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "1:35"
+            },
+            {
+              "n": 9,
+              "title": "Life Is Calling vs. Earthquake vs. High On Life (Hardwell Mashup)",
+              "performer": "JoeySuki & Kill The Buzz & Josh Le Tissier vs. Hardwell & Harrison vs. Martin Garrix & Bonn",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "2:54"
+            },
+            {
+              "n": 10,
+              "title": "Rise Again vs. Locked Out Of Heaven (Hardwell Mashup)",
+              "performer": "Hardwell & RYOS vs. Bruno Mars",
+              "genre": "",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:18"
+            },
+            {
+              "n": 11,
+              "title": "Raveline vs. A Sky Full Of Stars (Hardwell UMF Europe 2025 Mashup)",
+              "performer": "Matt Dybal & Alan Krevo vs. Coldplay",
+              "genre": "",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "3:37"
+            },
+            {
+              "n": 12,
+              "title": "Not Alone",
+              "performer": "Hardwell & Dyro",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "3:54"
+            },
+            {
+              "n": 13,
+              "title": "Everytime We Touch (Hardwell & Maurice West Remix)",
+              "performer": "Cascada",
+              "genre": "Mainstage",
+              "label": "ZOO DIGITAL(ZOOLAND)",
+              "duration": "1:30"
+            },
+            {
+              "n": 14,
+              "title": "Out Of This Town vs. Can't Hold Us vs. Flashlight (Hardwell Mashup)",
+              "performer": "Hardwell & VINAI & Cam Meekins vs. Macklemore & Ryan Lewis & Ray Dalton vs. R3HAB & Deorro",
+              "genre": "",
+              "label": "SPINNIN'",
+              "duration": "1:30"
+            },
+            {
+              "n": 15,
+              "title": "Tsunami vs. Power (Hardwell Mashup)",
+              "performer": "DVBBS & BORGEOUS & Hardwell vs. KSHMR & Jarrad Kritzstein",
+              "genre": "",
+              "label": "REVEALED",
+              "duration": "3:14"
+            },
+            {
+              "n": 16,
+              "title": "Rave Till My Grave",
+              "performer": "Hardwell & Maddix ft. Villain",
+              "genre": "Mainstage",
+              "label": "REVEALED",
+              "duration": "1:18"
+            },
+            {
+              "n": 17,
+              "title": "The Ultimate Seduction",
+              "performer": "Maddix & TMPL",
+              "genre": "Techno",
+              "label": "EXTATIC(REVEALED)",
+              "duration": "3:45"
+            },
+            {
+              "n": 18,
+              "title": "Berlin",
+              "performer": "D-Block & S-te-Fan & DJ Isaac",
+              "genre": "Hard Dance",
+              "label": "SCANTRAXX",
+              "duration": "2:14"
+            },
+            {
+              "n": 19,
+              "title": "Baila de Gasolina (Remix)",
+              "performer": "Outsiders & Ruthless & Effe Serieus",
+              "genre": "",
+              "label": "DE WATERMAKERS",
+              "duration": "2:06"
+            },
+            {
+              "n": 20,
+              "title": "Falling In Love",
+              "performer": "Hardwell & Outsiders",
+              "genre": "Hard Dance",
+              "label": "REVEALED",
+              "duration": "1:56"
+            },
+            {
+              "n": 21,
+              "title": "Aliens On Acid",
+              "performer": "Rebelion",
+              "genre": "Hard Dance",
+              "label": "ACID REIGN(DIRTY WORKZ)",
+              "duration": "3:44"
+            },
+            {
+              "n": 22,
+              "title": "Brace For Impact",
+              "performer": "Hardwell & Sub Zero Project ft. Lil Jon",
+              "genre": "Hard Dance",
+              "label": "REVEALED",
+              "duration": "4:03"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Swedish House Mafia",
+      "slug": "swedish-house-mafia",
+      "image": "artist-swedish-house-mafia.jpg",
+      "albums": [
+        {
+          "title": "Tomorrowland 2025 (Mainstage)",
+          "slug": "tomorrowland-2025-mainstage",
+          "cover": "album-swedish-house-mafia-tomorrowland-2025-mainstage.jpg",
+          "trackCount": 20,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Antidote (Belgium Edit)",
+              "performer": "Swedish House Mafia & Knife Party ft. ADL",
+              "genre": "Dance/Electro Pop",
+              "label": "POPHOUSE",
+              "duration": "4:26"
+            },
+            {
+              "n": 2,
+              "title": "Hooligans vs. Frankenstein (Axwell Mashup)",
+              "performer": "Steve Angello vs. Swedish House Mafia & A$AP Rocky",
+              "genre": "",
+              "label": "SSA(REPUBLIC)",
+              "duration": "2:58"
+            },
+            {
+              "n": 3,
+              "title": "Be vs. Show Me Love vs. Knas (Swedish House Mafia Mashup)",
+              "performer": "Steve Angello & Laidback Luke & Rowetta",
+              "genre": "",
+              "label": "MIXMASH",
+              "duration": "2:28"
+            },
+            {
+              "n": 4,
+              "title": "Miami 2 Ibiza (Paradise Again Edit)",
+              "performer": "Swedish House Mafia ft. Tinie Tempah",
+              "genre": "Dance/Electro Pop",
+              "label": "POPHOUSE",
+              "duration": "2:32"
+            },
+            {
+              "n": 5,
+              "title": "On Off (Kapuchon Edit)",
+              "performer": "Cirez D",
+              "genre": "",
+              "label": "",
+              "duration": "4:04"
+            },
+            {
+              "n": 6,
+              "title": "Ray Of Solar",
+              "performer": "Swedish House Mafia",
+              "genre": "Dance/Electro Pop",
+              "label": "SSA(REPUBLIC)",
+              "duration": "2:13"
+            },
+            {
+              "n": 7,
+              "title": "Tell Me Why (MEDUZA Remix)",
+              "performer": "Supermode",
+              "genre": "Melodic House/Techno",
+              "label": "AXTONE",
+              "duration": "2:45"
+            },
+            {
+              "n": 8,
+              "title": "A New Day",
+              "performer": "Sebastian Ingrosso ft. Céline Dion",
+              "genre": "Dance/Electro Pop",
+              "label": "SUPERHUMAN",
+              "duration": "3:12"
+            },
+            {
+              "n": 9,
+              "title": "Innerbloom vs. Payback (Steve Angello Mashup)",
+              "performer": "RÜFÜS DU SOL vs. Steve Angello & Dimitri Vangelis & Wyman",
+              "genre": "",
+              "label": "COLUMBIA",
+              "duration": "3:14"
+            },
+            {
+              "n": 10,
+              "title": "Payback vs. More Than You Know (Swedish House Mafia Mashup)",
+              "performer": "Steve Angello & Dimitri Vangelis & Wyman vs. Axwell Λ Ingrosso & Kristoffer Fogelmark",
+              "genre": "",
+              "label": "COLUMBIA",
+              "duration": "1:31"
+            },
+            {
+              "n": 11,
+              "title": "Love Inc vs. In My Mind (Axwell Mashup)",
+              "performer": "Booka Shade vs. Ivan Gough & Feenixpawl & Axwell ft. Georgi Kay",
+              "genre": "",
+              "label": "AXTONE",
+              "duration": "1:45"
+            },
+            {
+              "n": 12,
+              "title": "Greyhound vs. Raise Your Hands (Axwell Mashup)",
+              "performer": "Swedish House Mafia vs. Matt Caseli & Danny Freakazoid",
+              "genre": "",
+              "label": "AXTONE",
+              "duration": "4:03"
+            },
+            {
+              "n": 13,
+              "title": "Save The World (NC Edit)",
+              "performer": "Swedish House Mafia ft. John Martin",
+              "genre": "",
+              "label": "VIRGIN",
+              "duration": "1:32"
+            },
+            {
+              "n": 14,
+              "title": "Reload vs. Flash (Axwell Λ Ingrosso Mashup)",
+              "performer": "Sebastian Ingrosso & Tommy Trash & John Martin vs. Green Velvet & Nicky Romero",
+              "genre": "",
+              "label": "RELIEF",
+              "duration": "2:45"
+            },
+            {
+              "n": 15,
+              "title": "Another Minute (Yaro Rework)",
+              "performer": "Swedish House Mafia ft. 070 Shake",
+              "genre": "",
+              "label": "",
+              "duration": "2:00"
+            },
+            {
+              "n": 16,
+              "title": "Moth To A Flame (Swedish House Mafia Rework)",
+              "performer": "Swedish House Mafia & The Weeknd",
+              "genre": "",
+              "label": "",
+              "duration": "3:21"
+            },
+            {
+              "n": 17,
+              "title": "Don't You Worry Child",
+              "performer": "Swedish House Mafia ft. John Martin",
+              "genre": "Dance/Electro Pop",
+              "label": "POPHOUSE",
+              "duration": "3:19"
+            },
+            {
+              "n": 18,
+              "title": "Wait So Long (Why Do I Have To)",
+              "performer": "Swedish House Mafia",
+              "genre": "Dance/Electro Pop",
+              "label": "SUPERHUMAN",
+              "duration": "3:55"
+            },
+            {
+              "n": 19,
+              "title": "Heaven Takes You Home (Swedish House Mafia Remake)",
+              "performer": "Swedish House Mafia & Connie Constance",
+              "genre": "Dance/Electro Pop",
+              "label": "SSA(REPUBLIC)",
+              "duration": "2:08"
+            },
+            {
+              "n": 20,
+              "title": "Laktos is Calling vs. You Got The Love vs. I Wanna Dance With Somebody (Sebastian Ingrosso Re-Edit)",
+              "performer": "Sebastian Ingrosso vs. Alesso & Ryan Tedder vs. Candi Staton vs. Whitney Houston",
+              "genre": "",
+              "label": "REFUNE",
+              "duration": "5:26"
+            }
+          ]
+        },
+        {
+          "title": "UMF Miami 2026 (Mainstage)",
+          "slug": "umf-miami-2026-mainstage",
+          "cover": "album-swedish-house-mafia-umf-miami-2026-mainstage.jpg",
+          "trackCount": 34,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Miami 2 Ibiza",
+              "performer": "Swedish House Mafia ft. Tinie Tempah",
+              "genre": "Progressive House",
+              "label": "POPHOUSE",
+              "duration": "2:39"
+            },
+            {
+              "n": 2,
+              "title": "Flex It",
+              "performer": "MPH ft. Æ (US)",
+              "genre": "Bassline/Garage/Grime",
+              "label": "BLACK BOOK",
+              "duration": "1:41"
+            },
+            {
+              "n": 3,
+              "title": "I'm Not Alone (MPH Remix)",
+              "performer": "Calvin Harris",
+              "genre": "House",
+              "label": "ULTRA",
+              "duration": "2:01"
+            },
+            {
+              "n": 4,
+              "title": "Antidote (MPH Remix)",
+              "performer": "Swedish House Mafia & Knife Party ft. ADL",
+              "genre": "",
+              "label": "POPHOUSE",
+              "duration": "2:03"
+            },
+            {
+              "n": 5,
+              "title": "Raw",
+              "performer": "MPH",
+              "genre": "Bassline/Garage/Grime",
+              "label": "BLACK BOOK",
+              "duration": "1:43"
+            },
+            {
+              "n": 6,
+              "title": "Where's Your Head At? (Steve Angello Remix)",
+              "performer": "Basement Jaxx",
+              "genre": "Bass House",
+              "label": "XL",
+              "duration": "1:18"
+            },
+            {
+              "n": 7,
+              "title": "ID",
+              "performer": "Boys Noize",
+              "genre": "",
+              "label": "",
+              "duration": "2:18"
+            },
+            {
+              "n": 8,
+              "title": "U Ok? (Boys Noize Remix)",
+              "performer": "PARISI x Sebastian Ingrosso x Steve Angello",
+              "genre": "",
+              "label": "FFRR",
+              "duration": "2:00"
+            },
+            {
+              "n": 9,
+              "title": "FVKVRVND",
+              "performer": "Boys Noize",
+              "genre": "House",
+              "label": "HARD RECS(INSOMNIAC)",
+              "duration": "1:24"
+            },
+            {
+              "n": 10,
+              "title": "Fine Day Anthem (Boys Noize Remix)",
+              "performer": "Skrillex & Boys Noize ft. Opus III",
+              "genre": "",
+              "label": "OWSLA",
+              "duration": "1:03"
+            },
+            {
+              "n": 11,
+              "title": "Fine Day Anthem",
+              "performer": "Skrillex & Boys Noize ft. Opus III",
+              "genre": "Trance",
+              "label": "OWSLA",
+              "duration": "2:00"
+            },
+            {
+              "n": 12,
+              "title": "Drone Logic (Harvey McKay Re-Edit)",
+              "performer": "Daniel Avery",
+              "genre": "Techno",
+              "label": "PHANTASY SOUND",
+              "duration": "2:04"
+            },
+            {
+              "n": 13,
+              "title": "Melt!",
+              "performer": "Kelly Lee Owens",
+              "genre": "Electronica",
+              "label": "SMALLTOWN SUPERSOUND",
+              "duration": "1:08"
+            },
+            {
+              "n": 14,
+              "title": "Everything In Its Right Place",
+              "performer": "Gigamesh & ELOHIM & Thomas Adagio",
+              "genre": "Rock",
+              "label": "INFINITE GAME",
+              "duration": "3:15"
+            },
+            {
+              "n": 15,
+              "title": "Pon De Floor (Afrojack Version)",
+              "performer": "Major Lazer ft. Vybz Kartel",
+              "genre": "Trance",
+              "label": "MAD DECENT",
+              "duration": "2:32"
+            },
+            {
+              "n": 16,
+              "title": "Show Me Love",
+              "performer": "Steve Angello & Laidback Luke ft. Robin S",
+              "genre": "House",
+              "label": "MIXMASH",
+              "duration": "4:51"
+            },
+            {
+              "n": 17,
+              "title": "Bonkers",
+              "performer": "Dizzee Rascal & Armand van Helden",
+              "genre": "House",
+              "label": "DIRTEE STANK",
+              "duration": "2:00"
+            },
+            {
+              "n": 18,
+              "title": "My My My (AVH Rework)",
+              "performer": "Armand van Helden",
+              "genre": "House",
+              "label": "SOUTHERN FRIED",
+              "duration": "1:20"
+            },
+            {
+              "n": 19,
+              "title": "You Don't Know Me",
+              "performer": "Armand van Helden ft. Duane Harden",
+              "genre": "House",
+              "label": "FFRR(PARLOPHONE)",
+              "duration": "1:42"
+            },
+            {
+              "n": 20,
+              "title": "I Want Your Soul (Armand van Helden Rework)",
+              "performer": "Armand van Helden",
+              "genre": "House",
+              "label": "SOUTHERN FRIED",
+              "duration": "2:20"
+            },
+            {
+              "n": 21,
+              "title": "Turn On The Lights Again..",
+              "performer": "Fred again.. & Swedish House Mafia ft. Future",
+              "genre": "Bassline/Garage/Grime",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "5:21"
+            },
+            {
+              "n": 22,
+              "title": "It Gets Better (Stockholm Version)",
+              "performer": "Swedish House Mafia",
+              "genre": "",
+              "label": "SSA(REPUBLIC)",
+              "duration": "1:13"
+            },
+            {
+              "n": 23,
+              "title": "Flood",
+              "performer": "Sebastian Ingrosso",
+              "genre": "Bass House",
+              "label": "SUPERHUMAN",
+              "duration": "2:26"
+            },
+            {
+              "n": 24,
+              "title": "Allein",
+              "performer": "Pryda",
+              "genre": "Progressive House",
+              "label": "VIRGIN",
+              "duration": "1:54"
+            },
+            {
+              "n": 25,
+              "title": "On Off Lazer Beams (Eric Prydz Edit)",
+              "performer": "Cirez D vs. Green Velvet & Harvard Bass",
+              "genre": "",
+              "label": "MOUSEVILLE",
+              "duration": "3:25"
+            },
+            {
+              "n": 26,
+              "title": "Midnight City (Eric Prydz Private Remix)",
+              "performer": "M83",
+              "genre": "Progressive House",
+              "label": "MUTE",
+              "duration": "3:49"
+            },
+            {
+              "n": 27,
+              "title": "The Return",
+              "performer": "Pryda",
+              "genre": "Electronica",
+              "label": "PRYDA",
+              "duration": "0:53"
+            },
+            {
+              "n": 28,
+              "title": "Offshore vs. Greyhound vs. Fine Day vs. Touch Me (Swedish House Mafia Mashup)",
+              "performer": "Chicane & Axwell vs. Swedish House Mafia vs. Opus III vs. Rui Da Silva & Cassandra Fox",
+              "genre": "",
+              "label": "KISMET",
+              "duration": "4:18"
+            },
+            {
+              "n": 29,
+              "title": "Save The World (NC Edit)",
+              "performer": "Swedish House Mafia ft. John Martin",
+              "genre": "",
+              "label": "VIRGIN",
+              "duration": "0:57"
+            },
+            {
+              "n": 30,
+              "title": "Reload vs. Flash (Axwell Λ Ingrosso Mashup)",
+              "performer": "Sebastian Ingrosso & Tommy Trash & John Martin vs. Green Velvet & Nicky Romero",
+              "genre": "",
+              "label": "RELIEF",
+              "duration": "1:45"
+            },
+            {
+              "n": 31,
+              "title": "Don't You Worry Child",
+              "performer": "Swedish House Mafia ft. John Martin",
+              "genre": "Dance/Electro Pop",
+              "label": "POPHOUSE",
+              "duration": "2:19"
+            },
+            {
+              "n": 32,
+              "title": "Don't You Worry Child vs. Wake Me Up (Axwell Λ Ingrosso Mashup)",
+              "performer": "Swedish House Mafia & John Martin vs. Avicii & Aloe Blacc",
+              "genre": "",
+              "label": "POPHOUSE",
+              "duration": "3:15"
+            },
+            {
+              "n": 33,
+              "title": "Heaven Takes You Home (Swedish House Mafia Remake)",
+              "performer": "Swedish House Mafia & Connie Constance",
+              "genre": "Dance/Electro Pop",
+              "label": "SSA(REPUBLIC)",
+              "duration": "1:55"
+            },
+            {
+              "n": 34,
+              "title": "Laktos is Calling vs. You Got The Love vs. I Wanna Dance With Somebody (Sebastian Ingrosso Re-Edit)",
+              "performer": "Sebastian Ingrosso vs. Alesso & Ryan Tedder vs. Candi Staton vs. Whitney Houston",
+              "genre": "",
+              "label": "REFUNE",
+              "duration": "4:48"
+            }
+          ]
+        },
+        {
+          "title": "Creamfields 2025 (ARC Stage)",
+          "slug": "creamfields-2025-arc-stage",
+          "cover": "album-swedish-house-mafia-creamfields-2025-arc-stage.jpg",
+          "trackCount": 31,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Antidote (Belgium Edit)",
+              "performer": "Swedish House Mafia & Knife Party ft. ADL",
+              "genre": "Dance/Electro Pop",
+              "label": "POPHOUSE",
+              "duration": "2:40"
+            },
+            {
+              "n": 2,
+              "title": "Hooligans vs. Frankenstein (Axwell Mashup)",
+              "performer": "Steve Angello vs. Swedish House Mafia & A$AP Rocky",
+              "genre": "",
+              "label": "SSA(REPUBLIC)",
+              "duration": "2:50"
+            },
+            {
+              "n": 3,
+              "title": "Deep vs. Goosebumps vs. Kernkraft 400 (Axwell Mashup)",
+              "performer": "Yaro vs. Travis Scott & Kendrick Lamar vs. Zombie Nation & James Hype",
+              "genre": "",
+              "label": "EPIC(SONY BMG)",
+              "duration": "1:30"
+            },
+            {
+              "n": 4,
+              "title": "Miami 2 Ibiza (Paradise Again Edit)",
+              "performer": "Swedish House Mafia ft. Tinie Tempah",
+              "genre": "Dance/Electro Pop",
+              "label": "POPHOUSE",
+              "duration": "2:30"
+            },
+            {
+              "n": 5,
+              "title": "Love Parade",
+              "performer": "Cassian & YOTTO & Da Hool",
+              "genre": "Melodic House/Techno",
+              "label": "AFTERLIFE",
+              "duration": "1:50"
+            },
+            {
+              "n": 6,
+              "title": "Atom",
+              "performer": "MORTEN & Nari & Milani",
+              "genre": "",
+              "label": "SIZE",
+              "duration": "2:40"
+            },
+            {
+              "n": 7,
+              "title": "Be vs. Show Me Love vs. Knas (Swedish House Mafia Mashup)",
+              "performer": "Steve Angello & Laidback Luke & Rowetta",
+              "genre": "",
+              "label": "MIXMASH",
+              "duration": "1:50"
+            },
+            {
+              "n": 8,
+              "title": "Victory Lap",
+              "performer": "Fred again.. & Skepta & PlaqueBoyMax",
+              "genre": "Dubstep",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "1:30"
+            },
+            {
+              "n": 9,
+              "title": "Jungle",
+              "performer": "Corey James & MORGANJ & Tyoz",
+              "genre": "Mainstage",
+              "label": "SIZE",
+              "duration": "3:40"
+            },
+            {
+              "n": 10,
+              "title": "Peace Of Flood",
+              "performer": "Martin Garrix & Citadelle & Sebastian Ingrosso",
+              "genre": "Dance/Electro Pop",
+              "label": "SUPERHUMAN",
+              "duration": "3:30"
+            },
+            {
+              "n": 11,
+              "title": "Tear The Club Up",
+              "performer": "Steve Angello & Sebastian Ingrosso",
+              "genre": "",
+              "label": "SUPERHUMAN",
+              "duration": "2:20"
+            },
+            {
+              "n": 12,
+              "title": "On Off (Kapuchon Edit)",
+              "performer": "Cirez D",
+              "genre": "",
+              "label": "",
+              "duration": "3:25"
+            },
+            {
+              "n": 13,
+              "title": "Tell Me Why (MEDUZA Remix)",
+              "performer": "Supermode",
+              "genre": "Melodic House/Techno",
+              "label": "AXTONE",
+              "duration": "3:05"
+            },
+            {
+              "n": 14,
+              "title": "Offshore vs. Greyhound vs. Fine Day vs. Touch Me (Swedish House Mafia Mashup)",
+              "performer": "Chicane & Axwell vs. Swedish House Mafia vs. Opus III vs. Rui Da Silva & Cassandra Fox",
+              "genre": "",
+              "label": "KISMET",
+              "duration": "5:00"
+            },
+            {
+              "n": 15,
+              "title": "Pjanoo (LAWZ Remix)",
+              "performer": "Eric Prydz",
+              "genre": "",
+              "label": "PRYDA",
+              "duration": "1:20"
+            },
+            {
+              "n": 16,
+              "title": "Innerbloom vs. Payback (Steve Angello Mashup)",
+              "performer": "RÜFÜS DU SOL vs. Steve Angello & Dimitri Vangelis & Wyman",
+              "genre": "",
+              "label": "COLUMBIA",
+              "duration": "4:30"
+            },
+            {
+              "n": 17,
+              "title": "Love Inc vs. In My Mind (Axwell Mashup)",
+              "performer": "Booka Shade vs. Ivan Gough & Feenixpawl & Axwell ft. Georgi Kay",
+              "genre": "",
+              "label": "AXTONE",
+              "duration": "1:50"
+            },
+            {
+              "n": 18,
+              "title": "Save The World (NC Edit)",
+              "performer": "Swedish House Mafia ft. John Martin",
+              "genre": "",
+              "label": "VIRGIN",
+              "duration": "4:20"
+            },
+            {
+              "n": 19,
+              "title": "A New Day",
+              "performer": "Sebastian Ingrosso ft. Céline Dion",
+              "genre": "Dance/Electro Pop",
+              "label": "SUPERHUMAN",
+              "duration": "3:23"
+            },
+            {
+              "n": 20,
+              "title": "Ray Of Solar",
+              "performer": "Swedish House Mafia",
+              "genre": "Dance/Electro Pop",
+              "label": "SSA(REPUBLIC)",
+              "duration": "3:37"
+            },
+            {
+              "n": 21,
+              "title": "ID",
+              "performer": "Swedish House Mafia",
+              "genre": "",
+              "label": "",
+              "duration": "2:00"
+            },
+            {
+              "n": 22,
+              "title": "TUCUTU vs. Freed From Desire vs. Sandstorm (Axwell Mashup)",
+              "performer": "Wiwek & Emy Perez vs. Gala vs. Darude",
+              "genre": "",
+              "label": "NEO RECORDS",
+              "duration": "2:30"
+            },
+            {
+              "n": 23,
+              "title": "Insomnia",
+              "performer": "Faithless",
+              "genre": "Dance/Electro Pop",
+              "label": "CHEEKY",
+              "duration": "2:10"
+            },
+            {
+              "n": 24,
+              "title": "Allein",
+              "performer": "Pryda",
+              "genre": "Progressive House",
+              "label": "VIRGIN",
+              "duration": "2:00"
+            },
+            {
+              "n": 25,
+              "title": "It Gets Better (Forever Mix)",
+              "performer": "KETTAMA",
+              "genre": "Techno",
+              "label": "STEEL CITY DANCE DISCS",
+              "duration": "2:50"
+            },
+            {
+              "n": 26,
+              "title": "Midnight City (Reezer & Driver Of The Future Remix)",
+              "performer": "M83",
+              "genre": "",
+              "label": "FREE",
+              "duration": "2:10"
+            },
+            {
+              "n": 27,
+              "title": "Moth To A Flame (Swedish House Mafia Rework)",
+              "performer": "Swedish House Mafia & The Weeknd",
+              "genre": "",
+              "label": "",
+              "duration": "3:49"
+            },
+            {
+              "n": 28,
+              "title": "Don't You Worry Child",
+              "performer": "Swedish House Mafia ft. John Martin",
+              "genre": "Dance/Electro Pop",
+              "label": "POPHOUSE",
+              "duration": "2:26"
+            },
+            {
+              "n": 29,
+              "title": "Wait So Long (Why Do I Have To)",
+              "performer": "Swedish House Mafia",
+              "genre": "Dance/Electro Pop",
+              "label": "SUPERHUMAN",
+              "duration": "3:35"
+            },
+            {
+              "n": 30,
+              "title": "Heaven Takes You Home (Swedish House Mafia Remake)",
+              "performer": "Swedish House Mafia & Connie Constance",
+              "genre": "Dance/Electro Pop",
+              "label": "SSA(REPUBLIC)",
+              "duration": "2:20"
+            },
+            {
+              "n": 31,
+              "title": "Laktos vs. You Got The Love vs. Calling vs. Somebody That I Used To Know (Axwell Λ Ingrosso Mashup)",
+              "performer": "Sebastian Ingrosso vs. The Source & Candi Staton vs. Alesso & Ryan Tedder vs. Gotye & Kimbra",
+              "genre": "",
+              "label": "REFUNE",
+              "duration": "5:59"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "David Guetta",
+      "slug": "david-guetta",
+      "image": "artist-david-guetta.jpg",
+      "albums": [
+        {
+          "title": "Tomorrowland 2025 (Mainstage)",
+          "slug": "tomorrowland-2025-mainstage",
+          "cover": "album-david-guetta-tomorrowland-2025-mainstage.jpg",
+          "trackCount": 25,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "I'm Good (Blue) (Cedric Gervais Remix)",
+              "performer": "David Guetta ft. Bebe Rexha",
+              "genre": "Dance/Electro Pop",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "4:51"
+            },
+            {
+              "n": 2,
+              "title": "Titanium (David Guetta & MORTEN Future Rave Remix)",
+              "performer": "David Guetta ft. Sia",
+              "genre": "Mainstage",
+              "label": "FFRR(PARLOPHONE)",
+              "duration": "4:37"
+            },
+            {
+              "n": 3,
+              "title": "Give It To Me vs. Kick Out The Epic Motherfucker (Armin van Buuren Mashup)",
+              "performer": "Hel:sløwed & Nina de Koning vs. Dada Life",
+              "genre": "",
+              "label": "SO MUCH DADA",
+              "duration": "3:55"
+            },
+            {
+              "n": 4,
+              "title": "Heavy",
+              "performer": "Armin van Buuren & JOA",
+              "genre": "Melodic House/Techno",
+              "label": "ARMADA",
+              "duration": "1:20"
+            },
+            {
+              "n": 5,
+              "title": "FE!N vs. Night In Detroit (DJs From Mars Bootleg)",
+              "performer": "Travis Scott & Playboi Carti vs. MORTEN & David Guetta & Fedde Le Grand",
+              "genre": "",
+              "label": "CACTUS JACK",
+              "duration": "3:09"
+            },
+            {
+              "n": 6,
+              "title": "Club Can't Handle Me (From The Step Up 3D Soundtrack) (David Guetta & DJs From Mars Bootleg)",
+              "performer": "Flo Rida ft. David Guetta",
+              "genre": "",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "1:44"
+            },
+            {
+              "n": 7,
+              "title": "Things I Haven't Told You",
+              "performer": "David Guetta & Audio Bullys & DJs From Mars",
+              "genre": "Melodic House/Techno",
+              "label": "SPINNIN'",
+              "duration": "1:46"
+            },
+            {
+              "n": 8,
+              "title": "Sound Of Da Police (David Guetta Remix)",
+              "performer": "KRS-One",
+              "genre": "",
+              "label": "JIVE",
+              "duration": "1:59"
+            },
+            {
+              "n": 9,
+              "title": "Memories vs. Satisfaction (David Guetta & DJs From Mars Mashup)",
+              "performer": "David Guetta & Kid Cudi vs. Benny Benassi",
+              "genre": "",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "3:56"
+            },
+            {
+              "n": 10,
+              "title": "Lucky",
+              "performer": "MORTEN & David Guetta",
+              "genre": "Mainstage",
+              "label": "FUTURE RAVE",
+              "duration": "2:57"
+            },
+            {
+              "n": 11,
+              "title": "A Better World (Cedric Gervais & Alexander Orue Remix)",
+              "performer": "David Guetta & Cedric Gervais",
+              "genre": "Dance/Electro Pop",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:01"
+            },
+            {
+              "n": 12,
+              "title": "Love Is Gone vs. Don't You Know vs. Set Fire To The Rain (DJs From Mars Bootleg)",
+              "performer": "David Guetta & Chris Willis vs. Volaris vs. Adele",
+              "genre": "",
+              "label": "FMIF",
+              "duration": "3:42"
+            },
+            {
+              "n": 13,
+              "title": "Let's Go",
+              "performer": "Jaden Bojsen & David Guetta ft. Sami Brielle",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "2:53"
+            },
+            {
+              "n": 14,
+              "title": "Play Hard (David Guetta & MORTEN Future Rave Remix)",
+              "performer": "David Guetta ft. Ne-Yo & Akon",
+              "genre": "",
+              "label": "FFRR(PARLOPHONE)",
+              "duration": "1:57"
+            },
+            {
+              "n": 15,
+              "title": "The Past, The Present, The Future",
+              "performer": "David Guetta & MARTEN HØRGER pres. Men Machine",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "3:32"
+            },
+            {
+              "n": 16,
+              "title": "Engage",
+              "performer": "David Guetta & MARTEN HØRGER pres. Men Machine ft. Vitalic",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "2:14"
+            },
+            {
+              "n": 17,
+              "title": "Sexy Bitch",
+              "performer": "David Guetta ft. Akon",
+              "genre": "Mainstage",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "3:18"
+            },
+            {
+              "n": 18,
+              "title": "I Don't Wanna Wait (DJs From Mars Remix)",
+              "performer": "David Guetta & OneRepublic",
+              "genre": "Mainstage",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "1:20"
+            },
+            {
+              "n": 19,
+              "title": "Forever Young",
+              "performer": "David Guetta & Alphaville & Ava Max",
+              "genre": "Dance/Electro Pop",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "2:34"
+            },
+            {
+              "n": 20,
+              "title": "Our Time",
+              "performer": "AFROJACK & Martin Garrix & David Guetta & Amél ft. Zack Hall",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "3:21"
+            },
+            {
+              "n": 21,
+              "title": "Sweat (David Guetta & MORTEN Remix)",
+              "performer": "Snoop Dogg vs. David Guetta",
+              "genre": "Mainstage",
+              "label": "WHAT A MUSIC",
+              "duration": "3:22"
+            },
+            {
+              "n": 22,
+              "title": "Love Tonight vs. Give Me Everything vs. Aria (AFROJACK Mashup)",
+              "performer": "Shouse & David Guetta vs. Pitbull & Ne-Yo & AFROJACK & Nayer vs. Argy & Omnya",
+              "genre": "",
+              "label": "MR. 305",
+              "duration": "2:27"
+            },
+            {
+              "n": 23,
+              "title": "Messy (AFROJACK Remix)",
+              "performer": "Lola Young",
+              "genre": "",
+              "label": "ISLAND(UMG)",
+              "duration": "3:31"
+            },
+            {
+              "n": 24,
+              "title": "Walked Away",
+              "performer": "Hypaton & David Guetta",
+              "genre": "Dance/Electro Pop",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:38"
+            },
+            {
+              "n": 25,
+              "title": "Together",
+              "performer": "Hypaton & David Guetta ft. Bonnie Tyler",
+              "genre": "Dance/Electro Pop",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:33"
+            }
+          ]
+        },
+        {
+          "title": "[UNVRS] Ibiza 2025",
+          "slug": "unvrs-ibiza-2025",
+          "cover": "album-david-guetta-unvrs-ibiza-2025.jpg",
+          "trackCount": 69,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "I'm Good (Blue) (Cedric Gervais Remix)",
+              "performer": "David Guetta ft. Bebe Rexha",
+              "genre": "Dance/Electro Pop",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "6:06"
+            },
+            {
+              "n": 2,
+              "title": "Club Can't Handle Me (From The Step Up 3D Soundtrack) (David Guetta & DJs From Mars Bootleg)",
+              "performer": "Flo Rida ft. David Guetta",
+              "genre": "",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "1:46"
+            },
+            {
+              "n": 3,
+              "title": "Things I Haven't Told You",
+              "performer": "David Guetta & Audio Bullys & DJs From Mars",
+              "genre": "Melodic House/Techno",
+              "label": "SPINNIN'",
+              "duration": "1:46"
+            },
+            {
+              "n": 4,
+              "title": "Give It To Me vs. Kick Out The Epic Motherfucker (Armin van Buuren Mashup)",
+              "performer": "Hel:sløwed & Nina de Koning vs. Dada Life",
+              "genre": "",
+              "label": "SO MUCH DADA",
+              "duration": "2:42"
+            },
+            {
+              "n": 5,
+              "title": "Memories vs. Satisfaction (David Guetta & DJs From Mars Mashup)",
+              "performer": "David Guetta & Kid Cudi vs. Benny Benassi",
+              "genre": "",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "4:10"
+            },
+            {
+              "n": 6,
+              "title": "Let's Go",
+              "performer": "Jaden Bojsen & David Guetta ft. Sami Brielle",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "3:18"
+            },
+            {
+              "n": 7,
+              "title": "Verano en NY (David Guetta Remix)",
+              "performer": "Toman",
+              "genre": "",
+              "label": "SOLID GROOVES",
+              "duration": "3:02"
+            },
+            {
+              "n": 8,
+              "title": "Baiana",
+              "performer": "Matt Sassari & CHRSTPHR ft. Barbatuques",
+              "genre": "Tech House",
+              "label": "CR2",
+              "duration": "2:37"
+            },
+            {
+              "n": 9,
+              "title": "Just Dance (ACRAZE Remix)",
+              "performer": "Lady GaGa ft. Colby O'Donis",
+              "genre": "House",
+              "label": "INTERSCOPE",
+              "duration": "2:11"
+            },
+            {
+              "n": 10,
+              "title": "Lucky",
+              "performer": "MORTEN & David Guetta",
+              "genre": "Mainstage",
+              "label": "FUTURE RAVE",
+              "duration": "2:43"
+            },
+            {
+              "n": 11,
+              "title": "Baby Don't Hurt Me vs. Dreams (David Guetta Mashup)",
+              "performer": "David Guetta & Anne-Marie & Coi Leray vs. MORTEN & Lanie Gardner",
+              "genre": "",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "1:43"
+            },
+            {
+              "n": 12,
+              "title": "Play Hard (David Guetta & MORTEN Future Rave Remix)",
+              "performer": "David Guetta ft. Ne-Yo & Akon",
+              "genre": "",
+              "label": "FFRR(PARLOPHONE)",
+              "duration": "3:14"
+            },
+            {
+              "n": 13,
+              "title": "I Don't Wanna Wait (DJs From Mars Remix)",
+              "performer": "David Guetta & OneRepublic",
+              "genre": "Mainstage",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "3:12"
+            },
+            {
+              "n": 14,
+              "title": "Forever Young",
+              "performer": "David Guetta & Alphaville & Ava Max",
+              "genre": "Dance/Electro Pop",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "3:05"
+            },
+            {
+              "n": 15,
+              "title": "ID",
+              "performer": "David Guetta",
+              "genre": "",
+              "label": "",
+              "duration": "2:45"
+            },
+            {
+              "n": 16,
+              "title": "Bring The Techno Back To Black (DJs From Mars Bootleg)",
+              "performer": "Amy Winehouse vs. Orjan Nilsen & Mark Sixma & nilsix",
+              "genre": "",
+              "label": "ISLAND(UMG)",
+              "duration": "2:16"
+            },
+            {
+              "n": 17,
+              "title": "Bus Stop Please (David Guetta & MORTEN Future Rave Remix)",
+              "performer": "Fatboy Slim & Daniel Steinberg",
+              "genre": "House",
+              "label": "SOUTHERN FRIED",
+              "duration": "3:02"
+            },
+            {
+              "n": 18,
+              "title": "System Overload",
+              "performer": "Joshlane",
+              "genre": "Indie Dance",
+              "label": "AFTERLIFE",
+              "duration": "3:26"
+            },
+            {
+              "n": 19,
+              "title": "Sexy Bitch",
+              "performer": "David Guetta ft. Akon",
+              "genre": "Mainstage",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "3:20"
+            },
+            {
+              "n": 20,
+              "title": "NOKIA (David Guetta Remix)",
+              "performer": "Drake",
+              "genre": "",
+              "label": "OVO",
+              "duration": "1:36"
+            },
+            {
+              "n": 21,
+              "title": "CASH OUT",
+              "performer": "SIDEPIECE & Bobby Shmurda",
+              "genre": "House",
+              "label": "LIP SERVICE",
+              "duration": "2:58"
+            },
+            {
+              "n": 22,
+              "title": "Jump Around",
+              "performer": "House Of Pain",
+              "genre": "Hip Hop",
+              "label": "TOMMY BOY",
+              "duration": "3:03"
+            },
+            {
+              "n": 23,
+              "title": "Love Is Gone vs. Don't You Know vs. Set Fire To The Rain (DJs From Mars Bootleg)",
+              "performer": "David Guetta & Chris Willis vs. Volaris vs. Adele",
+              "genre": "",
+              "label": "FMIF",
+              "duration": "3:29"
+            },
+            {
+              "n": 24,
+              "title": "When Love Takes Over vs. Just The Way You Are vs. Turn It Off (David Guetta Mashup)",
+              "performer": "David Guetta & Kelly Rowland & MORTEN vs. Bruno Mars vs. JustLuke",
+              "genre": "",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:21"
+            },
+            {
+              "n": 25,
+              "title": "Calling Titanium (David Guetta & DJs From Mars Mashup)",
+              "performer": "David Guetta & Sia vs. Sebastian Ingrosso & Alesso",
+              "genre": "",
+              "label": "PARLOPHONE",
+              "duration": "4:07"
+            },
+            {
+              "n": 26,
+              "title": "Messy (AFROJACK Remix)",
+              "performer": "Lola Young",
+              "genre": "",
+              "label": "ISLAND(UMG)",
+              "duration": "3:21"
+            },
+            {
+              "n": 27,
+              "title": "Blessings (Cassian Remix)",
+              "performer": "Calvin Harris ft. Clementine Douglas",
+              "genre": "Dance/Electro Pop",
+              "label": "COLUMBIA(SONY)",
+              "duration": "4:01"
+            },
+            {
+              "n": 28,
+              "title": "Love Parade",
+              "performer": "Cassian & YOTTO & Da Hool",
+              "genre": "Melodic House/Techno",
+              "label": "AFTERLIFE",
+              "duration": "2:10"
+            },
+            {
+              "n": 29,
+              "title": "Shake And Pop (John Summit Remix)",
+              "performer": "Green Velvet ft. Walter Philips",
+              "genre": "Techno",
+              "label": "EXPERTS ONLY",
+              "duration": "3:36"
+            },
+            {
+              "n": 30,
+              "title": "Sweat (David Guetta & MORTEN Remix)",
+              "performer": "Snoop Dogg vs. David Guetta",
+              "genre": "Mainstage",
+              "label": "WHAT A MUSIC",
+              "duration": "3:40"
+            },
+            {
+              "n": 31,
+              "title": "Where Them Girls At (David Guetta & MORTEN Remix)",
+              "performer": "David Guetta ft. Flo Rida & Nicki Minaj",
+              "genre": "",
+              "label": "PARLOPHONE(WARNER MUSIC)",
+              "duration": "3:16"
+            },
+            {
+              "n": 32,
+              "title": "Permanence",
+              "performer": "David Guetta & MORTEN",
+              "genre": "Mainstage",
+              "label": "MUSICAL FREEDOM",
+              "duration": "3:45"
+            },
+            {
+              "n": 33,
+              "title": "Prayer",
+              "performer": "David Guetta & Kiko & Olivier Giacomotto",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "3:13"
+            },
+            {
+              "n": 34,
+              "title": "Love Tonight vs. Give Me Everything vs. Aria (AFROJACK Mashup)",
+              "performer": "Shouse & David Guetta vs. Pitbull & Ne-Yo & AFROJACK & Nayer vs. Argy & Omnya",
+              "genre": "",
+              "label": "MR. 305",
+              "duration": "3:22"
+            },
+            {
+              "n": 35,
+              "title": "Don't You Worry Child (David Guetta Remix)",
+              "performer": "Swedish House Mafia ft. John Martin",
+              "genre": "",
+              "label": "POPHOUSE",
+              "duration": "3:38"
+            },
+            {
+              "n": 36,
+              "title": "Call On Me",
+              "performer": "Eric Prydz",
+              "genre": "Funky/Groove House",
+              "label": "DATA REC.(MINISTRY OF SOUND)",
+              "duration": "4:37"
+            },
+            {
+              "n": 37,
+              "title": "Faded (Blacklizt Version / HNTR Remix)",
+              "performer": "ZHU",
+              "genre": "Techno",
+              "label": "BROKE",
+              "duration": "3:23"
+            },
+            {
+              "n": 38,
+              "title": "Lord Pretty Flacko Jodye 2 (LPFJ2) (HNTR Edit)",
+              "performer": "A$AP Rocky",
+              "genre": "Deep House",
+              "label": "",
+              "duration": "2:39"
+            },
+            {
+              "n": 39,
+              "title": "I Gotta Feeling vs. Love Is A Drug vs. We Found Love (David Guetta Mashup)",
+              "performer": "Black Eyed Peas vs. Armin van Buuren & Anne Gudrun vs. Rihanna & Calvin Harris",
+              "genre": "",
+              "label": "INTERSCOPE",
+              "duration": "3:45"
+            },
+            {
+              "n": 40,
+              "title": "Anxiety (David Guetta Remix)",
+              "performer": "Doechii",
+              "genre": "",
+              "label": "TOP DAWG",
+              "duration": "3:21"
+            },
+            {
+              "n": 41,
+              "title": "Levels vs. Don't Stop Believin' (David Guetta Mashup)",
+              "performer": "Avicii vs. Journey",
+              "genre": "",
+              "label": "LE7ELS",
+              "duration": "6:26"
+            },
+            {
+              "n": 42,
+              "title": "Gimme! Gimme! Gimme! (Sgt Slick Melbourne Recut)",
+              "performer": "Sgt Slick",
+              "genre": "",
+              "label": "VICIOUS",
+              "duration": "4:26"
+            },
+            {
+              "n": 43,
+              "title": "Without You",
+              "performer": "David Guetta ft. Usher",
+              "genre": "Pop",
+              "label": "PARLOPHONE",
+              "duration": "4:22"
+            },
+            {
+              "n": 44,
+              "title": "Sad Girls",
+              "performer": "Bebe Rexha & David Guetta",
+              "genre": "Electronica",
+              "label": "EMPIRE",
+              "duration": "2:34"
+            },
+            {
+              "n": 45,
+              "title": "A Better World (Cedric Gervais & Alexander Orue Remix)",
+              "performer": "David Guetta & Cedric Gervais",
+              "genre": "Dance/Electro Pop",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:02"
+            },
+            {
+              "n": 46,
+              "title": "FE!N vs. Night In Detroit (DJs From Mars Bootleg)",
+              "performer": "Travis Scott & Playboi Carti vs. MORTEN & David Guetta & Fedde Le Grand",
+              "genre": "",
+              "label": "CACTUS JACK",
+              "duration": "2:39"
+            },
+            {
+              "n": 47,
+              "title": "Hooligans vs. Frankenstein (Axwell Mashup)",
+              "performer": "Steve Angello vs. Swedish House Mafia & A$AP Rocky",
+              "genre": "",
+              "label": "SSA(REPUBLIC)",
+              "duration": "1:43"
+            },
+            {
+              "n": 48,
+              "title": "Love Don't Let Me Go (Walking Away)",
+              "performer": "David Guetta vs. The Egg ft. Chris Willis",
+              "genre": "Dance/Electro Pop",
+              "label": "VIRGIN",
+              "duration": "3:07"
+            },
+            {
+              "n": 49,
+              "title": "The Past, The Present, The Future",
+              "performer": "David Guetta & MARTEN HØRGER pres. Men Machine",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "3:19"
+            },
+            {
+              "n": 50,
+              "title": "Engage",
+              "performer": "David Guetta & MARTEN HØRGER pres. Men Machine ft. Vitalic",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "2:34"
+            },
+            {
+              "n": 51,
+              "title": "Hey You",
+              "performer": "David Guetta & MARTEN HØRGER pres. Men Machine",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "1:18"
+            },
+            {
+              "n": 52,
+              "title": "Sweet Dreams (Are Made of This) (Antiyu Remix)",
+              "performer": "Eurythmics",
+              "genre": "Mainstage",
+              "label": "BIG MACHINE",
+              "duration": "1:57"
+            },
+            {
+              "n": 53,
+              "title": "The Sound Of Violence (David Guetta Remix)",
+              "performer": "Cassius ft. Steve Edwards",
+              "genre": "",
+              "label": "CASSIUS",
+              "duration": "1:20"
+            },
+            {
+              "n": 54,
+              "title": "World, Hold On (Children Of The Sky) (David Guetta Remix)",
+              "performer": "Bob Sinclar ft. Steve Edwards",
+              "genre": "",
+              "label": "DEFECTED",
+              "duration": "1:39"
+            },
+            {
+              "n": 55,
+              "title": "Colossal vs. Gypsy Woman (She's Homeless) (David Guetta Mashup)",
+              "performer": "Mind Against & Sideral vs. Crystal Waters",
+              "genre": "",
+              "label": "",
+              "duration": "1:47"
+            },
+            {
+              "n": 56,
+              "title": "Missing",
+              "performer": "DJ Yasmin",
+              "genre": "Techno",
+              "label": "INTERPLAY",
+              "duration": "1:50"
+            },
+            {
+              "n": 57,
+              "title": "Free (David Guetta Remix)",
+              "performer": "Ultra Naté",
+              "genre": "",
+              "label": "STRICTLY RHYTHM",
+              "duration": "1:55"
+            },
+            {
+              "n": 58,
+              "title": "Sitting In The Sun (Walking In The Rain)",
+              "performer": "DumitrEscu",
+              "genre": "House",
+              "label": "CHAOS",
+              "duration": "2:27"
+            },
+            {
+              "n": 59,
+              "title": "Dior (David Guetta Remix)",
+              "performer": "MK ft. CHRYSTAL",
+              "genre": "Dance/Electro Pop",
+              "label": "COLUMBIA(SONY)",
+              "duration": "3:10"
+            },
+            {
+              "n": 60,
+              "title": "Freak Like Me (Ben Kim Remix)",
+              "performer": "DJ Deeon vs. Lee Walker ft. Katy B & MNEK",
+              "genre": "House",
+              "label": "DEFECTED",
+              "duration": "3:03"
+            },
+            {
+              "n": 61,
+              "title": "Summer (MBP & Rivo Edit)",
+              "performer": "Calvin Harris",
+              "genre": "",
+              "label": "",
+              "duration": "2:47"
+            },
+            {
+              "n": 62,
+              "title": "Collision vs. A Sky Full Of Stars (Rivo Mashup)",
+              "performer": "Argy vs. Coldplay",
+              "genre": "",
+              "label": "",
+              "duration": "2:56"
+            },
+            {
+              "n": 63,
+              "title": "You & Me (Rivo Remix)",
+              "performer": "Disclosure ft. Eliza Doolittle",
+              "genre": "Dance/Electro Pop",
+              "label": "ISLAND(UMG)",
+              "duration": "4:06"
+            },
+            {
+              "n": 64,
+              "title": "Secret ID vs. Creepin' (Rivo Mashup)",
+              "performer": "Da Capo & Moojo vs. Metro Boomin & The Weeknd & 21 Savage",
+              "genre": "",
+              "label": "BOOMINATI WORLDWIDE",
+              "duration": "2:05"
+            },
+            {
+              "n": 65,
+              "title": "Favela",
+              "performer": "Swanky Tunes & Shapov",
+              "genre": "Dance/Electro Pop",
+              "label": "SPINNIN'",
+              "duration": "3:45"
+            },
+            {
+              "n": 66,
+              "title": "Verano en NY (David Guetta Remix)",
+              "performer": "Toman",
+              "genre": "",
+              "label": "SOLID GROOVES",
+              "duration": "3:33"
+            },
+            {
+              "n": 67,
+              "title": "Walked Away",
+              "performer": "Hypaton & David Guetta",
+              "genre": "Dance/Electro Pop",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:03"
+            },
+            {
+              "n": 68,
+              "title": "Together",
+              "performer": "Hypaton & David Guetta ft. Bonnie Tyler",
+              "genre": "Dance/Electro Pop",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "4:11"
+            },
+            {
+              "n": 69,
+              "title": "The Best",
+              "performer": "Hypaton & David Guetta",
+              "genre": "",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:19"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Anyma",
+      "slug": "anyma",
+      "image": "artist-anyma.jpg",
+      "albums": [
+        {
+          "title": "Tomorrowland 2025 (Mainstage)",
+          "slug": "tomorrowland-2025-mainstage",
+          "cover": "album-anyma-tomorrowland-2025-mainstage.jpg",
+          "trackCount": 22,
+          "tracks": [
+            {
+              "n": 1,
+              "title": "Where I'm From",
+              "performer": "Cassian & SCRIPT & Belladonna",
+              "genre": "Melodic House/Techno",
+              "label": "TSZR",
+              "duration": "3:08"
+            },
+            {
+              "n": 2,
+              "title": "Born Like That",
+              "performer": "Kevin de Vries & Jast",
+              "genre": "Melodic House/Techno",
+              "label": "AFTERLIFE",
+              "duration": "2:40"
+            },
+            {
+              "n": 3,
+              "title": "Voices In My Head",
+              "performer": "Anyma & Argy & Son Of Son",
+              "genre": "Melodic House/Techno",
+              "label": "THE END OF GENESYS",
+              "duration": "3:00"
+            },
+            {
+              "n": 4,
+              "title": "Hyper (DJ KUBA & NEITAN Remix)",
+              "performer": "GENESI",
+              "genre": "Techno",
+              "label": "DIYNAMIC",
+              "duration": "3:00"
+            },
+            {
+              "n": 5,
+              "title": "Cash Is King",
+              "performer": "Massano",
+              "genre": "Melodic House/Techno",
+              "label": "DIYNAMIC",
+              "duration": "2:50"
+            },
+            {
+              "n": 6,
+              "title": "Gangs",
+              "performer": "TH;EN & SLVR",
+              "genre": "Dance/Electro Pop",
+              "label": "FUTURE RAVE",
+              "duration": "2:10"
+            },
+            {
+              "n": 7,
+              "title": "Red Light, Green Light (Jast Remix)",
+              "performer": "Duke Dumont ft. Shaun Ross",
+              "genre": "Techno",
+              "label": "BLASE BOYS CLUB(VIRGIN EMI)",
+              "duration": "2:15"
+            },
+            {
+              "n": 8,
+              "title": "Heavy",
+              "performer": "Armin van Buuren & JOA",
+              "genre": "Melodic House/Techno",
+              "label": "ARMADA",
+              "duration": "3:05"
+            },
+            {
+              "n": 9,
+              "title": "System Overload",
+              "performer": "Joshlane",
+              "genre": "Indie Dance",
+              "label": "AFTERLIFE",
+              "duration": "2:30"
+            },
+            {
+              "n": 10,
+              "title": "Pictures Of You (Cassian Remix)",
+              "performer": "Anyma",
+              "genre": "Melodic House/Techno",
+              "label": "AFTERLIFE",
+              "duration": "1:55"
+            },
+            {
+              "n": 11,
+              "title": "The Feeling (2025 Private Edit)",
+              "performer": "Massano",
+              "genre": "",
+              "label": "RUNNING CLOUDS",
+              "duration": "3:35"
+            },
+            {
+              "n": 12,
+              "title": "Midnight City (Reezer & Driver Of The Future Remix)",
+              "performer": "M83",
+              "genre": "",
+              "label": "FREE",
+              "duration": "2:30"
+            },
+            {
+              "n": 13,
+              "title": "Turn On The Lights Again.. (Anyma Remix)",
+              "performer": "Fred again.. & Swedish House Mafia ft. Future",
+              "genre": "Dance/Electro Pop",
+              "label": "ATLANTIC(WARNER MUSIC)",
+              "duration": "3:10"
+            },
+            {
+              "n": 14,
+              "title": "Losing My Mind",
+              "performer": "Seth Hills & DAMEN",
+              "genre": "Dance/Electro Pop",
+              "label": "TOMORROWLAND",
+              "duration": "2:30"
+            },
+            {
+              "n": 15,
+              "title": "Move (Anyma & Cassian Remix)",
+              "performer": "Adam Port & Stryv ft. Malachiii",
+              "genre": "Techno",
+              "label": "KEINEMUSIK",
+              "duration": "3:20"
+            },
+            {
+              "n": 16,
+              "title": "Last Night (Anyma & Layton Giordani Remix)",
+              "performer": "Loofy",
+              "genre": "Techno",
+              "label": "NERVOUS",
+              "duration": "2:45"
+            },
+            {
+              "n": 17,
+              "title": "Traffic (Anyma & Stylo Remix)",
+              "performer": "Tiësto",
+              "genre": "",
+              "label": "MAGIK MUZIK(BLACK HOLE)",
+              "duration": "3:05"
+            },
+            {
+              "n": 18,
+              "title": "Out Of My Body",
+              "performer": "Anyma ft. EJAE",
+              "genre": "Melodic House/Techno",
+              "label": "THE END OF GENESYS",
+              "duration": "3:00"
+            },
+            {
+              "n": 19,
+              "title": "Kernkraft 400 (Brigado Crew Re-Interpretation)",
+              "performer": "Zombie Nation",
+              "genre": "",
+              "label": "",
+              "duration": "3:24"
+            },
+            {
+              "n": 20,
+              "title": "Syren (Adam Sellouk Remix)",
+              "performer": "Anyma & Rebūke",
+              "genre": "Melodic House/Techno",
+              "label": "AFTERLIFE",
+              "duration": "1:21"
+            },
+            {
+              "n": 21,
+              "title": "Consciousness (Omiki Remix)",
+              "performer": "Anyma & Chris Avantgarde",
+              "genre": "Goa/Psy-Trance",
+              "label": "FREE",
+              "duration": "1:54"
+            },
+            {
+              "n": 22,
+              "title": "Blinding Lights (Anyma & Mike Dean Remix)",
+              "performer": "The Weeknd",
+              "genre": "",
+              "label": "XO(REPUBLIC)",
+              "duration": "2:32"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -3,6 +3,27 @@
    Dark studio-console aesthetic
    ============================================ */
 
+/* ============================================
+   CANONICAL HOUSE-STYLE PALETTE (source of truth)
+   --------------------------------------------
+   This :root block is the reference palette. The docs Material theme mirrors
+   the accent in docs/stylesheets/extra.css; keep them in sync when changing a
+   color.
+
+   Colors and their WCAG AA status on the dark backgrounds (#06060c / #0a0a14):
+     --text-primary   #f0f0f5  17.0-17.8:1  AAA
+     --text-secondary #8888a0  5.6-5.9:1    AA
+     --text-muted     #80809a  5.1-5.3:1    AA   (was #555570 = 2.8:1, failed AA)
+     --accent         #2bb2a8  7.4-7.7:1    AA   (as TEXT on dark only)
+     --accent-soft    #4ecdc4  10.0-10.5:1  AAA
+
+   White-on-teal rule: never place white/light text on a SOLID #2bb2a8 fill
+   (only 2.6:1). Buttons use dark text #04181a on the teal fill (7.0:1). Where
+   white is required (the docs Material header bar), the primary is darkened to
+   #146b65 in extra.css so white clears WCAG AA (6.3:1). #2bb2a8 stays the
+   accent for text and tints elsewhere.
+   ============================================ */
+
 :root {
   --bg-deep: #06060c;
   --bg-dark: #0a0a14;
@@ -13,7 +34,7 @@
 
   --text-primary: #f0f0f5;
   --text-secondary: #8888a0;
-  --text-muted: #555570;
+  --text-muted: #80809a;
 
   --accent: #2bb2a8;
   --accent-glow: rgba(43, 178, 168, 0.18);
@@ -418,6 +439,198 @@ section { padding: 7rem 2rem; }
 
 .hero-poster { transform-style: preserve-3d; will-change: transform; }
 
+/* ---- Library browser ---- */
+.browser {
+  background: var(--bg-dark);
+  border-top: 1px solid var(--border);
+}
+
+.browser-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 340px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Shared card surface for the three panels */
+.browser-tree,
+.browser-stage,
+.browser-meta {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+/* Tree */
+.browser-tree {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.browser-tree::-webkit-scrollbar,
+.browser-meta::-webkit-scrollbar,
+.tracklist::-webkit-scrollbar { width: 6px; }
+.browser-tree::-webkit-scrollbar-track,
+.browser-meta::-webkit-scrollbar-track,
+.tracklist::-webkit-scrollbar-track { background: transparent; }
+.browser-tree::-webkit-scrollbar-thumb,
+.browser-meta::-webkit-scrollbar-thumb,
+.tracklist::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
+
+.tree-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-row:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.tree-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.tree-folder {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tree-album {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.tree-album:hover {
+  color: var(--accent-soft);
+}
+
+/* Nesting */
+.tree-kids {
+  display: none;
+  margin-left: 0.9rem;
+  padding-left: 0.4rem;
+  border-left: 1px solid var(--border);
+}
+
+.tree-kids.open {
+  display: block;
+}
+
+/* Stage (square album covers) */
+.browser-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 340px;
+  padding: 1.5rem;
+}
+
+.browser-stage img {
+  max-width: 100%;
+  max-height: min(60vh, 480px);
+  width: auto;
+  object-fit: contain;
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* No src: hide the broken image and show a hint via the figure */
+.browser-stage img:not([src]) { display: none; }
+
+.browser-stage:has(img:not([src]))::after {
+  content: 'Select an album to preview its cover';
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  max-width: 220px;
+  line-height: 1.6;
+}
+
+/* Meta panel */
+.browser-meta {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.browser-meta h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin-bottom: 0.4rem;
+}
+
+.browser-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tracklist {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.tracklist li {
+  display: grid;
+  grid-template-columns: 2em 1fr auto;
+  align-items: baseline;
+  gap: 0.2rem 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.tracklist .tnum {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.tracklist .tname {
+  color: var(--text-primary);
+}
+
+.tracklist .tgenre {
+  grid-column: 2;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.tracklist .tdur {
+  grid-row: 1;
+  grid-column: 3;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
 /* ---- Workflow ---- */
 .workflow {
   background: var(--bg-dark);
@@ -725,8 +938,6 @@ section { padding: 7rem 2rem; }
   100% { transform: scale(1); opacity: 1; }
 }
 
-.hero-desc { min-height: 1.6em; }
-
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
   .nav { padding: 0.75rem 1.25rem; }
@@ -746,6 +957,12 @@ section { padding: 7rem 2rem; }
   .feature-grid { grid-template-columns: 1fr; gap: 1rem; }
 
   .gallery-item { width: 160px; }
+
+  .browser-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .browser-tree { max-height: 320px; }
+  .browser-stage { min-height: 240px; }
+  .browser-meta { max-height: none; }
+  .tracklist { max-height: 360px; }
 
   .workflow-step { gap: 1rem; }
   .step-number { width: 36px; height: 36px; font-size: 0.95rem; }
