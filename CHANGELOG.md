@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Removed
+
+- Internal: dropped the write-only `tags["edition"]` field. It was set during festival canonicalization but never read; the edition is already reflected in the festival display string (and thus the album name and folder), so there is no user-visible change.
+
 ## [0.13.0] - 2026-06-12
 
 ### Added

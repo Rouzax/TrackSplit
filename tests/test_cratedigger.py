@@ -391,14 +391,15 @@ class TestApplyCratediggerCanon:
         apply_cratedigger_canon(tags, cd_home / "video.mkv")
         assert tags["artist"] == "Deadmau5"
         assert tags["festival"] == "Tomorrowland"
-        assert tags["edition"] == ""
+        assert "edition" not in tags
 
     def test_edition_included_in_display(self, cd_home: Path, monkeypatch):
         monkeypatch.setattr(Path, "home", lambda: cd_home)
         tags = {"artist": "Armin van Buuren", "festival": "Tomorrowland Winter"}
         apply_cratedigger_canon(tags, cd_home / "video.mkv")
+        # The edition is reflected in the festival display string, not a separate tag.
         assert tags["festival"] == "Tomorrowland Winter"
-        assert tags["edition"] == "Winter"
+        assert "edition" not in tags
 
     def test_no_config_noop(self, tmp_path: Path, monkeypatch):
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -406,7 +407,7 @@ class TestApplyCratediggerCanon:
         apply_cratedigger_canon(tags, tmp_path / "video.mkv")
         assert tags["artist"] == "SomeArtist"
         assert tags["festival"] == "Some Fest"
-        assert tags["edition"] == ""
+        assert "edition" not in tags
 
     def test_venue_resolved(self, cd_home: Path, monkeypatch):
         monkeypatch.setattr(Path, "home", lambda: cd_home)
