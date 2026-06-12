@@ -383,9 +383,6 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
                         raw_festival, display, edition,
                     )
         tags["festival"] = display
-        tags["edition"] = edition
-    else:
-        tags.setdefault("edition", "")
 
     raw_venue = tags.get("venue", "")
     if raw_venue:
@@ -412,7 +409,7 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
 def apply_cratedigger_canon(tags: dict, input_path: Path) -> dict:
     """Rewrite ``tags`` in place with canonical festival/artist + MBID fallback.
 
-    Adds ``edition`` key. Safe to call with or without a CrateDigger config
-    available: when no config exists the tags are returned unchanged.
+    Safe to call with or without a CrateDigger config available: when no
+    config exists the tags are returned unchanged.
     """
     return apply_cratedigger_canon_with(tags, load_config(input_path))
