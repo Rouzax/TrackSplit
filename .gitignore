@@ -23,3 +23,6 @@ docs/superpowers/
 
 # Local-only showcase asset builder (references private library mount)
 scripts/build-showcase-assets.py
+
+# Local-only app-icon builder
+scripts/build-icons.py
