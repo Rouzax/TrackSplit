@@ -20,3 +20,6 @@ docs/superpowers/
 
 # Git worktrees
 .worktrees/
+
+# Local-only showcase asset builder (references private library mount)
+scripts/build-showcase-assets.py
