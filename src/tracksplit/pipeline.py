@@ -746,7 +746,10 @@ def process_file(
 
     if level == RegenLevel.SKIP:
         primary_artist = album.albumartists[0] if album.albumartists else album.artist
-        dj_artwork_data = find_dj_artwork(input_path, artist=primary_artist)
+        primary_slug = (tags.get("albumartist_slugs") or [""])[0]
+        dj_artwork_data = find_dj_artwork(
+            input_path, slug=primary_slug, artist=primary_artist,
+        )
         artist_dir = output_dir / safe_filename(album.artist_folder)
         refresh_artist_cover(
             artist_dir,
@@ -783,7 +786,10 @@ def process_file(
 
     if level == RegenLevel.RETAG:
         primary_artist = album.albumartists[0] if album.albumartists else album.artist
-        dj_artwork_data = find_dj_artwork(input_path, artist=primary_artist)
+        primary_slug = (tags.get("albumartist_slugs") or [""])[0]
+        dj_artwork_data = find_dj_artwork(
+            input_path, slug=primary_slug, artist=primary_artist,
+        )
         artist_dir = output_dir / safe_filename(album.artist_folder)
         refresh_artist_cover(
             artist_dir,
@@ -848,8 +854,9 @@ def process_file(
         _progress("Extracting cover art")
         cover_data = extract_cover_from_mkv(input_path, ffprobe_data=ffprobe_data)
         primary_artist = album.albumartists[0] if album.albumartists else album.artist
+        primary_slug = (tags.get("albumartist_slugs") or [""])[0]
         dj_artwork_data = find_dj_artwork(
-            input_path, artist=primary_artist,
+            input_path, slug=primary_slug, artist=primary_artist,
         )
 
         _progress("Composing covers")

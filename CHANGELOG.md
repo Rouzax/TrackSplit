@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Artist image lookup (`folder.jpg` / `artist.jpg`) now resolves CrateDigger's artwork cache by the canonical slug read from the `CRATEDIGGER_ALBUMARTIST_SLUGS` tag (index 0, the primary album artist), rather than by the sanitized display name. The slug is normalized for the filesystem and used to locate `cache/artists/<slug>/`. For files that do not carry the slug tag, the slug is derived from the artist name using the same `slugify` logic CrateDigger applies. This fixes artwork misses caused by display-name truncation (e.g. "Above & Beyond" stored under "Above"), case differences, Unicode normalization differences, and trailing punctuation. **Coupling:** requires CrateDigger to key its artwork cache by slug; both tools must be updated together.
 - Artist photo (`folder.jpg` / `artist.jpg`) is now center-cropped to a square
   before compositing, so faces keep natural proportions. Previously a landscape
   source (for example a 1920x1080 `fanart.jpg`) was scaled directly to the
@@ -29,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   affected album and artist covers automatically (only covers whose rendering
   changes are rewritten). Artist cards now also honor the cover schema version;
   previously they refreshed only when the source artwork itself changed.
+
+### Removed
+
+- The sanitized-name-based artist image lookup path (`safe_artist_name` helper) is removed. Slug-based lookup is now the sole resolution strategy.
 
 ## [0.12.0] - 2026-06-11
 
