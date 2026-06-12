@@ -429,36 +429,31 @@ class TestStateDir:
             assert result == Path("/fake/state/TrackSplit")
 
 
-class TestSafeArtistName:
-    def test_passthrough_for_safe_name(self):
-        assert paths.safe_artist_name("Martin Garrix") == "Martin Garrix"
+class TestSlugHelpers:
+    """Hand-synced with CrateDigger festival_organizer/normalization.py.
 
-    def test_replaces_unicode(self):
-        assert paths.safe_artist_name("Tiësto") == "Ti_sto"
+    These must stay byte-identical to CD's slugify/folder_slug/strip_diacritics,
+    since they resolve the shared slug-keyed artwork cache.
+    """
 
-    def test_replaces_colon(self):
-        assert paths.safe_artist_name("VER:WEST") == "VER_WEST"
+    def test_strip_diacritics(self):
+        assert paths.strip_diacritics("Tiësto") == "Tiesto"
+        assert paths.strip_diacritics("Kölsch") == "Kolsch"
+        assert paths.strip_diacritics("plain") == "plain"
 
-    def test_replaces_slash(self):
-        assert paths.safe_artist_name("AC/DC") == "AC_DC"
+    def test_slugify(self):
+        assert paths.slugify("Above & Beyond") == "aboveandbeyond"
+        assert paths.slugify("Tiësto") == "tiesto"
+        assert paths.slugify("Fred again..") == "fredagain"
+        assert paths.slugify("Kölsch") == "kolsch"
+        assert paths.slugify("Cosmic Gate") == "cosmicgate"
+        assert paths.slugify("AFROJACK") == "afrojack"
 
-    def test_preserves_ampersand(self):
-        assert paths.safe_artist_name("Above & Beyond") == "Above & Beyond"
-
-    def test_preserves_parentheses(self):
-        assert paths.safe_artist_name("DJ (Official)") == "DJ (Official)"
-
-    def test_preserves_dot_and_hyphen(self):
-        assert paths.safe_artist_name("Mr. Sub-Zero") == "Mr. Sub-Zero"
-
-    def test_empty_returns_underscore(self):
-        assert paths.safe_artist_name("") == "_"
-
-    def test_whitespace_only_returns_underscore(self):
-        assert paths.safe_artist_name("   ") == "_"
-
-    def test_strips_whitespace(self):
-        assert paths.safe_artist_name("  Garrix  ") == "Garrix"
+    def test_folder_slug(self):
+        assert paths.folder_slug("fredagain..") == "fredagain"
+        assert paths.folder_slug("tiesto") == "tiesto"
+        assert paths.folder_slug("aboveandbeyond") == "aboveandbeyond"
+        assert paths.folder_slug("name ") == "name"
 
 
 class TestDetectLibraryInterior:

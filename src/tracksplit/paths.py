@@ -37,6 +37,7 @@ import os
 import re
 import sys
 import tempfile
+import unicodedata
 from datetime import date
 from pathlib import Path
 
@@ -102,15 +103,37 @@ def cratedigger_cache_dir() -> Path:
     return Path(platformdirs.user_cache_dir(CRATEDIGGER_APP_NAME, appauthor=False))
 
 
-_SAFE_ARTIST_RE = re.compile(r"[^A-Za-z0-9 _()&.\-]")
+# --- Slug helpers (hand-synced with CrateDigger normalization.py) -----------
+# These resolve the shared slug-keyed artwork cache and MUST stay byte-identical
+# to CrateDigger ``festival_organizer/normalization.py`` (slugify / folder_slug /
+# strip_diacritics), the same hand-sync discipline used for update_check.py.
 
 
-def safe_artist_name(name: str) -> str:
-    """Sanitize an artist name for CrateDigger cache directory lookups.
+def strip_diacritics(text: str) -> str:
+    """Remove diacritics: 'Tiësto' -> 'Tiesto'."""
+    nfkd = unicodedata.normalize("NFD", text)
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
 
-    Mirrors CrateDigger's ``_safe_artist_name``.
+
+def slugify(name: str) -> str:
+    """1001TL-style slug from a display name: ASCII-fold, lowercase,
+    '&' -> 'and', then keep only [a-z0-9].
+
+    The deterministic fallback cache key for an artist with no embedded slug.
     """
-    return _SAFE_ARTIST_RE.sub("_", name).strip() or "_"
+    folded = strip_diacritics(name).lower()
+    folded = folded.replace("&", "and")
+    return re.sub(r"[^a-z0-9]", "", folded)
+
+
+def folder_slug(slug: str) -> str:
+    """Make a real 1001TL slug safe as a directory name.
+
+    Windows silently strips trailing dots/spaces, so 'fredagain..' must become
+    the folder 'fredagain'. A real slug's internal characters are already
+    URL-safe, so only the trailing strip is needed.
+    """
+    return slug.rstrip(" .")
 
 
 def cratedigger_data_dir() -> Path:

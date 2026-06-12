@@ -255,142 +255,140 @@ class TestFindDjArtwork:
         empty.mkdir()
         monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: empty)
 
-    def test_finds_dj_artwork_jpg_in_global(self, tmp_path, monkeypatch):
-        """Prefers dj-artwork.jpg over fanart.jpg."""
-        cd_dir = tmp_path / ".cratedigger"
-        artist_dir = cd_dir / "artists" / "Tiësto"
+    def test_slug_resolves_cache_folder(self, tmp_path, monkeypatch):
+        """The embedded slug keys the cache folder directly."""
+        cache_dir = tmp_path / "cd_cache"
+        artist_dir = cache_dir / "artists" / "aboveandbeyond"
         artist_dir.mkdir(parents=True)
-        (artist_dir / "dj-artwork.jpg").write_bytes(b"dj-artwork-data")
-        (artist_dir / "fanart.jpg").write_bytes(b"fanart-data")
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"slug-artwork")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.walkup_cratedigger_dir",
-            lambda _p: cd_dir,
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
         )
 
         result = find_dj_artwork(
-            tmp_path / "music" / "file.mkv",
-            artist="Tiësto",
+            tmp_path / "file.mkv", slug="aboveandbeyond", artist="Above & Beyond",
         )
-        assert result == b"dj-artwork-data"
+        assert result == b"slug-artwork"
+
+    def test_folder_slug_strips_trailing_dots(self, tmp_path, monkeypatch):
+        """A real slug with trailing dots resolves the Windows-safe folder."""
+        cache_dir = tmp_path / "cd_cache"
+        artist_dir = cache_dir / "artists" / "fredagain"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"fred-artwork")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", slug="fredagain..")
+        assert result == b"fred-artwork"
+
+    def test_prefers_dj_artwork_over_fanart(self, tmp_path, monkeypatch):
+        cache_dir = tmp_path / "cd_cache"
+        artist_dir = cache_dir / "artists" / "tiesto"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"dj-data")
+        (artist_dir / "fanart.jpg").write_bytes(b"fan-data")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", slug="tiesto")
+        assert result == b"dj-data"
 
     def test_falls_back_to_fanart(self, tmp_path, monkeypatch):
-        """Uses fanart.jpg when dj-artwork.jpg is absent."""
+        cache_dir = tmp_path / "cd_cache"
+        artist_dir = cache_dir / "artists" / "tiesto"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "fanart.jpg").write_bytes(b"fan-data")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", slug="tiesto")
+        assert result == b"fan-data"
+
+    def test_slugify_fallback_when_no_slug(self, tmp_path, monkeypatch):
+        """Files without the slug tag fall back to slugify(artist)."""
+        cache_dir = tmp_path / "cd_cache"
+        artist_dir = cache_dir / "artists" / "cosmicgate"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"cg-artwork")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", artist="Cosmic Gate")
+        assert result == b"cg-artwork"
+
+    def test_slug_wins_over_artist_slugify(self, tmp_path, monkeypatch):
+        """When both are given, the explicit slug is used (not slugify(artist))."""
+        cache_dir = tmp_path / "cd_cache"
+        (cache_dir / "artists" / "aboveandbeyond").mkdir(parents=True)
+        (cache_dir / "artists" / "aboveandbeyond" / "dj-artwork.jpg").write_bytes(b"by-slug")
+        # slugify("Above & Beyond") would also be "aboveandbeyond", so use a slug
+        # that differs from slugify(artist) to prove the slug path is taken.
+        (cache_dir / "artists" / "ab").mkdir(parents=True)
+        (cache_dir / "artists" / "ab" / "dj-artwork.jpg").write_bytes(b"by-real-slug")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", slug="ab", artist="Above & Beyond")
+        assert result == b"by-real-slug"
+
+    def test_finds_in_data_dir_by_slug(self, tmp_path, monkeypatch):
+        """Walk-up .cratedigger/artists/<slug>/ is searched too."""
         cd_dir = tmp_path / ".cratedigger"
-        artist_dir = cd_dir / "artists" / "DJ"
+        artist_dir = cd_dir / "artists" / "tiesto"
         artist_dir.mkdir(parents=True)
-        (artist_dir / "fanart.jpg").write_bytes(b"fanart-data")
-        monkeypatch.setattr(
-            "tracksplit.paths.walkup_cratedigger_dir",
-            lambda _p: cd_dir,
-        )
-
-        result = find_dj_artwork(
-            tmp_path / "music" / "file.mkv",
-            artist="DJ",
-        )
-        assert result == b"fanart-data"
-
-    def test_finds_in_library_cache(self, tmp_path, monkeypatch):
-        """Resolver points at a library-local .cratedigger/artists/ cache."""
-        lib_dir = tmp_path / "library"
-        cd_dir = lib_dir / ".cratedigger"
-        artist_dir = cd_dir / "artists" / "DJ Name"
-        artist_dir.mkdir(parents=True)
-        (artist_dir / "dj-artwork.jpg").write_bytes(b"lib-artwork")
-
-        input_file = lib_dir / "videos" / "file.mkv"
-        input_file.parent.mkdir(parents=True)
-
-        monkeypatch.setattr(
-            "tracksplit.paths.walkup_cratedigger_dir",
-            lambda _p: cd_dir,
-        )
-
-        result = find_dj_artwork(input_file, artist="DJ Name")
-        assert result == b"lib-artwork"
-
-    def test_returns_none_when_not_found(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "tracksplit.paths.walkup_cratedigger_dir",
-            lambda _p: None,
-        )
-        monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir",
-            lambda: tmp_path / "empty_visible",
-        )
-        result = find_dj_artwork(
-            tmp_path / "file.flac",
-            artist="Nobody",
-        )
-        assert result is None
-
-    def test_no_artist_returns_none(self, tmp_path):
-        result = find_dj_artwork(tmp_path / "file.flac")
-        assert result is None
-
-    def test_finds_artwork_in_cache_dir(self, tmp_path, monkeypatch):
-        """Cache dir is the primary lookup location."""
-        cache_dir = tmp_path / "cd_cache"
-        artist_dir = cache_dir / "artists" / "AFROJACK"
-        artist_dir.mkdir(parents=True)
-        (artist_dir / "dj-artwork.jpg").write_bytes(b"cache-artwork")
-        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
-        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"data-artwork")
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: cd_dir)
         monkeypatch.setattr(
             "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
         )
 
-        result = find_dj_artwork(tmp_path / "file.mkv", artist="AFROJACK")
-        assert result == b"cache-artwork"
+        result = find_dj_artwork(tmp_path / "music" / "file.mkv", slug="tiesto")
+        assert result == b"data-artwork"
 
-    def test_cache_dir_uses_sanitized_name(self, tmp_path, monkeypatch):
-        """Cache dir uses the sanitized artist name (e.g. Tiësto -> Ti_sto)."""
+    def test_cache_takes_priority_over_data(self, tmp_path, monkeypatch):
         cache_dir = tmp_path / "cd_cache"
-        artist_dir = cache_dir / "artists" / "Ti_sto"
-        artist_dir.mkdir(parents=True)
-        (artist_dir / "dj-artwork.jpg").write_bytes(b"sanitized-artwork")
-        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
-        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
-        monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
-        )
-
-        result = find_dj_artwork(tmp_path / "file.mkv", artist="Tiësto")
-        assert result == b"sanitized-artwork"
-
-    def test_cache_dir_takes_priority_over_data_dir(self, tmp_path, monkeypatch):
-        cache_dir = tmp_path / "cd_cache"
-        cache_artist = cache_dir / "artists" / "DJ"
-        cache_artist.mkdir(parents=True)
-        (cache_artist / "dj-artwork.jpg").write_bytes(b"from-cache")
-
+        (cache_dir / "artists" / "tiesto").mkdir(parents=True)
+        (cache_dir / "artists" / "tiesto" / "dj-artwork.jpg").write_bytes(b"from-cache")
         data_dir = tmp_path / ".cratedigger"
-        data_artist = data_dir / "artists" / "DJ"
-        data_artist.mkdir(parents=True)
-        (data_artist / "dj-artwork.jpg").write_bytes(b"from-data")
-
+        (data_dir / "artists" / "tiesto").mkdir(parents=True)
+        (data_dir / "artists" / "tiesto" / "dj-artwork.jpg").write_bytes(b"from-data")
         monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
         monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: data_dir)
         monkeypatch.setattr(
             "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
         )
 
-        result = find_dj_artwork(tmp_path / "file.mkv", artist="DJ")
+        result = find_dj_artwork(tmp_path / "file.mkv", slug="tiesto")
         assert result == b"from-cache"
 
-    def test_data_dir_tries_sanitized_name(self, tmp_path, monkeypatch):
-        data_dir = tmp_path / ".cratedigger"
-        artist_dir = data_dir / "artists" / "VER_WEST"
-        artist_dir.mkdir(parents=True)
-        (artist_dir / "dj-artwork.jpg").write_bytes(b"data-sanitized")
+    def test_no_slug_no_artist_returns_none(self, tmp_path):
+        assert find_dj_artwork(tmp_path / "file.flac") is None
 
-        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: data_dir)
+    def test_returns_none_when_not_found(self, tmp_path, monkeypatch):
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty_visible",
         )
-
-        result = find_dj_artwork(tmp_path / "file.mkv", artist="VER:WEST")
-        assert result == b"data-sanitized"
+        result = find_dj_artwork(tmp_path / "file.flac", slug="nobody")
+        assert result is None
 
     def test_logs_not_found(self, tmp_path, monkeypatch, caplog):
         import logging
@@ -401,7 +399,7 @@ class TestFindDjArtwork:
         )
 
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cover"):
-            result = find_dj_artwork(tmp_path / "file.mkv", artist="Nobody")
+            result = find_dj_artwork(tmp_path / "file.mkv", slug="nobody")
         assert result is None
         assert any("found=false" in r.message for r in caplog.records)
 

@@ -223,8 +223,8 @@ If none of the locations has the file, TrackSplit continues without it (raw tag 
 | `artists.json` | Canonical artist name resolution (e.g. `"tiesto"` to `"Tiësto"`). Applied before the artist folder name and the `ALBUMARTIST` tag are written. Case- and diacritic-insensitive, so both `"Tiesto"` and `"TIËSTO"` resolve correctly. |
 | `dj_cache.json` | Supplements `artists.json` with per-DJ aliases scraped by CrateDigger. Loaded before `artists.json` so manual entries in `artists.json` win when the same alias appears in both. |
 | `mbid_cache.json` | Fills missing MusicBrainz artist IDs. For Tier-1 sources (no CrateDigger tags) the `ALBUMARTIST` is looked up here to populate `MUSICBRAINZ_ALBUMARTISTID`. For Tier-2 sources, any empty slot in the positional MBID list (per-track `MUSICBRAINZ_ARTISTID` and album-level `MUSICBRAINZ_ALBUMARTISTID`) is backfilled from this cache. Unknown names stay empty. |
-| `artists/{Artist}/dj-artwork.jpg` | DJ portrait used to compose the artist cover (`folder.jpg` / `artist.jpg`). Looked up by the canonical artist name. |
-| `artists/{Artist}/fanart.jpg` | Fallback portrait used when `dj-artwork.jpg` is not present. |
+| `artists/{slug}/dj-artwork.jpg` | DJ portrait used to compose the artist cover (`folder.jpg` / `artist.jpg`). Looked up by the CrateDigger canonical slug (from the `CRATEDIGGER_ALBUMARTIST_SLUGS` tag, index 0). For files without that tag, the slug is derived from the artist name using the same `slugify` logic CrateDigger uses. This means artwork is found correctly even when the displayed artist name was truncated, cased differently, or stored with Unicode differences. |
+| `artists/{slug}/fanart.jpg` | Fallback portrait used when `dj-artwork.jpg` is not present. Resolved by the same slug. |
 
 ### Re-run manifest details
 

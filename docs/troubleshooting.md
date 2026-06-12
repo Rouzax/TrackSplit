@@ -229,6 +229,20 @@ pip install -e . --force-reinstall
 
 ---
 
+## Artist image is missing or shows a placeholder
+
+**What you see:** The `folder.jpg` / `artist.jpg` for an artist is absent or falls back to a generic placeholder, even though CrateDigger has a profile for that artist.
+
+**What is happening:** TrackSplit looks up the artist image by the CrateDigger canonical slug, read from the `CRATEDIGGER_ALBUMARTIST_SLUGS` tag embedded in the source file. It then looks for `cache/artists/<slug>/dj-artwork.jpg` (or `fanart.jpg`) in the CrateDigger data directory. The image is missing if:
+
+- CrateDigger has no cached artwork for that artist yet. Run CrateDigger on the source file to fetch it, then re-run TrackSplit.
+- The source file predates the `CRATEDIGGER_ALBUMARTIST_SLUGS` tag. TrackSplit falls back to deriving the slug from the artist name, which works for most artists but may miss one if the cache folder name differs from what `slugify` produces. Re-enriching the file with a current version of CrateDigger embeds the slug tag and removes the ambiguity.
+- The CrateDigger data directory is not found. Check that `CRATEDIGGER_DATA_DIR` is set correctly, or that CrateDigger is installed in its default location.
+
+**Fix:** Re-run CrateDigger on the source video to refresh its artwork cache and embed the slug tag, then re-run TrackSplit.
+
+---
+
 ## Where are my logs?
 
 TrackSplit creates a new log file for each CLI invocation, named with the timestamp and a short random suffix (for example, `split-2026-05-08T14-22-01-a3f2.log`). Log files are stored in:

@@ -179,6 +179,7 @@ class TestParseTags:
             "CRATEDIGGER_1001TL_VENUE": "Boom, Belgium",
             "CRATEDIGGER_1001TL_DATE": "2024-07-21",
             "CRATEDIGGER_1001TL_DJ_ARTWORK": "/path/to/art.jpg",
+            "CRATEDIGGER_ALBUMARTIST_SLUGS": "tiesto",
         })
         tags = parse_tags(data)
         assert tags["artist"] == "Tiesto"
@@ -189,7 +190,17 @@ class TestParseTags:
         assert tags["venue"] == "Boom, Belgium"
         assert tags["comment"] == "https://www.1001tracklists.com/tracklist/abc"
         assert tags["dj_artwork"] == "/path/to/art.jpg"
+        assert tags["albumartist_slugs"] == ["tiesto"]
         assert tags["cratedigger"] is True
+
+    def test_albumartist_slugs_multi_b2b(self):
+        data = _make_ffprobe_data(tags={
+            "ARTIST": "Fred again..",
+            "CRATEDIGGER_ALBUMARTIST_SLUGS": "fredagain..|thomasbangalter",
+        })
+        tags = parse_tags(data)
+        # Album-artist order preserved; index 0 is the primary.
+        assert tags["albumartist_slugs"] == ["fredagain..", "thomasbangalter"]
 
     def test_no_cratedigger_tags(self):
         data = _make_ffprobe_data(tags={
@@ -205,6 +216,7 @@ class TestParseTags:
         assert tags["location"] == ""
         assert tags["comment"] == ""
         assert tags["dj_artwork"] == ""
+        assert tags["albumartist_slugs"] == []
         assert tags["cratedigger"] is False
 
     def test_case_insensitive_lookup(self):

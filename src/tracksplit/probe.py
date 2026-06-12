@@ -129,6 +129,11 @@ def parse_tags(ffprobe_data: dict) -> dict:
         "location": ci.get("CRATEDIGGER_1001TL_LOCATION", ""),
         "comment": ci.get("CRATEDIGGER_1001TL_URL", ""),
         "dj_artwork": ci.get("CRATEDIGGER_1001TL_DJ_ARTWORK", ""),
+        "albumartist_slugs": [
+            s.strip()
+            for s in ci.get("CRATEDIGGER_ALBUMARTIST_SLUGS", "").split("|")
+            if s.strip()
+        ],
         "enriched_at": ci.get("CRATEDIGGER_ENRICHED_AT", ""),
         "albumartist_display": ci.get("CRATEDIGGER_ALBUMARTIST_DISPLAY", ""),
         "albumartists": albumartists,
