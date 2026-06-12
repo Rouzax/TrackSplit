@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-06-12
+
 ### Added
 
 - Interactive library browser on the landing page. Click an artist, then an album, to see its cover art and full tracklist. This is a documentation/site change only; TrackSplit's behaviour is unchanged.
+- App icons and favicons for the landing page and docs: a split-monogram mark (off-white `T` + teal `S`) on a dark rounded square, wired into the site `<head>` and as the MkDocs favicon and header logo.
 
 ### Changed
 
