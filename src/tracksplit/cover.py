@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # fonts, accent logic, gradient math, etc). TrackSplit uses the stored
 # vs current value of this constant to decide whether an existing album
 # needs a cover-only rebuild on the skip path.
-COVER_SCHEMA_VERSION = 2
+COVER_SCHEMA_VERSION = 3
 
 # ---------------------------------------------------------------------------
 # Font helpers

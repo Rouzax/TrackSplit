@@ -308,6 +308,7 @@ def rebuild_cover_only(
         stage=tags.get("stage", ""),
         venue=tags.get("venue", ""),
         background_data=background_data,
+        albumartists=tags.get("albumartists") or None,
     )
     new_sha = hashlib.sha256(cover_bytes).hexdigest() if cover_bytes else ""
 
@@ -406,6 +407,7 @@ def retag_album(
             stage=album.stage,
             venue=album.venue or album.location,
             background_data=cover_data,
+            albumartists=tags.get("albumartists") or None,
         )
         atomic_write_bytes(cover_path, cover_bytes)
         folder_jpg = album_dir / "folder.jpg"
@@ -867,6 +869,7 @@ def process_file(
             stage=album.stage,
             venue=album.venue or album.location,
             background_data=cover_data,
+            albumartists=tags.get("albumartists") or None,
         )
 
         # Tag all tracks

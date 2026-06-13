@@ -2155,3 +2155,36 @@ class TestSkipBranchCoverRebuild:
 
         assert process_file(src, tmp_path / "out") is False
         assert mock_rebuild.call_count == 0
+
+
+class TestRebuildCoverPassesAlbumartists:
+    def test_genuine_list_is_passed_to_compose(self, tmp_path):
+        import hashlib
+        import json
+        from unittest.mock import MagicMock
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME, load_album_manifest
+        from tracksplit.pipeline import rebuild_cover_only
+        from tests._manifest_helpers import make_manifest_dict, default_tags
+
+        fake = b"FAKECOVERBYTES"
+        sha = hashlib.sha256(fake).hexdigest()
+        tags = default_tags()
+        tags["artist"] = "Above & Beyond"
+        tags["albumartists"] = ["Above & Beyond"]
+        md = make_manifest_dict(tags=tags, cover_sha256=sha)
+        (tmp_path / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(md))
+        manifest = load_album_manifest(tmp_path)
+
+        compose = MagicMock(return_value=fake)   # sha matches -> short-circuits, no track files needed
+        extract = MagicMock(return_value=None)
+
+        rebuild_cover_only(
+            album_dir=tmp_path,
+            manifest=manifest,
+            source_path=tmp_path / "x.mkv",
+            ffprobe_data={},
+            extract=extract,
+            compose=compose,
+        )
+
+        assert compose.call_args.kwargs["albumartists"] == ["Above & Beyond"]
