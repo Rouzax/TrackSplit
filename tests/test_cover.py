@@ -9,6 +9,7 @@ from PIL import Image
 
 from tracksplit.cover import (
     _is_image_attachment,
+    _layout_album_cover,
     _load_font,
     _pick_image_attachment,
     _wcag_contrast,
@@ -792,3 +793,32 @@ class TestFestivalFallback:
             size=1000,
         )
         assert L["fest_text"] == "RED ROCKS"
+
+
+class TestLayoutAlbumArtistLines:
+    def _lines(self, albumartists, artist="X"):
+        L = _layout_album_cover(
+            artist, "Festival", "", "", "", 1000, albumartists=albumartists
+        )
+        return L["artist_lines"]
+
+    def test_single_act_with_ampersand_stays_one_line(self):
+        assert self._lines(["Above & Beyond"]) == ["ABOVE & BEYOND"]
+
+    def test_b2b_keeps_ampersand_prefix(self):
+        assert self._lines(["Martin Garrix", "Alesso"]) == ["MARTIN GARRIX", "& ALESSO"]
+
+    def test_three_way_b2b(self):
+        assert self._lines(["A", "B", "C"]) == ["A", "& B", "& C"]
+
+    def test_none_falls_back_to_split_artist(self):
+        L = _layout_album_cover(
+            "Above & Beyond", "Festival", "", "", "", 1000, albumartists=None
+        )
+        assert L["artist_lines"] == ["ABOVE", "& BEYOND"]
+
+    def test_empty_list_falls_back_to_split_artist(self):
+        L = _layout_album_cover(
+            "Above & Beyond", "Festival", "", "", "", 1000, albumartists=[]
+        )
+        assert L["artist_lines"] == ["ABOVE", "& BEYOND"]

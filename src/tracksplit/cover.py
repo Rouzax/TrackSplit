@@ -61,8 +61,9 @@ def split_artist(name: str) -> list[str]:
        one line per artist segment, connectors kept on subsequent lines.
     3. No connector: single-element list with the original name.
 
-    No group protection: users who want a duo kept on one line should
-    alias it to a short canonical form via the artist_aliases config.
+    This is the fallback used only when no structured album-artist list is
+    available (non-CrateDigger sources). When CrateDigger has identified the
+    acts, the cover builds lines from that list instead and bypasses this.
     """
     paren_match = re.match(r"^(.+?)\s*\((.+)\)\s*$", name)
     if paren_match:
@@ -488,6 +489,7 @@ def _layout_album_cover(
     stage: str,
     venue: str,
     size: int,
+    albumartists: list[str] | None = None,
 ) -> dict:
     """Measure fonts and compute positions for compose_cover.
 
@@ -516,7 +518,15 @@ def _layout_album_cover(
 
     PAD_ARTIST_LINES = int(6 * s)
     min_hero = int(80 * s)
-    artist_lines = [line.upper() for line in split_artist(artist)]
+    if albumartists:
+        # One line per act; "& " prefix on subsequent lines marks a B2B,
+        # matching CrateDigger's " & " album-artist join. A single-element
+        # list (a single act such as "Above & Beyond") yields one line and
+        # is never split, which is the fix.
+        base_lines = [albumartists[0]] + [f"& {a}" for a in albumartists[1:]]
+    else:
+        base_lines = split_artist(artist)
+    artist_lines = [line.upper() for line in base_lines]
     artist_lines = _word_wrap_lines(artist_lines, True, max_text_w, min_hero)
     longest = max(artist_lines, key=len) if artist_lines else ""
     artist_font = _auto_fit(
@@ -620,6 +630,7 @@ def compose_cover(
     venue: str = "",
     background_data: bytes | None = None,
     size: int = 1000,
+    albumartists: list[str] | None = None,
 ) -> bytes:
     """Compose an album cover with the set thumb fading into the dark.
 
@@ -627,7 +638,7 @@ def compose_cover(
     fading into a darkening gradient below; accent line with artist above,
     festival / date / stage / venue below.
     """
-    L = _layout_album_cover(artist, festival, date, stage, venue, size)
+    L = _layout_album_cover(artist, festival, date, stage, venue, size, albumartists=albumartists)
 
     bg, accent = _prepare_background(
         background_data, size, darkness=0.18, reject_non_landscape=True
