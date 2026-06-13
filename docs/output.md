@@ -87,27 +87,13 @@ This file is always created.
 
 **Background image source:** the cover uses the embedded video cover image as a blurred full-bleed background. The source must be landscape (aspect ratio at least 1.2). If the embedded image is portrait or near-square, TrackSplit falls back to a generated gradient background and logs a warning. When an MKV carries multiple image attachments, an attachment named `cover_land` is preferred over one named `cover` as the background source.
 
-**Multi-artist names break across lines.** If the artist field contains ` & `, ` B2B `, ` VS `, or ` X ` (with spaces around the connector, case-insensitive), the cover stacks one artist per line with the connector carried to each subsequent line, so a three-way B2B like `"Axwell & Sebastian Ingrosso & Steve Angello"` renders as three stacked lines. The shared font is sized to fit the longest line so the stack stays visually aligned. A parenthetical credit like `"Everything Always (Dom Dolla & John Summit)"` splits into the act on the first line and the inner artists on the second.
+**How the cover identifies the artist(s):** the cover follows the same source data used for folder names and tags.
 
-**Keeping a group name on one line.** Some duos and trios ("Dimitri Vegas & Like Mike", "Swedish House Mafia") read best as a single unit. TrackSplit does not detect these automatically; it splits on any ` & `. To keep a group on one line, add an alias in the CrateDigger `artists.json` file that maps the long form to a short canonical form. This file lives in the CrateDigger data directory:
+**With CrateDigger tags:** the cover draws one line per identified act, taken from the `CRATEDIGGER_1001TL_ARTISTS` tag. A single act whose name contains `&`, `vs`, or similar (for example `Above & Beyond`) stays on one line automatically, no configuration required. A back-to-back or collaboration set shows the primary act on the first line and each additional act on its own line prefixed with `& ` (for example `MARTIN GARRIX` on the first line, `& ALESSO` on the second). The shared font is sized to fit the longest line so the stack stays visually aligned.
 
-| Platform | Path |
-|---|---|
-| Linux | `~/CrateDigger/artists.json` |
-| macOS | `~/CrateDigger/artists.json` |
-| Windows | `Documents\CrateDigger\artists.json` |
+If an act you consider a single group is being split across lines, that means CrateDigger identified it as multiple acts. The place to fix this is upstream in CrateDigger (its `artists.json` groups list or DJ cache), not in TrackSplit.
 
-Alternatively, place it in a library-local `.cratedigger/artists.json` next to your video files if you want the alias to apply only to that library. The file uses `{canonical: [aliases]}` shape:
-
-```json
-{
-  "aliases": {
-    "DVLM": ["Dimitri Vegas & Like Mike"]
-  }
-}
-```
-
-With this entry, any track tagged `Dimitri Vegas & Like Mike` resolves to `DVLM` before the cover is drawn, so the name renders on one line at a larger font and stays readable on small thumbnails in Kodi or Jellyfin. The alias also affects the artist folder name, the `ALBUMARTIST` tag, and DJ artwork lookup (all three use the canonical name), so picking a short form you are happy to see elsewhere matters.
+**Without CrateDigger tags:** the album artist comes from the filename and there is no structured act list. The cover falls back to splitting the displayed name on ` & `, ` B2B `, ` VS `, and ` X ` (with surrounding spaces), as well as the `"Act (members)"` parenthetical form. A standalone act whose name contains one of those connectors will be split across lines, and there is no TrackSplit setting to prevent it. This is cosmetic only: the artist folder name and the tags always use the whole artist name.
 
 **Festival accent fallback.** The line directly below the accent rail shows the festival name when one is present. If there is no festival, TrackSplit falls back to the venue, then to the location (from the 1001Tracklists page heading), then to the first comma-separated segment of the stage, then leaves the slot empty. When stage is what fills the accent line, the separate stage subline below is suppressed so the same text does not appear twice. Whitespace-only festival, venue, location, or stage values are treated as empty and fall through the chain.
 
