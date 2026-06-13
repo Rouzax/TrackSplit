@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-06-13
+
 ### Fixed
 
 - Album cover no longer splits a single act whose name contains `&`, `vs`, or `x` (e.g. `Above & Beyond`) across two lines. Cover line breaks now follow CrateDigger's album-artist list, matching the folder and tag logic; back-to-back sets are unchanged (`MARTIN GARRIX` / `& ALESSO`). Existing libraries regenerate affected covers on their next run (cover schema bumped to 3). Sources without CrateDigger tags keep the previous best-effort connector splitting.
