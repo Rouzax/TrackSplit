@@ -10,6 +10,7 @@ the debug log readable:
 
 Successful invocations produce no log output.
 """
+
 from __future__ import annotations
 
 import logging
@@ -94,7 +95,8 @@ def tracked_run(
     except BaseException as exc:
         logger.debug(
             "subprocess.cancel: cmd=%s error=%s",
-            cmd_str, type(exc).__name__,
+            cmd_str,
+            type(exc).__name__,
         )
         proc.kill()
         proc.wait()
@@ -114,10 +116,15 @@ def tracked_run(
         tail = _stderr_tail(stderr)
         logger.debug(
             "subprocess.exit: code=%d cmd=%s tail=%s",
-            proc.returncode, cmd_str, tail,
+            proc.returncode,
+            cmd_str,
+            tail,
         )
         raise subprocess.CalledProcessError(
-            proc.returncode, cmd, output=stdout, stderr=stderr,
+            proc.returncode,
+            cmd,
+            output=stdout,
+            stderr=stderr,
         )
 
     return subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)

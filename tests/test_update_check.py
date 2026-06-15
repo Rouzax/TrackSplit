@@ -1,4 +1,5 @@
 """Unit tests for tracksplit.update_check. No real HTTP is performed."""
+
 from __future__ import annotations
 
 import json
@@ -38,6 +39,7 @@ def mock_paths(tmp_path):
 
 def test_module_imports():
     from tracksplit import update_check
+
     assert update_check.PACKAGE_NAME == "tracksplit"
     assert update_check.ENV_VAR == "TRACKSPLIT_NO_UPDATE_CHECK"
 
@@ -68,8 +70,10 @@ class TestIsNewer:
 
 
 class TestIsPrereleaseString:
-    @pytest.mark.parametrize("v", ["0.7.0rc1", "0.7.0a1", "0.7.0b2",
-                                   "0.7.0.dev1", "0.7.0-rc.1", "0.7.0.post1"])
+    @pytest.mark.parametrize(
+        "v",
+        ["0.7.0rc1", "0.7.0a1", "0.7.0b2", "0.7.0.dev1", "0.7.0-rc.1", "0.7.0.post1"],
+    )
     def test_prerelease(self, v):
         assert _is_prerelease_string(v)
 
@@ -136,6 +140,7 @@ class TestCacheIsFresh:
 class TestFetchLatestRelease:
     def _fake_response(self, body: bytes):
         from io import BytesIO
+
         r = BytesIO(body)
         return r
 
@@ -143,30 +148,40 @@ class TestFetchLatestRelease:
         from unittest.mock import patch
 
         from tracksplit.update_check import _fetch_latest_release
+
         payload = b'{"tag_name": "v0.7.0"}'
-        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+        with patch(
+            "tracksplit.update_check.urlopen", return_value=self._fake_response(payload)
+        ):
             assert _fetch_latest_release() == "0.7.0"
 
     def test_strips_single_leading_v(self):
         from unittest.mock import patch
 
         from tracksplit.update_check import _fetch_latest_release
+
         payload = b'{"tag_name": "v1.0.0"}'
-        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+        with patch(
+            "tracksplit.update_check.urlopen", return_value=self._fake_response(payload)
+        ):
             assert _fetch_latest_release() == "1.0.0"
 
     def test_no_leading_v(self):
         from unittest.mock import patch
 
         from tracksplit.update_check import _fetch_latest_release
+
         payload = b'{"tag_name": "0.7.0"}'
-        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+        with patch(
+            "tracksplit.update_check.urlopen", return_value=self._fake_response(payload)
+        ):
             assert _fetch_latest_release() == "0.7.0"
 
     def test_timeout_returns_none(self):
         from unittest.mock import patch
 
         from tracksplit.update_check import _fetch_latest_release
+
         with patch("tracksplit.update_check.urlopen", side_effect=TimeoutError()):
             assert _fetch_latest_release() is None
 
@@ -175,6 +190,7 @@ class TestFetchLatestRelease:
         from urllib.error import URLError
 
         from tracksplit.update_check import _fetch_latest_release
+
         with patch("tracksplit.update_check.urlopen", side_effect=URLError("dns")):
             assert _fetch_latest_release() is None
 
@@ -183,6 +199,7 @@ class TestFetchLatestRelease:
         from urllib.error import HTTPError
 
         from tracksplit.update_check import _fetch_latest_release
+
         err = HTTPError("u", 500, "boom", {}, None)  # type: ignore[arg-type]
         with patch("tracksplit.update_check.urlopen", side_effect=err):
             assert _fetch_latest_release() is None
@@ -191,42 +208,57 @@ class TestFetchLatestRelease:
         from unittest.mock import patch
 
         from tracksplit.update_check import _fetch_latest_release
-        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(b"not json")):
+
+        with patch(
+            "tracksplit.update_check.urlopen",
+            return_value=self._fake_response(b"not json"),
+        ):
             assert _fetch_latest_release() is None
 
     def test_missing_tag_returns_none(self):
         from unittest.mock import patch
 
         from tracksplit.update_check import _fetch_latest_release
-        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(b"{}")):
+
+        with patch(
+            "tracksplit.update_check.urlopen", return_value=self._fake_response(b"{}")
+        ):
             assert _fetch_latest_release() is None
 
     def test_prerelease_returns_none(self):
         from unittest.mock import patch
 
         from tracksplit.update_check import _fetch_latest_release
+
         payload = b'{"tag_name": "v0.7.0rc1"}'
-        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+        with patch(
+            "tracksplit.update_check.urlopen", return_value=self._fake_response(payload)
+        ):
             assert _fetch_latest_release() is None
 
     def test_malformed_tag_returns_none(self):
         from unittest.mock import patch
 
         from tracksplit.update_check import _fetch_latest_release
+
         payload = b'{"tag_name": "bogus"}'
-        with patch("tracksplit.update_check.urlopen", return_value=self._fake_response(payload)):
+        with patch(
+            "tracksplit.update_check.urlopen", return_value=self._fake_response(payload)
+        ):
             assert _fetch_latest_release() is None
 
 
 class TestIsSuppressed:
     def test_not_suppressed_default(self, monkeypatch):
         from tracksplit.update_check import _is_suppressed
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         assert not _is_suppressed()
 
     def test_suppressed_when_not_tty(self, monkeypatch):
         from tracksplit.update_check import _is_suppressed
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: False)
         assert _is_suppressed()
@@ -234,6 +266,7 @@ class TestIsSuppressed:
     @pytest.mark.parametrize("value", ["1", "true", "yes", "TRUE", "Yes"])
     def test_env_var_truthy(self, monkeypatch, value):
         from tracksplit.update_check import _is_suppressed
+
         monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", value)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         assert _is_suppressed()
@@ -241,6 +274,7 @@ class TestIsSuppressed:
     @pytest.mark.parametrize("value", ["0", "false", "no", ""])
     def test_env_var_falsy(self, monkeypatch, value):
         from tracksplit.update_check import _is_suppressed
+
         monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", value)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         assert not _is_suppressed()
@@ -249,24 +283,28 @@ class TestIsSuppressed:
 class TestUpgradeCommand:
     def test_pipx_via_env(self, monkeypatch):
         from tracksplit.update_check import _upgrade_command
+
         monkeypatch.setenv("PIPX_HOME", "/home/user/.local/pipx")
         monkeypatch.setattr("sys.prefix", "/usr/lib/python3.11")
         assert "pipx upgrade tracksplit" in _upgrade_command()
 
     def test_pipx_via_prefix(self, monkeypatch):
         from tracksplit.update_check import _upgrade_command
+
         monkeypatch.delenv("PIPX_HOME", raising=False)
         monkeypatch.setattr("sys.prefix", "/home/user/.local/pipx/venvs/tracksplit")
         assert "pipx upgrade tracksplit" in _upgrade_command()
 
     def test_uv_tool(self, monkeypatch):
         from tracksplit.update_check import _upgrade_command
+
         monkeypatch.delenv("PIPX_HOME", raising=False)
         monkeypatch.setattr("sys.prefix", "/home/user/.local/share/uv/tools/tracksplit")
         assert "uv tool upgrade tracksplit" in _upgrade_command()
 
     def test_default_pip(self, monkeypatch):
         from tracksplit.update_check import _upgrade_command
+
         monkeypatch.delenv("PIPX_HOME", raising=False)
         monkeypatch.setattr("sys.prefix", "/home/user/venv")
         cmd = _upgrade_command()
@@ -279,11 +317,13 @@ class TestPrintCachedUpdateNotice:
         from io import StringIO
 
         from rich.console import Console
+
         buf = StringIO()
         return Console(file=buf, force_terminal=False, width=120), buf
 
     def test_newer_version_prints(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import print_cached_update_notice
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         monkeypatch.setattr(
@@ -300,6 +340,7 @@ class TestPrintCachedUpdateNotice:
 
     def test_same_version_silent(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import print_cached_update_notice
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         monkeypatch.setattr(
@@ -313,6 +354,7 @@ class TestPrintCachedUpdateNotice:
 
     def test_null_latest_silent(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import print_cached_update_notice
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         _write_cache(latest_version=None, ttl_seconds=3600)
@@ -322,6 +364,7 @@ class TestPrintCachedUpdateNotice:
 
     def test_no_cache_silent(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import print_cached_update_notice
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         console, buf = self._make_console()
@@ -330,6 +373,7 @@ class TestPrintCachedUpdateNotice:
 
     def test_suppressed_silent(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import print_cached_update_notice
+
         monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
         _write_cache(latest_version="99.0.0", ttl_seconds=86400)
         console, buf = self._make_console()
@@ -340,6 +384,7 @@ class TestPrintCachedUpdateNotice:
 class TestRefreshUpdateCache:
     def test_stale_triggers_fetch_and_writes(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import refresh_update_cache
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         old_entry = {
@@ -352,7 +397,9 @@ class TestRefreshUpdateCache:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps(old_entry))
 
-        with patch("tracksplit.update_check._fetch_latest_release", return_value="0.7.0"):
+        with patch(
+            "tracksplit.update_check._fetch_latest_release", return_value="0.7.0"
+        ):
             refresh_update_cache()
 
         entry = _read_cache()
@@ -363,6 +410,7 @@ class TestRefreshUpdateCache:
 
     def test_fresh_skips_fetch(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import refresh_update_cache
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
         fresh_entry = {
@@ -381,10 +429,13 @@ class TestRefreshUpdateCache:
 
     def test_missing_cache_triggers_fetch(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import refresh_update_cache
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 
-        with patch("tracksplit.update_check._fetch_latest_release", return_value="0.7.0"):
+        with patch(
+            "tracksplit.update_check._fetch_latest_release", return_value="0.7.0"
+        ):
             refresh_update_cache()
 
         entry = _read_cache()
@@ -393,6 +444,7 @@ class TestRefreshUpdateCache:
 
     def test_fetch_failure_writes_short_ttl(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import refresh_update_cache
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 
@@ -406,6 +458,7 @@ class TestRefreshUpdateCache:
 
     def test_suppressed_no_op(self, tmp_path, mock_paths, monkeypatch):
         from tracksplit.update_check import refresh_update_cache
+
         monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
 
         with patch("tracksplit.update_check._fetch_latest_release") as m:
@@ -426,16 +479,23 @@ class TestDebugLogging:
         from urllib.error import URLError
 
         from tracksplit.update_check import _fetch_latest_release
+
         with patch("tracksplit.update_check.urlopen", side_effect=URLError("dns")):
             with caplog.at_level(_logging.DEBUG, logger="tracksplit.update_check"):
                 assert _fetch_latest_release() is None
-        assert any("update.fetch:" in r.message and "failed" in r.message for r in caplog.records)
-        assert any("dns" in r.message or "dns" in str(r.exc_info) for r in caplog.records)
+        assert any(
+            "update.fetch:" in r.message and "failed" in r.message
+            for r in caplog.records
+        )
+        assert any(
+            "dns" in r.message or "dns" in str(r.exc_info) for r in caplog.records
+        )
 
     def test_is_suppressed_logs_env_var_reason(self, monkeypatch, caplog):
         import logging as _logging
 
         from tracksplit.update_check import _is_suppressed
+
         monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
         with caplog.at_level(_logging.DEBUG, logger="tracksplit.update_check"):
             assert _is_suppressed()
@@ -446,6 +506,7 @@ class TestDebugLogging:
         import logging as _logging
 
         from tracksplit.update_check import _is_suppressed
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
         monkeypatch.setattr("sys.stdout.isatty", lambda: False)
         with caplog.at_level(_logging.DEBUG, logger="tracksplit.update_check"):
@@ -457,10 +518,12 @@ class TestDebugLogging:
         import logging as _logging
 
         from tracksplit.update_check import _is_suppressed
+
         monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
 
         def _raise():
             raise ValueError("io closed")
+
         monkeypatch.setattr("sys.stdout.isatty", _raise)
         with caplog.at_level(_logging.DEBUG, logger="tracksplit.update_check"):
             assert _is_suppressed()
@@ -488,18 +551,21 @@ class TestDebugLogging:
 
 def test_is_suppressed_explicit_env_var(monkeypatch):
     from tracksplit import update_check
+
     monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
     assert update_check._is_suppressed_explicit() is True
 
 
 def test_is_suppressed_explicit_unset(monkeypatch):
     from tracksplit import update_check
+
     monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
     assert update_check._is_suppressed_explicit() is False
 
 
 def test_is_suppressed_explicit_ignores_tty(monkeypatch):
     from tracksplit import update_check
+
     monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
     assert update_check._is_suppressed_explicit() is False
@@ -510,19 +576,25 @@ def test_refresh_force_bypasses_freshness(monkeypatch, tmp_path):
     from tracksplit import update_check
 
     cache_file = tmp_path / "update-check.json"
-    cache_file.write_text(json.dumps({
-        "schema": update_check.SCHEMA_VERSION,
-        "checked_at": int(time.time()),
-        "ttl_seconds": 86400,
-        "latest_version": "0.0.1",
-    }), encoding="utf-8")
+    cache_file.write_text(
+        json.dumps(
+            {
+                "schema": update_check.SCHEMA_VERSION,
+                "checked_at": int(time.time()),
+                "ttl_seconds": 86400,
+                "latest_version": "0.0.1",
+            }
+        ),
+        encoding="utf-8",
+    )
 
     monkeypatch.setattr(update_check, "_cache_path", lambda: cache_file)
     monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
 
     fetch_calls = []
-    monkeypatch.setattr(update_check, "_fetch_latest_release",
-                        lambda: fetch_calls.append(1) or "9.9.9")
+    monkeypatch.setattr(
+        update_check, "_fetch_latest_release", lambda: fetch_calls.append(1) or "9.9.9"
+    )
 
     update_check.refresh_update_cache(force=True)
 
@@ -536,19 +608,25 @@ def test_refresh_default_respects_fresh_cache(monkeypatch, tmp_path):
     from tracksplit import update_check
 
     cache_file = tmp_path / "update-check.json"
-    cache_file.write_text(json.dumps({
-        "schema": update_check.SCHEMA_VERSION,
-        "checked_at": int(time.time()),
-        "ttl_seconds": 86400,
-        "latest_version": "0.0.1",
-    }), encoding="utf-8")
+    cache_file.write_text(
+        json.dumps(
+            {
+                "schema": update_check.SCHEMA_VERSION,
+                "checked_at": int(time.time()),
+                "ttl_seconds": 86400,
+                "latest_version": "0.0.1",
+            }
+        ),
+        encoding="utf-8",
+    )
 
     monkeypatch.setattr(update_check, "_cache_path", lambda: cache_file)
     monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
 
     fetch_calls = []
-    monkeypatch.setattr(update_check, "_fetch_latest_release",
-                        lambda: fetch_calls.append(1) or "9.9.9")
+    monkeypatch.setattr(
+        update_check, "_fetch_latest_release", lambda: fetch_calls.append(1) or "9.9.9"
+    )
 
     update_check.refresh_update_cache()
 
@@ -562,8 +640,9 @@ def test_refresh_force_honours_explicit_suppression(monkeypatch, tmp_path):
     monkeypatch.setattr(update_check, "_cache_path", lambda: cache_file)
 
     fetch_calls = []
-    monkeypatch.setattr(update_check, "_fetch_latest_release",
-                        lambda: fetch_calls.append(1) or "9.9.9")
+    monkeypatch.setattr(
+        update_check, "_fetch_latest_release", lambda: fetch_calls.append(1) or "9.9.9"
+    )
     monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
     update_check.refresh_update_cache(force=True)
     assert fetch_calls == []
@@ -572,19 +651,33 @@ def test_refresh_force_honours_explicit_suppression(monkeypatch, tmp_path):
 
 def test_format_freshness_line_three_states(monkeypatch):
     from tracksplit import update_check
+
     # Make _upgrade_command deterministic so the stale assertion isn't
     # tied to install-method detection (PIPX_HOME, /uv/tools/, etc.)
-    monkeypatch.setattr(update_check, "_upgrade_command",
-                        lambda: "pipx upgrade tracksplit")
+    monkeypatch.setattr(
+        update_check, "_upgrade_command", lambda: "pipx upgrade tracksplit"
+    )
 
-    assert update_check.format_freshness_line(
-        "1.2.3", "1.2.3", package_name="tracksplit",
-    ) == "(latest)"
-    assert update_check.format_freshness_line(
-        "1.2.3", None, package_name="tracksplit",
-    ) == "(could not check for updates)"
+    assert (
+        update_check.format_freshness_line(
+            "1.2.3",
+            "1.2.3",
+            package_name="tracksplit",
+        )
+        == "(latest)"
+    )
+    assert (
+        update_check.format_freshness_line(
+            "1.2.3",
+            None,
+            package_name="tracksplit",
+        )
+        == "(could not check for updates)"
+    )
     text = update_check.format_freshness_line(
-        "1.2.3", "1.2.4", package_name="tracksplit",
+        "1.2.3",
+        "1.2.4",
+        package_name="tracksplit",
     )
     assert "newer: 1.2.4" in text
     assert "tracksplit" in text

@@ -1,4 +1,5 @@
 """Tests for the console Rich helpers."""
+
 import io
 
 from rich.console import Console

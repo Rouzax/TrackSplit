@@ -18,10 +18,14 @@ class TestBuildSplitCommand:
         )
         assert cmd == [
             "ffmpeg",
-            "-i", "/tmp/full.flac",
-            "-ss", "60.0",
-            "-to", "180.0",
-            "-c:a", "copy",
+            "-i",
+            "/tmp/full.flac",
+            "-ss",
+            "60.0",
+            "-to",
+            "180.0",
+            "-c:a",
+            "copy",
             "-y",
             "/tmp/out/01 - Song.flac",
         ]
@@ -35,9 +39,12 @@ class TestBuildSplitCommand:
         )
         assert cmd == [
             "ffmpeg",
-            "-i", "/tmp/full.flac",
-            "-ss", "300.0",
-            "-c:a", "copy",
+            "-i",
+            "/tmp/full.flac",
+            "-ss",
+            "300.0",
+            "-c:a",
+            "copy",
             "-y",
             "/tmp/out/05 - Closer.flac",
         ]
@@ -55,11 +62,15 @@ class TestBuildSplitCommand:
         assert "-vn" in cmd
         assert cmd == [
             "ffmpeg",
-            "-i", "/tmp/video.mkv",
-            "-ss", "0.0",
-            "-to", "60.0",
+            "-i",
+            "/tmp/video.mkv",
+            "-ss",
+            "0.0",
+            "-to",
+            "60.0",
             "-vn",
-            "-c:a", "copy",
+            "-c:a",
+            "copy",
             "-y",
             "/tmp/out/01 - Song.opus",
         ]
@@ -90,11 +101,17 @@ class TestBuildSplitCommand:
         assert "-vn" in cmd
         assert cmd == [
             "ffmpeg",
-            "-i", "/tmp/video.mkv",
-            "-ss", "10.0",
-            "-to", "70.0",
+            "-i",
+            "/tmp/video.mkv",
+            "-ss",
+            "10.0",
+            "-to",
+            "70.0",
             "-vn",
-            "-c:a", "libopus", "-b:a", "256k",
+            "-c:a",
+            "libopus",
+            "-b:a",
+            "256k",
             "-y",
             "/tmp/out/01 - Song.opus",
         ]
@@ -174,8 +191,12 @@ class TestSplitTracks:
         mock_run = mocker.patch("tracksplit.split.tracked_run")
 
         results = split_tracks(
-            full_audio, tracks, output_dir,
-            ext=".opus", codec_mode="copy", from_video=True,
+            full_audio,
+            tracks,
+            output_dir,
+            ext=".opus",
+            codec_mode="copy",
+            from_video=True,
         )
 
         assert len(results) == 2
@@ -209,8 +230,12 @@ class TestSplitTracksOpusPrefix:
         mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
 
         split_tracks(
-            audio, self._tracks(), tmp_path / "out",
-            ext=".opus", codec_mode="copy", from_video=True,
+            audio,
+            self._tracks(),
+            tmp_path / "out",
+            ext=".opus",
+            codec_mode="copy",
+            from_video=True,
             opus_packet_ms=20,
         )
 
@@ -232,8 +257,12 @@ class TestSplitTracksOpusPrefix:
         mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
 
         split_tracks(
-            audio, self._tracks(), tmp_path / "out",
-            ext=".opus", codec_mode="copy", from_video=True,
+            audio,
+            self._tracks(),
+            tmp_path / "out",
+            ext=".opus",
+            codec_mode="copy",
+            from_video=True,
             opus_packet_ms=None,
         )
 
@@ -251,8 +280,12 @@ class TestSplitTracksOpusPrefix:
         mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
 
         split_tracks(
-            audio, self._tracks(), tmp_path / "out",
-            ext=".opus", codec_mode="copy", from_video=True,
+            audio,
+            self._tracks(),
+            tmp_path / "out",
+            ext=".opus",
+            codec_mode="copy",
+            from_video=True,
             opus_packet_ms=60,
         )
 
@@ -267,8 +300,12 @@ class TestSplitTracksOpusPrefix:
         mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
 
         split_tracks(
-            audio, self._tracks(), tmp_path / "out",
-            ext=".opus", codec_mode="libopus", from_video=True,
+            audio,
+            self._tracks(),
+            tmp_path / "out",
+            ext=".opus",
+            codec_mode="libopus",
+            from_video=True,
             opus_packet_ms=20,
         )
 
@@ -283,8 +320,11 @@ class TestSplitTracksOpusPrefix:
         mock_patch = mocker.patch("tracksplit.split.patch_opus_pre_skip")
 
         split_tracks(
-            audio, self._tracks(), tmp_path / "out",
-            ext=".flac", codec_mode="copy",
+            audio,
+            self._tracks(),
+            tmp_path / "out",
+            ext=".flac",
+            codec_mode="copy",
             opus_packet_ms=20,
         )
 
@@ -304,8 +344,12 @@ class TestSplitTracksOpusPrefix:
         ]
 
         split_tracks(
-            audio, tracks, tmp_path / "out",
-            ext=".opus", codec_mode="copy", from_video=True,
+            audio,
+            tracks,
+            tmp_path / "out",
+            ext=".opus",
+            codec_mode="copy",
+            from_video=True,
             opus_packet_ms=20,
         )
 
@@ -319,10 +363,21 @@ def _make_opus_mkv(tmp_path: Path, chapter_starts: list[float], total: float) ->
     opus_file = tmp_path / "audio.opus"
     subprocess.run(
         [
-            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-            "-f", "lavfi",
-            "-i", f"sine=frequency=440:duration={total}:sample_rate=48000",
-            "-ac", "2", "-c:a", "libopus", "-b:a", "64k",
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            f"sine=frequency=440:duration={total}:sample_rate=48000",
+            "-ac",
+            "2",
+            "-c:a",
+            "libopus",
+            "-b:a",
+            "64k",
             str(opus_file),
         ],
         check=True,
@@ -340,11 +395,19 @@ def _make_opus_mkv(tmp_path: Path, chapter_starts: list[float], total: float) ->
     mkv_file = tmp_path / "source.mkv"
     subprocess.run(
         [
-            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-            "-i", str(opus_file),
-            "-i", str(meta_file),
-            "-map_metadata", "1",
-            "-c:a", "copy",
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(opus_file),
+            "-i",
+            str(meta_file),
+            "-map_metadata",
+            "1",
+            "-c:a",
+            "copy",
             str(mkv_file),
         ],
         check=True,
@@ -363,8 +426,12 @@ class TestSplitTracksOpusEndToEnd:
         out_dir = tmp_path / "out"
 
         split_tracks(
-            mkv, tracks, out_dir,
-            ext=".opus", codec_mode="copy", from_video=True,
+            mkv,
+            tracks,
+            out_dir,
+            ext=".opus",
+            codec_mode="copy",
+            from_video=True,
             opus_packet_ms=20,
         )
 
@@ -385,8 +452,12 @@ class TestSplitTracksOpusEndToEnd:
         out_dir = tmp_path / "out"
 
         split_tracks(
-            mkv, tracks, out_dir,
-            ext=".opus", codec_mode="copy", from_video=True,
+            mkv,
+            tracks,
+            out_dir,
+            ext=".opus",
+            codec_mode="copy",
+            from_video=True,
             opus_packet_ms=None,
         )
 
@@ -400,6 +471,7 @@ class TestSplitTracksDebugLogging:
     def test_debug_per_track(self, tmp_path, mocker, caplog):
         """split_tracks emits a structured DEBUG line per track."""
         import logging
+
         full_flac = tmp_path / "full.flac"
         full_flac.touch()
         output_dir = tmp_path / "output" / "album"
@@ -419,6 +491,7 @@ class TestSplitTracksDebugLogging:
     def test_debug_opus_prefix_applied(self, tmp_path, mocker, caplog):
         """When opus prefix is applied to a track, DEBUG shows prefix=True."""
         import logging
+
         full_audio = tmp_path / "full.opus"
         full_audio.touch()
         output_dir = tmp_path / "output" / "album"
@@ -431,8 +504,12 @@ class TestSplitTracksDebugLogging:
         mocker.patch("tracksplit.split.patch_opus_pre_skip")
         with caplog.at_level(logging.DEBUG, logger="tracksplit.split"):
             split_tracks(
-                full_audio, tracks, output_dir,
-                ext=".opus", codec_mode="copy", opus_packet_ms=20,
+                full_audio,
+                tracks,
+                output_dir,
+                ext=".opus",
+                codec_mode="copy",
+                opus_packet_ms=20,
             )
         joined = "\n".join(r.message for r in caplog.records)
         # Track 2 gets the prefix (i > 0 AND start - OPUS_PREFIX_SECONDS >= 0)
@@ -443,6 +520,7 @@ class TestSplitTracksDebugLogging:
         the prefix cannot be applied without a negative seek, and DEBUG
         shows prefix=False."""
         import logging
+
         full_audio = tmp_path / "full.opus"
         full_audio.touch()
         output_dir = tmp_path / "output" / "album"
@@ -457,8 +535,12 @@ class TestSplitTracksDebugLogging:
         mocker.patch("tracksplit.split.patch_opus_pre_skip")
         with caplog.at_level(logging.DEBUG, logger="tracksplit.split"):
             split_tracks(
-                full_audio, tracks, output_dir,
-                ext=".opus", codec_mode="copy", opus_packet_ms=20,
+                full_audio,
+                tracks,
+                output_dir,
+                ext=".opus",
+                codec_mode="copy",
+                opus_packet_ms=20,
             )
         joined = "\n".join(r.message for r in caplog.records)
         assert "prefix=False" in joined

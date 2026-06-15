@@ -4,6 +4,7 @@ Tests should call ``make_audio_fp`` and ``make_manifest_dict`` instead of
 hand-rolling JSON dicts, so future schema bumps only need updating in
 one place.
 """
+
 from __future__ import annotations
 
 from tracksplit.manifest import MANIFEST_SCHEMA
@@ -72,8 +73,10 @@ def make_manifest_dict(*, source_path: str = "/x.mkv", **overrides) -> dict:
         "resolved_album_folder": overrides.pop("album_folder", "B"),
         "output_format": overrides.pop("output_format", "flac"),
         "codec_mode": overrides.pop("codec_mode", "copy"),
-        "chapters": overrides.pop("chapters",
-            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}]),
+        "chapters": overrides.pop(
+            "chapters",
+            [{"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}],
+        ),
         "tags": tags,
         "track_filenames": overrides.pop("track_filenames", ["01 - T.flac"]),
         "cover_sha256": overrides.pop("cover_sha256", "a" * 64),

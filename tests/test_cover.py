@@ -265,11 +265,14 @@ class TestFindDjArtwork:
         monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
         monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
         )
 
         result = find_dj_artwork(
-            tmp_path / "file.mkv", slug="aboveandbeyond", artist="Above & Beyond",
+            tmp_path / "file.mkv",
+            slug="aboveandbeyond",
+            artist="Above & Beyond",
         )
         assert result == b"slug-artwork"
 
@@ -282,7 +285,8 @@ class TestFindDjArtwork:
         monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
         monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
         )
 
         result = find_dj_artwork(tmp_path / "file.mkv", slug="fredagain..")
@@ -297,7 +301,8 @@ class TestFindDjArtwork:
         monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
         monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
         )
 
         result = find_dj_artwork(tmp_path / "file.mkv", slug="tiesto")
@@ -311,7 +316,8 @@ class TestFindDjArtwork:
         monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
         monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
         )
 
         result = find_dj_artwork(tmp_path / "file.mkv", slug="tiesto")
@@ -326,7 +332,8 @@ class TestFindDjArtwork:
         monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
         monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
         )
 
         result = find_dj_artwork(tmp_path / "file.mkv", artist="Cosmic Gate")
@@ -336,7 +343,9 @@ class TestFindDjArtwork:
         """When both are given, the explicit slug is used (not slugify(artist))."""
         cache_dir = tmp_path / "cd_cache"
         (cache_dir / "artists" / "aboveandbeyond").mkdir(parents=True)
-        (cache_dir / "artists" / "aboveandbeyond" / "dj-artwork.jpg").write_bytes(b"by-slug")
+        (cache_dir / "artists" / "aboveandbeyond" / "dj-artwork.jpg").write_bytes(
+            b"by-slug"
+        )
         # slugify("Above & Beyond") would also be "aboveandbeyond", so use a slug
         # that differs from slugify(artist) to prove the slug path is taken.
         (cache_dir / "artists" / "ab").mkdir(parents=True)
@@ -344,10 +353,13 @@ class TestFindDjArtwork:
         monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
         monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
         )
 
-        result = find_dj_artwork(tmp_path / "file.mkv", slug="ab", artist="Above & Beyond")
+        result = find_dj_artwork(
+            tmp_path / "file.mkv", slug="ab", artist="Above & Beyond"
+        )
         assert result == b"by-real-slug"
 
     def test_finds_in_data_dir_by_slug(self, tmp_path, monkeypatch):
@@ -356,9 +368,12 @@ class TestFindDjArtwork:
         artist_dir = cd_dir / "artists" / "tiesto"
         artist_dir.mkdir(parents=True)
         (artist_dir / "dj-artwork.jpg").write_bytes(b"data-artwork")
-        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: cd_dir)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.walkup_cratedigger_dir", lambda _p: cd_dir
+        )
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
         )
 
         result = find_dj_artwork(tmp_path / "music" / "file.mkv", slug="tiesto")
@@ -372,9 +387,12 @@ class TestFindDjArtwork:
         (data_dir / "artists" / "tiesto").mkdir(parents=True)
         (data_dir / "artists" / "tiesto" / "dj-artwork.jpg").write_bytes(b"from-data")
         monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
-        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: data_dir)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.walkup_cratedigger_dir", lambda _p: data_dir
+        )
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
         )
 
         result = find_dj_artwork(tmp_path / "file.mkv", slug="tiesto")
@@ -386,7 +404,8 @@ class TestFindDjArtwork:
     def test_returns_none_when_not_found(self, tmp_path, monkeypatch):
         monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty_visible",
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty_visible",
         )
         result = find_dj_artwork(tmp_path / "file.flac", slug="nobody")
         assert result is None
@@ -396,7 +415,8 @@ class TestFindDjArtwork:
 
         monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_data_dir", lambda: tmp_path / "empty",
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
         )
 
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cover"):
@@ -468,6 +488,7 @@ class TestExtractCoverFromMkv:
                 return MagicMock(stdout=identify_json, returncode=0)
             elif any("mkvextract" in str(c) for c in cmd):
                 import re
+
                 for part in cmd:
                     m = re.match(r"\d+:(.*)", str(part))
                     if m:
@@ -488,7 +509,9 @@ class TestExtractCoverFromMkv:
                 {"index": 0, "codec_type": "video", "codec_name": "av1"},
                 {"index": 1, "codec_type": "audio", "codec_name": "opus"},
                 {
-                    "index": 2, "codec_type": "video", "codec_name": "png",
+                    "index": 2,
+                    "codec_type": "video",
+                    "codec_name": "png",
                     "tags": {"filename": "cover.png", "mimetype": "image/png"},
                 },
             ],
@@ -508,7 +531,8 @@ class TestExtractCoverFromMkv:
 
         mock_run.side_effect = side_effect
         result = extract_cover_from_mkv(
-            Path("/tmp/video.mp4"), ffprobe_data=ffprobe_data,
+            Path("/tmp/video.mp4"),
+            ffprobe_data=ffprobe_data,
         )
         assert result == fake_image
 
@@ -521,7 +545,8 @@ class TestExtractCoverFromMkv:
             ],
         }
         result = extract_cover_from_mkv(
-            Path("/tmp/video.mp4"), ffprobe_data=ffprobe_data,
+            Path("/tmp/video.mp4"),
+            ffprobe_data=ffprobe_data,
         )
         assert result is None
 
@@ -530,12 +555,14 @@ class TestLoadFont:
     def test_returns_freetype_font(self):
         """Bundled Inter font should load as a FreeTypeFont, not bitmap."""
         from PIL import ImageFont
+
         font = _load_font(90, bold=True)
         assert isinstance(font, ImageFont.FreeTypeFont)
 
     def test_size_scales_width(self):
         """Rendered text width must scale with size (not fixed bitmap width)."""
         from tracksplit.cover import _measure_w
+
         small = _load_font(40, bold=True)
         large = _load_font(90, bold=True)
         w_small = _measure_w(small, "TIESTO")
@@ -545,6 +572,7 @@ class TestLoadFont:
     def test_unicode_glyph_rendered(self):
         """Inter includes 'ë' so measured width should be reasonable."""
         from tracksplit.cover import _measure_w
+
         font = _load_font(90, bold=True)
         plain = _measure_w(font, "TIESTO")
         accented = _measure_w(font, "TIëSTO")
@@ -559,12 +587,10 @@ class TestIsImageAttachment:
         assert _is_image_attachment({"content_type": "image/png"}) is True
 
     def test_by_file_name(self):
-        assert _is_image_attachment(
-            {"content_type": "", "file_name": "cover.jpg"}
-        ) is True
-        assert _is_image_attachment(
-            {"file_name": "COVER.PNG"}
-        ) is True
+        assert (
+            _is_image_attachment({"content_type": "", "file_name": "cover.jpg"}) is True
+        )
+        assert _is_image_attachment({"file_name": "COVER.PNG"}) is True
 
     def test_non_image(self):
         assert _is_image_attachment({"content_type": "text/plain"}) is False
@@ -628,7 +654,9 @@ class TestFitSquare:
         out = _fit_square(img, 550).convert("RGB")
         px = out.getpixel((5, 275))
         assert isinstance(px, tuple)
-        assert px[0] > px[1], "left edge should be the cropped-in red center, not stretched green"
+        assert px[0] > px[1], (
+            "left edge should be the cropped-in red center, not stretched green"
+        )
 
 
 class TestPrepareBackgroundRatioGuard:
@@ -675,6 +703,7 @@ class TestMkvtoolsTempFileUnique:
                 return MagicMock(stdout=identify_json, returncode=0)
             elif "mkvextract" in (cmd[0] if cmd else ""):
                 import re
+
                 for part in cmd:
                     m = re.match(r"\d+:(.*)", part)
                     if m:
@@ -697,7 +726,12 @@ class TestFestivalFallback:
         from tracksplit.cover import _layout_album_cover
 
         L = _layout_album_cover(
-            artist="A", festival="Ultra", date="", stage="", venue="", size=1000,
+            artist="A",
+            festival="Ultra",
+            date="",
+            stage="",
+            venue="",
+            size=1000,
         )
         assert L["fest_text"] == "ULTRA"
 
@@ -705,7 +739,12 @@ class TestFestivalFallback:
         from tracksplit.cover import _layout_album_cover
 
         L = _layout_album_cover(
-            artist="A", festival="", date="", stage="", venue="Red Rocks", size=1000,
+            artist="A",
+            festival="",
+            date="",
+            stage="",
+            venue="Red Rocks",
+            size=1000,
         )
         assert L["fest_text"] == "RED ROCKS"
 
@@ -713,7 +752,12 @@ class TestFestivalFallback:
         from tracksplit.cover import _layout_album_cover
 
         L = _layout_album_cover(
-            artist="A", festival="", date="", stage="Mainstage", venue="", size=1000,
+            artist="A",
+            festival="",
+            date="",
+            stage="Mainstage",
+            venue="",
+            size=1000,
         )
         assert L["fest_text"] == "MAINSTAGE"
 
@@ -721,7 +765,12 @@ class TestFestivalFallback:
         from tracksplit.cover import _layout_album_cover
 
         L = _layout_album_cover(
-            artist="A", festival="", date="", stage="Mainstage", venue="", size=1000,
+            artist="A",
+            festival="",
+            date="",
+            stage="Mainstage",
+            venue="",
+            size=1000,
         )
         assert L["stage_parts"] == [], (
             "stage must not render twice when it filled the festival slot"
@@ -759,7 +808,12 @@ class TestFestivalFallback:
         from tracksplit.cover import _layout_album_cover
 
         L = _layout_album_cover(
-            artist="A", festival="", date="", stage="", venue="", size=1000,
+            artist="A",
+            festival="",
+            date="",
+            stage="",
+            venue="",
+            size=1000,
         )
         assert L["fest_text"] == ""
         assert L["fest_font"] is None

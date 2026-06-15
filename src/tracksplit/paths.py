@@ -30,6 +30,7 @@ For each curated file, the first directory containing it wins; files not
 present in the walk-up dir fall through to the visible data dir.
 Cache files are read from :func:`cratedigger_cache_dir` (platformdirs cache).
 """
+
 from __future__ import annotations
 
 import logging

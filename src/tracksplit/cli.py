@@ -1,4 +1,5 @@
 """CLI entry point for TrackSplit."""
+
 from __future__ import annotations
 
 import errno
@@ -59,7 +60,11 @@ def _friendly_error(exc: BaseException) -> str:
             raw = raw.decode("utf-8", errors="replace")
         text = (raw or "").strip()
         tail = text.splitlines()[-1] if text else f"exit {exc.returncode}"
-        cmd = exc.cmd[0] if isinstance(exc.cmd, (list, tuple)) and exc.cmd else "subprocess"
+        cmd = (
+            exc.cmd[0]
+            if isinstance(exc.cmd, (list, tuple)) and exc.cmd
+            else "subprocess"
+        )
         return f"{Path(str(cmd)).name} failed: {tail}"
     return f"{type(exc).__name__}: {exc}"
 
@@ -111,8 +116,10 @@ def _process_single_file(
         with FileProgress(console, enabled=use_live) as progress:
             progress.set_filename(input_path.name)
             success = process_file(
-                input_path, output_dir,
-                force=force, dry_run=dry_run,
+                input_path,
+                output_dir,
+                force=force,
+                dry_run=dry_run,
                 output_format=output_format,
                 on_progress=progress.update,
                 cancel_event=_cancel_event,
@@ -173,8 +180,10 @@ def _process_directory(
                 progress.set_filename(video_file.name)
                 try:
                     if process_file(
-                        video_file, output_dir,
-                        force=force, dry_run=dry_run,
+                        video_file,
+                        output_dir,
+                        force=force,
+                        dry_run=dry_run,
                         output_format=output_format,
                         on_progress=progress.update,
                         cancel_event=_cancel_event,
@@ -183,7 +192,9 @@ def _process_directory(
                         progress.print(status_text("done", video_file.name))
                     else:
                         skipped += 1
-                        progress.print(status_text("skipped", video_file.name, "unchanged"))
+                        progress.print(
+                            status_text("skipped", video_file.name, "unchanged")
+                        )
                 except (CancelledError, KeyboardInterrupt):
                     _cancel_event.set()
                     cancelled += 1
@@ -198,12 +209,16 @@ def _process_directory(
                         progress.print(status_text("error", video_file.name, detail))
     else:
         # Parallel mode with batch progress display
-        with BatchProgress(console, total_files=len(video_files), enabled=use_live) as batch:
+        with BatchProgress(
+            console, total_files=len(video_files), enabled=use_live
+        ) as batch:
 
             def _make_callback(key: str, filename: str):  # noqa: ANN202
                 """Create a progress callback bound to a specific worker key."""
+
                 def _cb(step: str, current: int = 0, total: int = 0) -> None:
                     batch.worker_update(key, filename, step, current, total)
+
                 return _cb
 
             with ThreadPoolExecutor(max_workers=workers) as executor:
@@ -213,8 +228,10 @@ def _process_directory(
                     cb = _make_callback(key, video_file.name)
                     future = executor.submit(
                         process_file,
-                        video_file, output_dir,
-                        force=force, dry_run=dry_run,
+                        video_file,
+                        output_dir,
+                        force=force,
+                        dry_run=dry_run,
                         output_format=output_format,
                         on_progress=cb,
                         cancel_event=_cancel_event,
@@ -228,21 +245,34 @@ def _process_directory(
                             result = future.result()
                             if result:
                                 processed += 1
-                                batch.file_done(key, status_text("done", video_file.name))
+                                batch.file_done(
+                                    key, status_text("done", video_file.name)
+                                )
                             else:
                                 skipped += 1
-                                batch.file_done(key, status_text("skipped", video_file.name, "unchanged"))
+                                batch.file_done(
+                                    key,
+                                    status_text(
+                                        "skipped", video_file.name, "unchanged"
+                                    ),
+                                )
                         except CancelledError:
                             cancelled += 1
-                            batch.file_done(key, status_text("cancelled", video_file.name))
+                            batch.file_done(
+                                key, status_text("cancelled", video_file.name)
+                            )
                         except Exception as exc:
                             if _cancel_event.is_set():
                                 cancelled += 1
-                                batch.file_done(key, status_text("cancelled", video_file.name))
+                                batch.file_done(
+                                    key, status_text("cancelled", video_file.name)
+                                )
                             else:
                                 detail = _report_failure(video_file.name, exc)
                                 failed += 1
-                                batch.file_done(key, status_text("error", video_file.name, detail))
+                                batch.file_done(
+                                    key, status_text("error", video_file.name, detail)
+                                )
                 except KeyboardInterrupt:
                     _cancel_event.set()
                     kill_active_processes()
@@ -250,7 +280,9 @@ def _process_directory(
                         f.cancel()
 
     console.print()
-    console.print(summary_panel(processed, skipped, failed, cancelled, log_path=log_path))
+    console.print(
+        summary_panel(processed, skipped, failed, cancelled, log_path=log_path)
+    )
 
 
 _TOOLS: list[tuple[str, bool]] = [
@@ -308,6 +340,7 @@ def _run_check() -> int:
         format_freshness_line,
         refresh_update_cache,
     )
+
     try:
         update_installed = version(PACKAGE_NAME)
     except PackageNotFoundError:
@@ -325,7 +358,9 @@ def _run_check() -> int:
         update_entry = _read_cache()
         update_latest = update_entry.get("latest_version") if update_entry else None
         annotation = format_freshness_line(
-            update_installed, update_latest, package_name=PACKAGE_NAME,
+            update_installed,
+            update_latest,
+            package_name=PACKAGE_NAME,
         )
         if update_latest is None:
             out.print(
@@ -367,7 +402,9 @@ def _run_check() -> int:
         if errors:
             parts.append(f"[red]{errors} {'error' if errors == 1 else 'errors'}[/red]")
         if warnings:
-            parts.append(f"[yellow]{warnings} {'warning' if warnings == 1 else 'warnings'}[/yellow]")
+            parts.append(
+                f"[yellow]{warnings} {'warning' if warnings == 1 else 'warnings'}[/yellow]"
+            )
         out.print(", ".join(parts) + ".")
 
     return 1 if errors else 0
@@ -492,6 +529,7 @@ def main(
         raise typer.Exit()
 
     from tracksplit.update_check import print_cached_update_notice
+
     print_cached_update_notice(console)
 
     if check:
@@ -567,15 +605,19 @@ def main(
                 raise typer.Exit(code=1)
 
             _process_single_file(
-                input_path, output_dir,
-                force=force, dry_run=dry_run,
+                input_path,
+                output_dir,
+                force=force,
+                dry_run=dry_run,
                 output_format=output_format,
             )
 
         elif input_path.is_dir():
             _process_directory(
-                input_path, output_dir,
-                force=force, dry_run=dry_run,
+                input_path,
+                output_dir,
+                force=force,
+                dry_run=dry_run,
                 output_format=output_format,
                 workers=workers,
                 log_path=_log_path,
@@ -603,6 +645,7 @@ def run() -> None:
     finally:
         try:
             from tracksplit.update_check import refresh_update_cache
+
             refresh_update_cache()
         except BaseException:
             pass

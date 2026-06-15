@@ -1,4 +1,5 @@
 """Split a full FLAC into individual tracks at chapter boundaries."""
+
 from __future__ import annotations
 
 import logging
@@ -47,8 +48,10 @@ def build_split_command(
     """
     cmd = [
         get_tool("ffmpeg"),
-        "-i", str(input_path),
-        "-ss", str(start),
+        "-i",
+        str(input_path),
+        "-ss",
+        str(start),
     ]
     if end is not None:
         cmd.extend(["-to", str(end)])
@@ -103,17 +106,15 @@ def split_tracks(
     state at the cut point.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
-    apply_opus_prefix = (
-        ext == ".opus"
-        and codec_mode == "copy"
-        and opus_packet_ms == 20
-    )
+    apply_opus_prefix = ext == ".opus" and codec_mode == "copy" and opus_packet_ms == 20
 
     total = len(tracks)
     output_paths: list[Path] = []
     logger.debug(
         "split.start: file=%s tracks=%d codec_mode=%s",
-        full_flac.name, total, codec_mode,
+        full_flac.name,
+        total,
+        codec_mode,
     )
     for i, track in enumerate(tracks):
         if cancel_event is not None and cancel_event.is_set():
@@ -131,22 +132,27 @@ def split_tracks(
             end = None
 
         use_prefix = (
-            apply_opus_prefix
-            and i > 0
-            and track.start - OPUS_PREFIX_SECONDS >= 0.0
+            apply_opus_prefix and i > 0 and track.start - OPUS_PREFIX_SECONDS >= 0.0
         )
         start = track.start - OPUS_PREFIX_SECONDS if use_prefix else track.start
 
         logger.debug(
             'split.track: num=%d/%d title="%s" start=%.3f end=%s prefix=%s',
-            i + 1, total, track.title, start,
+            i + 1,
+            total,
+            track.title,
+            start,
             f"{end:.3f}" if end is not None else "eof",
             use_prefix if (apply_opus_prefix and i > 0) else "n/a",
         )
 
         cmd = build_split_command(
-            full_flac, output_path, start, end,
-            codec_mode=codec_mode, from_video=from_video,
+            full_flac,
+            output_path,
+            start,
+            end,
+            codec_mode=codec_mode,
+            from_video=from_video,
         )
         tracked_run(cmd, cancel_event=cancel_event)
 

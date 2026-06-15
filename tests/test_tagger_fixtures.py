@@ -8,6 +8,7 @@ in the dump exercises the full path:
 and asserts invariants that must hold for every set. Gives us continuous
 regression coverage against real data without shipping the corpus.
 """
+
 from __future__ import annotations
 
 import json
@@ -31,6 +32,7 @@ pytestmark = pytest.mark.skipif(
     not DUMP_DIR.is_dir(),
     reason=f"MKV dump corpus not present at {DUMP_DIR}",
 )
+
 
 def _fixture_ids() -> list[str]:
     if not DUMP_DIR.is_dir():
@@ -58,8 +60,7 @@ def _chapters_from_menu(menu_track: dict) -> list[Chapter]:
     extra = menu_track.get("extra", {})
     # Keys are timecodes like "_00_00_00000"; values are strings like "en:TITLE".
     entries = sorted(
-        (k, v) for k, v in extra.items()
-        if isinstance(k, str) and k.startswith("_")
+        (k, v) for k, v in extra.items() if isinstance(k, str) and k.startswith("_")
     )
     times: list[float] = []
     titles: list[str] = []
@@ -69,7 +70,12 @@ def _chapters_from_menu(menu_track: dict) -> list[Chapter]:
             continue
         h, m, rest = parts[0], parts[1], parts[2]
         try:
-            seconds = int(h) * 3600 + int(m) * 60 + int(rest[:2]) + int(rest[2:].ljust(3, "0")[:3]) / 1000
+            seconds = (
+                int(h) * 3600
+                + int(m) * 60
+                + int(rest[:2])
+                + int(rest[2:].ljust(3, "0")[:3]) / 1000
+            )
         except ValueError:
             continue
         if isinstance(v, str) and ":" in v:
@@ -115,9 +121,15 @@ def test_corpus_invariants(fixture_name):
         td = build_tag_dict(meta, track)
 
         # Required tags populated
-        assert td["TITLE"] and td["TITLE"][0], f"{fixture_name} t{track.number}: empty TITLE"
-        assert td["ARTIST"] and td["ARTIST"][0], f"{fixture_name} t{track.number}: empty ARTIST"
-        assert td["ALBUMARTIST"] and td["ALBUMARTIST"][0], f"{fixture_name} t{track.number}: empty ALBUMARTIST"
+        assert td["TITLE"] and td["TITLE"][0], (
+            f"{fixture_name} t{track.number}: empty TITLE"
+        )
+        assert td["ARTIST"] and td["ARTIST"][0], (
+            f"{fixture_name} t{track.number}: empty ARTIST"
+        )
+        assert td["ALBUMARTIST"] and td["ALBUMARTIST"][0], (
+            f"{fixture_name} t{track.number}: empty ALBUMARTIST"
+        )
 
         # Regression guard: the old tag key must never reappear
         assert "MUSICBRAINZ_ARTISTID" not in td, (
@@ -131,5 +143,3 @@ def test_corpus_invariants(fixture_name):
                 f"{fixture_name} t{track.number}: MUSICBRAINZ_ALBUMARTISTID "
                 f"written with all-empty slots"
             )
-
-

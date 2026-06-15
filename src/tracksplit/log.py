@@ -6,6 +6,7 @@ MemoryHandler so disk writes only happen when a WARNING (or higher) record is
 emitted, or when the handler is closed at exit. This keeps the hot path free of
 I/O while still capturing a full DEBUG trail for post-mortem analysis.
 """
+
 from __future__ import annotations
 
 import logging
@@ -91,9 +92,7 @@ def setup_logging(
 
     # -- Console handler ---------------------------------------------------
     console_level = (
-        logging.DEBUG if debug
-        else logging.INFO if verbose
-        else logging.WARNING
+        logging.DEBUG if debug else logging.INFO if verbose else logging.WARNING
     )
 
     if console is not None:

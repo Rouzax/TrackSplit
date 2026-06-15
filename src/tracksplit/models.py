@@ -1,10 +1,12 @@
 """Data models for TrackSplit."""
+
 from dataclasses import dataclass, field
 
 
 @dataclass
 class Chapter:
     """A chapter marker from a video file."""
+
     index: int
     title: str
     start: float  # seconds
@@ -19,6 +21,7 @@ class Chapter:
 @dataclass
 class TrackMeta:
     """Metadata for a single output track."""
+
     number: int
     title: str
     start: float
@@ -33,6 +36,7 @@ class TrackMeta:
 @dataclass
 class AlbumMeta:
     """Metadata for the output album."""
+
     artist: str
     album: str
     date: str = ""

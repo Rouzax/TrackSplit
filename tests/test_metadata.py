@@ -1,4 +1,5 @@
 """Tests for tracksplit.metadata module."""
+
 from tracksplit.cratedigger import CrateDiggerConfig
 from tracksplit.metadata import (
     strip_label,
@@ -12,6 +13,7 @@ from tracksplit.models import Chapter
 
 
 # --- strip_label ---
+
 
 def test_strip_label_with_label():
     title, label = strip_label("Track Title [Armada Music]")
@@ -45,6 +47,7 @@ def test_strip_label_brackets_in_middle():
 
 
 # --- safe_filename ---
+
 
 def test_safe_filename_illegal_chars():
     result = safe_filename('Track: "Live" <2024> | Mix?')
@@ -89,6 +92,7 @@ def test_safe_filename_control_chars():
 
 
 # --- parse_filename ---
+
 
 def test_parse_filename_full_pattern():
     artist, year = parse_filename("2024 - Armin van Buuren - Tomorrowland")
@@ -147,6 +151,7 @@ def test_split_track_artist_x_connector():
 
 # --- deduplicate_titles ---
 
+
 def test_deduplicate_titles_no_dupes():
     titles = ["Track A", "Track B", "Track C"]
     result = deduplicate_titles(titles)
@@ -167,10 +172,13 @@ def test_deduplicate_titles_three_dupes():
 
 # --- build_album_meta ---
 
+
 def _make_chapters(titles):
     chapters = []
     for i, t in enumerate(titles):
-        chapters.append(Chapter(index=i, title=t, start=float(i * 60), end=float((i + 1) * 60)))
+        chapters.append(
+            Chapter(index=i, title=t, start=float(i * 60), end=float((i + 1) * 60))
+        )
     return chapters
 
 
@@ -212,7 +220,9 @@ def test_build_album_meta_tier2_without_stage():
 def test_build_album_meta_tier1():
     tags = {}
     chapters = _make_chapters(["Track A [Label]", "Track B"])
-    meta = build_album_meta(tags, chapters, "2024 - Armin van Buuren - Tomorrowland", tier=1)
+    meta = build_album_meta(
+        tags, chapters, "2024 - Armin van Buuren - Tomorrowland", tier=1
+    )
     assert meta.artist == "Armin van Buuren"
     assert meta.album == "2024 - Armin van Buuren - Tomorrowland"
     assert meta.date == "2024"
@@ -248,11 +258,13 @@ def test_build_album_meta_splits_track_artists():
         "date": "2024-05-18",
         "genres": ["Trance"],
     }
-    chapters = _make_chapters([
-        "Fred again.. & Jamie T - Lights Burn Dimmer [Atlantic]",
-        "Tiësto - Adagio For Strings [Magik Muzik]",
-        "ID",  # no artist separator
-    ])
+    chapters = _make_chapters(
+        [
+            "Fred again.. & Jamie T - Lights Burn Dimmer [Atlantic]",
+            "Tiësto - Adagio For Strings [Magik Muzik]",
+            "ID",  # no artist separator
+        ]
+    )
     meta = build_album_meta(tags, chapters, "", tier=2)
     assert meta.tracks[0].artist == "Fred again.. & Jamie T"
     assert meta.tracks[0].title == "Lights Burn Dimmer"
@@ -421,13 +433,16 @@ def test_tier1_solo_synthesizes_albumartists_and_fills_mbid_from_cache():
     cfg = CrateDiggerConfig(mbid_cache={"deadmau5": "cached-uuid"})
     # Tier-1 derives artist from the filename stem.
     chapters = [Chapter(index=1, title="Strobe", start=0.0, end=60.0)]
-    meta = build_album_meta({}, chapters, "2024 - deadmau5 - EDC", tier=1, cd_config=cfg)
+    meta = build_album_meta(
+        {}, chapters, "2024 - deadmau5 - EDC", tier=1, cd_config=cfg
+    )
     assert meta.artist == "deadmau5"
     assert meta.albumartists == ["deadmau5"]
     assert meta.albumartist_mbids == ["cached-uuid"]
 
 
 # --- Per-track artist case normalization (defense-in-depth) ---
+
 
 def test_track_artist_case_normalized_uppercase_chapter():
     """Chapter 'AFROJACK - ID' with album ARTIST 'Afrojack' → normalized."""
@@ -449,10 +464,12 @@ def test_track_artist_case_normalized_lowercase_chapter():
 def test_track_artist_preserved_when_not_whole_match():
     """Multi-artist strings containing the album artist stay as-is."""
     tags = {"artist": "Afrojack", "festival": "EDC", "date": "2025-05-17"}
-    chapters = _make_chapters([
-        "AFROJACK & Steve Aoki ft. Miss Palmer - No Beef",
-        "AFROJACK & Martin Garrix - Turn Up The Speakers",
-    ])
+    chapters = _make_chapters(
+        [
+            "AFROJACK & Steve Aoki ft. Miss Palmer - No Beef",
+            "AFROJACK & Martin Garrix - Turn Up The Speakers",
+        ]
+    )
     meta = build_album_meta(tags, chapters, "", tier=2)
     assert meta.tracks[0].artist == "AFROJACK & Steve Aoki ft. Miss Palmer"
     assert meta.tracks[1].artist == "AFROJACK & Martin Garrix"
@@ -470,11 +487,13 @@ def test_track_artist_empty_when_chapter_has_no_separator():
 def test_unicode_artist_preserved_through_build_album_meta():
     """Diacritics in artist names must survive the pipeline untouched."""
     tags = {"artist": "Tiësto", "festival": "EDC", "date": "2025-05-17"}
-    chapters = _make_chapters([
-        "RÜFÜS DU SOL - Innerbloom",
-        "Kölsch - Grey",
-        "Amél - Birds Of A Feather",
-    ])
+    chapters = _make_chapters(
+        [
+            "RÜFÜS DU SOL - Innerbloom",
+            "Kölsch - Grey",
+            "Amél - Birds Of A Feather",
+        ]
+    )
     meta = build_album_meta(tags, chapters, "", tier=2)
     assert meta.artist == "Tiësto"
     assert meta.tracks[0].artist == "RÜFÜS DU SOL"
@@ -500,7 +519,8 @@ def test_structured_chapter_tags_drive_track_fields():
     }
     chapters = [
         _structured_chapter(
-            0.0, 60.0,
+            0.0,
+            60.0,
             "Armin van Buuren & Alle Farben ft. ROSY - Lost In Time [ARMADA]",
             {
                 "TITLE": "Lost In Time",
@@ -527,7 +547,9 @@ def test_missing_per_artist_mbids_filled_from_cache():
     tags = {"artist": "Armin van Buuren"}
     chapters = [
         _structured_chapter(
-            0.0, 60.0, "Armin van Buuren & JOA - Heavy",
+            0.0,
+            60.0,
+            "Armin van Buuren & JOA - Heavy",
             {
                 "TITLE": "Heavy",
                 "PERFORMER": "Armin van Buuren & JOA",
@@ -544,7 +566,9 @@ def test_remixer_included_in_artists_but_not_display():
     tags = {"artist": "X"}
     chapters = [
         _structured_chapter(
-            0.0, 60.0, "A & B - Song (C Remix)",
+            0.0,
+            60.0,
+            "A & B - Song (C Remix)",
             {
                 "TITLE": "Song (C Remix)",
                 "PERFORMER": "A & B",
@@ -593,7 +617,9 @@ def test_per_artist_case_normalization_against_albumartists():
     }
     chapters = [
         _structured_chapter(
-            0.0, 60.0, "AFROJACK - ID",
+            0.0,
+            60.0,
+            "AFROJACK - ID",
             {
                 "TITLE": "ID",
                 "PERFORMER": "AFROJACK",
@@ -607,6 +633,7 @@ def test_per_artist_case_normalization_against_albumartists():
 
 
 # --- CrateDigger 0.12.5 per-chapter tag rename (CRATEDIGGER_TRACK_*) ---
+
 
 def test_structured_chapter_tags_drive_track_fields_new_names():
     """Same as the legacy test but with CRATEDIGGER_TRACK_* prefixed names.
@@ -622,7 +649,8 @@ def test_structured_chapter_tags_drive_track_fields_new_names():
     }
     chapters = [
         _structured_chapter(
-            0.0, 60.0,
+            0.0,
+            60.0,
             "Armin van Buuren & Alle Farben ft. ROSY - Lost In Time [ARMADA]",
             {
                 "CRATEDIGGER_TRACK_TITLE": "Lost In Time",
@@ -645,6 +673,7 @@ def test_structured_chapter_tags_drive_track_fields_new_names():
 
 
 # --- B2B album-artist display synthesis (Red Rocks venue collision fix) ---
+
 
 def test_tier2_synthesizes_b2b_display_when_explicit_missing():
     """No ALBUMARTIST_DISPLAY but multi-entry albumartists -> joined display.
@@ -697,7 +726,5 @@ def test_tier2_solo_uses_file_artist_when_no_display():
         "venue": "Red Rocks Amphitheatre",
     }
     chapters = _make_chapters(["Track 1"])
-    meta = build_album_meta(
-        tags, chapters, "2025 - Martin Garrix - Red Rocks", tier=2
-    )
+    meta = build_album_meta(tags, chapters, "2025 - Martin Garrix - Red Rocks", tier=2)
     assert meta.artist == "Martin Garrix"

@@ -1,4 +1,5 @@
 """Metadata extraction, sanitization, and album building for TrackSplit."""
+
 from __future__ import annotations
 
 import logging
@@ -198,9 +199,7 @@ def build_album_meta(
         albumartist_mbids = []
     if albumartists:
         if cd_config is not None:
-            albumartist_mbids = cd_config.fill_mbids(
-                albumartists, albumartist_mbids
-            )
+            albumartist_mbids = cd_config.fill_mbids(albumartists, albumartist_mbids)
         else:
             while len(albumartist_mbids) < len(albumartists):
                 albumartist_mbids.append("")
@@ -237,7 +236,9 @@ def build_album_meta(
         if not clean_titles:
             logger.debug(
                 "metadata.source: file=%s structured=%s cratedigger=%s",
-                filename_stem, has_structured, tier == 2,
+                filename_stem,
+                has_structured,
+                tier == 2,
             )
 
         if has_structured:
@@ -266,15 +267,14 @@ def build_album_meta(
         else:
             title_full, label = strip_label(ch.title)
             track_artist, title = split_track_artist(title_full)
-            if (
-                track_artist
-                and artist
-                and track_artist.casefold() == artist.casefold()
-            ):
+            if track_artist and artist and track_artist.casefold() == artist.casefold():
                 if track_artist != artist:
                     logger.debug(
                         'metadata.artist_canon: file=%s track=%d original="%s" canonical="%s"',
-                        filename_stem, len(clean_titles) + 1, track_artist, artist,
+                        filename_stem,
+                        len(clean_titles) + 1,
+                        track_artist,
+                        artist,
                     )
                 track_artist = artist
             display = track_artist
@@ -293,7 +293,9 @@ def build_album_meta(
     clean_titles = deduplicate_titles(clean_titles)
     dedup_count = sum(1 for a, b in zip(pre_dedup, clean_titles) if a != b)
     if dedup_count:
-        logger.debug("metadata.title_dedup: file=%s count=%d", filename_stem, dedup_count)
+        logger.debug(
+            "metadata.title_dedup: file=%s count=%d", filename_stem, dedup_count
+        )
 
     tracks: list[TrackMeta] = []
     for i, ch in enumerate(chapters):

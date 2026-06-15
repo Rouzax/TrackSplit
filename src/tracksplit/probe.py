@@ -1,4 +1,5 @@
 """Probe video files for chapters and metadata using ffprobe."""
+
 import json
 import logging
 import subprocess
@@ -16,6 +17,7 @@ def _fix_text(s: str) -> str:
         return s
     return ftfy.fix_text(s)
 
+
 logger = logging.getLogger(__name__)
 
 VIDEO_EXTENSIONS = {".mkv", ".mp4", ".webm", ".avi", ".mov", ".m2ts", ".ts", ".flv"}
@@ -25,15 +27,21 @@ def run_ffprobe(path: Path) -> dict:
     """Run ffprobe with JSON output on *path* and return parsed data."""
     cmd = [
         get_tool("ffprobe"),
-        "-v", "quiet",
-        "-print_format", "json",
+        "-v",
+        "quiet",
+        "-print_format",
+        "json",
         "-show_chapters",
         "-show_streams",
         "-show_format",
         str(path),
     ]
     result = subprocess.run(
-        cmd, capture_output=True, text=True, check=True, encoding="utf-8",
+        cmd,
+        capture_output=True,
+        text=True,
+        check=True,
+        encoding="utf-8",
     )
     return json.loads(result.stdout)
 
@@ -56,7 +64,9 @@ def parse_chapters(ffprobe_data: dict) -> list[Chapter]:
         if end - start <= 0:
             title = raw_tags.get("title", "(untitled)")
             logger.warning(
-                'probe.skip_zero: title="%s" start=%.3f', title, start,
+                'probe.skip_zero: title="%s" start=%.3f',
+                title,
+                start,
             )
             continue
 
@@ -109,12 +119,16 @@ def parse_tags(ffprobe_data: dict) -> dict:
     ci: dict[str, str] = {k.upper(): _fix_text(v) for k, v in raw_tags.items()}
 
     genres_raw = ci.get("CRATEDIGGER_1001TL_GENRES", "").strip()
-    genres = [g.strip() for g in genres_raw.split("|") if g.strip()] if genres_raw else []
+    genres = (
+        [g.strip() for g in genres_raw.split("|") if g.strip()] if genres_raw else []
+    )
 
     cratedigger = any(k.startswith("CRATEDIGGER_") for k in ci)
 
     albumartists_raw = ci.get("CRATEDIGGER_1001TL_ARTISTS", "")
-    albumartists = [n for n in albumartists_raw.split("|") if n] if albumartists_raw else []
+    albumartists = (
+        [n for n in albumartists_raw.split("|") if n] if albumartists_raw else []
+    )
 
     albumartist_mbids_raw = ci.get("CRATEDIGGER_ALBUMARTIST_MBIDS", "")
     albumartist_mbids = _split_pipe_preserving_empty(albumartist_mbids_raw)
@@ -150,10 +164,7 @@ def detect_tier(tags: dict) -> int:
 
 def has_audio(ffprobe_data: dict) -> bool:
     """Check whether at least one audio stream exists."""
-    return any(
-        s.get("codec_type") == "audio"
-        for s in ffprobe_data.get("streams", [])
-    )
+    return any(s.get("codec_type") == "audio" for s in ffprobe_data.get("streams", []))
 
 
 def is_video_file(path: Path) -> bool:
@@ -169,7 +180,15 @@ def get_audio_codec(ffprobe_data: dict) -> str:
     return ""
 
 
-LOSSLESS_CODECS = {"flac", "alac", "pcm_s16le", "pcm_s24le", "pcm_s32le", "pcm_f32le", "wavpack"}
+LOSSLESS_CODECS = {
+    "flac",
+    "alac",
+    "pcm_s16le",
+    "pcm_s24le",
+    "pcm_s32le",
+    "pcm_f32le",
+    "wavpack",
+}
 
 
 def is_lossless_codec(codec: str) -> bool:
@@ -186,12 +205,17 @@ def get_opus_packet_duration_ms(path: Path) -> int | None:
     """
     cmd = [
         get_tool("ffprobe"),
-        "-v", "error",
+        "-v",
+        "error",
         "-show_packets",
-        "-select_streams", "a:0",
-        "-read_intervals", "%+#20",
-        "-show_entries", "packet=duration_time",
-        "-of", "default=noprint_wrappers=1",
+        "-select_streams",
+        "a:0",
+        "-read_intervals",
+        "%+#20",
+        "-show_entries",
+        "packet=duration_time",
+        "-of",
+        "default=noprint_wrappers=1",
         str(path),
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -203,19 +227,23 @@ def get_opus_packet_duration_ms(path: Path) -> int | None:
             seconds = float(line.split("=", 1)[1])
         except ValueError:
             logger.debug(
-                'probe.opus_packet: file=%s error="parse failed: %s"', path.name, line,
+                'probe.opus_packet: file=%s error="parse failed: %s"',
+                path.name,
+                line,
             )
             return None
         durations_ms.add(int(round(seconds * 1000)))
     if not durations_ms:
         logger.debug(
-            "probe.opus_packet: file=%s error=no_packets", path.name,
+            "probe.opus_packet: file=%s error=no_packets",
+            path.name,
         )
         return None
     if len(durations_ms) != 1:
         logger.debug(
             "probe.opus_disagree: file=%s durations_ms=%s",
-            path.name, sorted(durations_ms),
+            path.name,
+            sorted(durations_ms),
         )
         return None
     result = next(iter(durations_ms))

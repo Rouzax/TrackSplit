@@ -3,6 +3,7 @@
 Stored alongside generated outputs so that a future invocation can
 decide whether anything meaningful changed since the last run.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -59,6 +60,7 @@ class AudioFingerprint:
     duration in the codec's native integer timebase. Float ``duration``
     is deliberately not used: it varies subtly across mux operations.
     """
+
     codec_name: str
     sample_rate: int
     channels: int
@@ -113,6 +115,7 @@ class AlbumManifest:
     was actually written to disk, not the CLI argument (which may have been
     ``"auto"``). Compare against ``ext.lstrip('.')`` when deciding reruns.
     """
+
     schema: int
     source: SourceFingerprint
     resolved_artist_folder: str
@@ -173,6 +176,7 @@ def build_album_manifest(
     from tracksplit.pipeline import INTRO_MIN_SECONDS  # local import avoids cycle
     from tracksplit.cover import COVER_SCHEMA_VERSION  # local import avoids cycle
     from tracksplit.tagger import TAG_SCHEMA_VERSION  # local import avoids cycle
+
     return AlbumManifest(
         schema=MANIFEST_SCHEMA,
         source=SourceFingerprint.from_ffprobe(source_path, ffprobe_data),
@@ -223,7 +227,9 @@ def load_album_manifest(album_dir: Path) -> AlbumManifest | None:
         if data.get("schema") != MANIFEST_SCHEMA:
             logger.debug(
                 "manifest.schema_mismatch: file=%s found=%s expected=%d",
-                path.name, data.get("schema"), MANIFEST_SCHEMA,
+                path.name,
+                data.get("schema"),
+                MANIFEST_SCHEMA,
             )
             return None
         return AlbumManifest.from_dict(data)
@@ -252,11 +258,14 @@ def load_artist_manifest(artist_dir: Path) -> ArtistManifest | None:
         if d.get("schema") != MANIFEST_SCHEMA:
             logger.debug(
                 "manifest.schema_mismatch: file=%s found=%s expected=%d",
-                path.name, d.get("schema"), MANIFEST_SCHEMA,
+                path.name,
+                d.get("schema"),
+                MANIFEST_SCHEMA,
             )
             return None
         return ArtistManifest(
-            schema=d["schema"], artist=d["artist"],
+            schema=d["schema"],
+            artist=d["artist"],
             dj_artwork_sha256=d["dj_artwork_sha256"],
             cover_schema_version=d.get("cover_schema_version", 0),
         )

@@ -5,6 +5,7 @@ They are skipped by default. Run with: pytest tests/test_integration.py -v
 
 Set TRACKSPLIT_TEST_VIDEO to a video file path to enable.
 """
+
 import os
 from pathlib import Path
 
@@ -60,6 +61,7 @@ def test_full_pipeline(video_path, tmp_path):
 
     # Verify tags on first track
     from mutagen.flac import FLAC
+
     audio = FLAC(str(flac_files[0]))
     assert "TITLE" in audio
     assert "ARTIST" in audio

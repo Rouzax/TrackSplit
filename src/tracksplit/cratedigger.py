@@ -16,6 +16,7 @@ first; if the file is not there, the visible data dir
 tried. ``$CRATEDIGGER_DATA_DIR`` overrides both when set.
 Cache files are read from :func:`tracksplit.paths.cratedigger_cache_dir`.
 """
+
 from __future__ import annotations
 
 import json
@@ -116,8 +117,7 @@ def _find_json_multi(dirs: list[Path], filenames: list[str]) -> dict:
 def _strip_diacritics(s: str) -> str:
     """Fold diacritics for case/accent-insensitive matching ("Tiësto" -> "Tiesto")."""
     return "".join(
-        c for c in unicodedata.normalize("NFD", s)
-        if not unicodedata.combining(c)
+        c for c in unicodedata.normalize("NFD", s) if not unicodedata.combining(c)
     )
 
 
@@ -173,7 +173,7 @@ class CrateDiggerConfig:
                 if name.lower() in aliases:
                     return canonical, ed_name
             if name.lower().startswith(canonical.lower()):
-                suffix = name[len(canonical):].strip()
+                suffix = name[len(canonical) :].strip()
                 for ed_name in fc.get("editions", {}):
                     if ed_name.lower() == suffix.lower():
                         return canonical, ed_name
@@ -325,8 +325,7 @@ def load_config(input_path: Path) -> CrateDiggerConfig:
 
     fest = _find_json_multi(dirs, ["places.json", "festivals.json"])
     fest = {
-        k: v for k, v in fest.items()
-        if not k.startswith("_") and isinstance(v, dict)
+        k: v for k, v in fest.items() if not k.startswith("_") and isinstance(v, dict)
     }
     cfg.festival_config = fest
 
@@ -334,9 +333,7 @@ def load_config(input_path: Path) -> CrateDiggerConfig:
     for canon, fc in fest.items():
         raw_aliases.setdefault(canon, []).extend(fc.get("aliases", []))
         for ed_conf in fc.get("editions", {}).values():
-            raw_aliases.setdefault(canon, []).extend(
-                ed_conf.get("aliases", [])
-            )
+            raw_aliases.setdefault(canon, []).extend(ed_conf.get("aliases", []))
     cfg.festival_aliases = _invert_alias_map(raw_aliases)
 
     # -- Cache files: always from CrateDigger's platformdirs cache dir --
@@ -380,7 +377,9 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
                     _logged_festival_aliases.add(raw_festival)
                     logger.debug(
                         'cratedigger.festival_alias: raw="%s" short="%s" edition="%s"',
-                        raw_festival, display, edition,
+                        raw_festival,
+                        display,
+                        edition,
                     )
         tags["festival"] = display
 
@@ -400,7 +399,11 @@ def apply_cratedigger_canon_with(tags: dict, cfg: CrateDiggerConfig) -> dict:
     if raw_artist:
         resolved = cfg.resolve_artist(raw_artist)
         if resolved != raw_artist:
-            logger.debug('cratedigger.artist_alias: raw="%s" canonical="%s"', raw_artist, resolved)
+            logger.debug(
+                'cratedigger.artist_alias: raw="%s" canonical="%s"',
+                raw_artist,
+                resolved,
+            )
         tags["artist"] = resolved
 
     return tags

@@ -12,6 +12,7 @@ Example config::
     mkvmerge = "C:/Program Files/MKVToolNix/mkvmerge.exe"
     mkvextract = "C:/Program Files/MKVToolNix/mkvextract.exe"
 """
+
 from __future__ import annotations
 
 import logging
@@ -59,12 +60,17 @@ def _load_config() -> dict[str, str]:
     if not isinstance(tools_section, dict):
         logger.warning(
             'tools.config: path=%s error="[tools] must be a table, got %s"',
-            path, type(tools_section).__name__,
+            path,
+            type(tools_section).__name__,
         )
         return {}
     resolved = {k: str(v) for k, v in tools_section.items()}
     if resolved:
-        logger.info("tools.config: path=%s status=loaded tools=%s", path, "|".join(sorted(resolved)))
+        logger.info(
+            "tools.config: path=%s status=loaded tools=%s",
+            path,
+            "|".join(sorted(resolved)),
+        )
         for name, tool_path in resolved.items():
             if tool_path != name and not Path(tool_path).is_file():
                 logger.warning("tools.missing: tool=%s path=%s", name, tool_path)
@@ -84,10 +90,18 @@ def get_tool(name: str) -> str:
 
 
 _INSTALL_PACKAGES: dict[str, dict[str, str]] = {
-    "ffmpeg":     {"brew": "ffmpeg",     "apt": "ffmpeg",     "winget": "Gyan.FFmpeg"},
-    "ffprobe":    {"brew": "ffmpeg",     "apt": "ffmpeg",     "winget": "Gyan.FFmpeg"},
-    "mkvextract": {"brew": "mkvtoolnix", "apt": "mkvtoolnix", "winget": "MKVToolNix.MKVToolNix"},
-    "mkvmerge":   {"brew": "mkvtoolnix", "apt": "mkvtoolnix", "winget": "MKVToolNix.MKVToolNix"},
+    "ffmpeg": {"brew": "ffmpeg", "apt": "ffmpeg", "winget": "Gyan.FFmpeg"},
+    "ffprobe": {"brew": "ffmpeg", "apt": "ffmpeg", "winget": "Gyan.FFmpeg"},
+    "mkvextract": {
+        "brew": "mkvtoolnix",
+        "apt": "mkvtoolnix",
+        "winget": "MKVToolNix.MKVToolNix",
+    },
+    "mkvmerge": {
+        "brew": "mkvtoolnix",
+        "apt": "mkvtoolnix",
+        "winget": "MKVToolNix.MKVToolNix",
+    },
 }
 
 
@@ -120,13 +134,20 @@ def verify_tool(name: str) -> tuple[bool, str]:
     try:
         result = subprocess.run(
             [path, version_flag],
-            capture_output=True, text=True, timeout=5, check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
         )
     except (OSError, subprocess.SubprocessError) as exc:
         return False, f"failed to run: {exc}"
     if result.returncode != 0:
         return False, f"exited {result.returncode}"
-    first_line = (result.stdout or result.stderr).splitlines()[0] if (result.stdout or result.stderr) else ""
+    first_line = (
+        (result.stdout or result.stderr).splitlines()[0]
+        if (result.stdout or result.stderr)
+        else ""
+    )
     return True, first_line.strip()
 
 

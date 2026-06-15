@@ -1,4 +1,5 @@
 """Tests for the CrateDigger config reader and alias resolvers."""
+
 from __future__ import annotations
 
 import json
@@ -21,12 +22,14 @@ def _reset_cratedigger_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     cache = tmp_path / "cd_cache"
     cache.mkdir(exist_ok=True)
     monkeypatch.setattr(
-        "tracksplit.paths.cratedigger_cache_dir", lambda: cache,
+        "tracksplit.paths.cratedigger_cache_dir",
+        lambda: cache,
     )
     cd_visible = tmp_path / "cd_visible_data"
     cd_visible.mkdir(exist_ok=True)
     monkeypatch.setattr(
-        "tracksplit.paths.cratedigger_data_dir", lambda: cd_visible,
+        "tracksplit.paths.cratedigger_data_dir",
+        lambda: cd_visible,
     )
     _clear_config_cache()
     yield
@@ -39,61 +42,79 @@ def cd_home(tmp_path: Path) -> Path:
     home = tmp_path / "home"
     cd = home / ".cratedigger"
     cd.mkdir(parents=True)
-    (cd / "places.json").write_text(json.dumps({
-        "_comment": "test",
-        "ASOT": {"aliases": ["A State Of Trance Festival", "A State Of Trance"]},
-        "Tomorrowland": {
-            "aliases": ["TML", "Tomorrowland Weekend 1"],
-            "editions": {
-                "Brasil": {},
-                "Winter": {"aliases": ["TML Winter"]},
-            },
-        },
-        "UMF": {
-            "aliases": ["Ultra"],
-            "editions": {"Europe": {}, "Miami": {"aliases": ["UMF Miami"]}},
-        },
-        "Awakenings": {},
-        "Red Rocks": {
-            "aliases": ["Red Rocks Amphitheatre"],
-            "color": "#C0392B",
-        },
-    }))
-    (cd / "artists.json").write_text(json.dumps({
-        "aliases": {
-            "Deadmau5": ["deadmau5", "Testpilot"],
-            "David Guetta": ["Jack Back"],
-        },
-        "groups": ["Swedish House Mafia"],
-    }))
+    (cd / "places.json").write_text(
+        json.dumps(
+            {
+                "_comment": "test",
+                "ASOT": {
+                    "aliases": ["A State Of Trance Festival", "A State Of Trance"]
+                },
+                "Tomorrowland": {
+                    "aliases": ["TML", "Tomorrowland Weekend 1"],
+                    "editions": {
+                        "Brasil": {},
+                        "Winter": {"aliases": ["TML Winter"]},
+                    },
+                },
+                "UMF": {
+                    "aliases": ["Ultra"],
+                    "editions": {"Europe": {}, "Miami": {"aliases": ["UMF Miami"]}},
+                },
+                "Awakenings": {},
+                "Red Rocks": {
+                    "aliases": ["Red Rocks Amphitheatre"],
+                    "color": "#C0392B",
+                },
+            }
+        )
+    )
+    (cd / "artists.json").write_text(
+        json.dumps(
+            {
+                "aliases": {
+                    "Deadmau5": ["deadmau5", "Testpilot"],
+                    "David Guetta": ["Jack Back"],
+                },
+                "groups": ["Swedish House Mafia"],
+            }
+        )
+    )
     cache = tmp_path / "cd_cache"
     cache.mkdir(exist_ok=True)
-    (cache / "dj_cache.json").write_text(json.dumps({
-        "tiesto": {
-            "name": "Tiësto",
-            "aliases": [
-                {"slug": "verwest", "name": "VER:WEST"},
-                {"slug": "allurenl", "name": "Allure"},
-            ],
-            "member_of": [],
-        },
-        "martingarrix": {
-            "name": "Martin Garrix",
-            "aliases": [{"slug": "ytram", "name": "YTRAM"}],
-            "member_of": [{"slug": "area21", "name": "AREA21"}],
-        },
-        # Conflict with artists.json: dj_cache says Deadmau5's alias maps to
-        # something else. artists.json should win.
-        "othermau5": {
-            "name": "Someone Else",
-            "aliases": [{"slug": "testpilot", "name": "Testpilot"}],
-            "member_of": [],
-        },
-    }))
-    (cache / "mbid_cache.json").write_text(json.dumps({
-        "Deadmau5": "2f9ecbed-27be-40e6-abca-6de49d50299e",
-        "David Guetta": {"mbid": "abc-123"},
-    }))
+    (cache / "dj_cache.json").write_text(
+        json.dumps(
+            {
+                "tiesto": {
+                    "name": "Tiësto",
+                    "aliases": [
+                        {"slug": "verwest", "name": "VER:WEST"},
+                        {"slug": "allurenl", "name": "Allure"},
+                    ],
+                    "member_of": [],
+                },
+                "martingarrix": {
+                    "name": "Martin Garrix",
+                    "aliases": [{"slug": "ytram", "name": "YTRAM"}],
+                    "member_of": [{"slug": "area21", "name": "AREA21"}],
+                },
+                # Conflict with artists.json: dj_cache says Deadmau5's alias maps to
+                # something else. artists.json should win.
+                "othermau5": {
+                    "name": "Someone Else",
+                    "aliases": [{"slug": "testpilot", "name": "Testpilot"}],
+                    "member_of": [],
+                },
+            }
+        )
+    )
+    (cache / "mbid_cache.json").write_text(
+        json.dumps(
+            {
+                "Deadmau5": "2f9ecbed-27be-40e6-abca-6de49d50299e",
+                "David Guetta": {"mbid": "abc-123"},
+            }
+        )
+    )
     return home
 
 
@@ -211,11 +232,13 @@ class TestResolveArtist:
         # Iterating with set() makes this non-deterministic because string
         # hashing is randomized per-process; the resolver must preserve
         # insertion order instead.
-        cfg = CrateDiggerConfig(artist_aliases={
-            "NLW": "AFROJACK",
-            "Kapuchon": "AFROJACK",
-            "SomeOtherAlias": "Afrojack",
-        })
+        cfg = CrateDiggerConfig(
+            artist_aliases={
+                "NLW": "AFROJACK",
+                "Kapuchon": "AFROJACK",
+                "SomeOtherAlias": "Afrojack",
+            }
+        )
         assert cfg.resolve_artist("Afrojack") == "AFROJACK"
 
 
@@ -238,10 +261,13 @@ class TestLookupMbid:
 
 def test_fill_mbids_gap_fills_empties():
     from tracksplit.cratedigger import CrateDiggerConfig
-    cfg = CrateDiggerConfig(mbid_cache={
-        "Alle Farben": "mbid-af",
-        "JOA": "mbid-joa",
-    })
+
+    cfg = CrateDiggerConfig(
+        mbid_cache={
+            "Alle Farben": "mbid-af",
+            "JOA": "mbid-joa",
+        }
+    )
     names = ["Armin van Buuren", "Alle Farben", "JOA"]
     mbids = ["mbid-arm", "", ""]
     filled = cfg.fill_mbids(names, mbids)
@@ -250,6 +276,7 @@ def test_fill_mbids_gap_fills_empties():
 
 def test_fill_mbids_leaves_unknown_empty():
     from tracksplit.cratedigger import CrateDiggerConfig
+
     cfg = CrateDiggerConfig(mbid_cache={"A": "mbid-a"})
     filled = cfg.fill_mbids(["A", "B"], ["", ""])
     assert filled == ["mbid-a", ""]
@@ -257,6 +284,7 @@ def test_fill_mbids_leaves_unknown_empty():
 
 def test_fill_mbids_pads_shorter_mbid_list():
     from tracksplit.cratedigger import CrateDiggerConfig
+
     cfg = CrateDiggerConfig(mbid_cache={"B": "mbid-b"})
     filled = cfg.fill_mbids(["A", "B", "C"], ["mbid-a"])
     assert filled == ["mbid-a", "mbid-b", ""]
@@ -264,6 +292,7 @@ def test_fill_mbids_pads_shorter_mbid_list():
 
 def test_fill_mbids_truncates_longer_mbid_list():
     from tracksplit.cratedigger import CrateDiggerConfig
+
     cfg = CrateDiggerConfig()
     filled = cfg.fill_mbids(["A"], ["mbid-a", "extra"])
     assert filled == ["mbid-a"]
@@ -271,6 +300,7 @@ def test_fill_mbids_truncates_longer_mbid_list():
 
 def test_fill_mbids_does_not_overwrite_existing():
     from tracksplit.cratedigger import CrateDiggerConfig
+
     cfg = CrateDiggerConfig(mbid_cache={"A": "mbid-cache"})
     filled = cfg.fill_mbids(["A"], ["mbid-existing"])
     assert filled == ["mbid-existing"]
@@ -341,16 +371,33 @@ class TestCacheVsDataSplit:
         data_dir.mkdir(parents=True)
         (data_dir / "places.json").write_text("{}")
         (data_dir / "artists.json").write_text("{}")
-        (data_dir / "dj_cache.json").write_text(json.dumps({
-            "wrong": {"name": "ShouldNotAppear", "aliases": [], "member_of": []},
-        }))
+        (data_dir / "dj_cache.json").write_text(
+            json.dumps(
+                {
+                    "wrong": {
+                        "name": "ShouldNotAppear",
+                        "aliases": [],
+                        "member_of": [],
+                    },
+                }
+            )
+        )
         cache_dir = tmp_path / "cache"
         cache_dir.mkdir()
-        (cache_dir / "dj_cache.json").write_text(json.dumps({
-            "right": {"name": "Correct", "aliases": [{"slug": "a", "name": "Alias"}], "member_of": []},
-        }))
+        (cache_dir / "dj_cache.json").write_text(
+            json.dumps(
+                {
+                    "right": {
+                        "name": "Correct",
+                        "aliases": [{"slug": "a", "name": "Alias"}],
+                        "member_of": [],
+                    },
+                }
+            )
+        )
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_cache_dir", lambda: cache_dir,
+            "tracksplit.paths.cratedigger_cache_dir",
+            lambda: cache_dir,
         )
         monkeypatch.setattr(
             "tracksplit.paths.walkup_cratedigger_dir",
@@ -368,9 +415,12 @@ class TestCacheVsDataSplit:
         (data_dir / "mbid_cache.json").write_text(json.dumps({"Wrong": "wrong-mbid"}))
         cache_dir = tmp_path / "cache"
         cache_dir.mkdir()
-        (cache_dir / "mbid_cache.json").write_text(json.dumps({"Right": "correct-mbid"}))
+        (cache_dir / "mbid_cache.json").write_text(
+            json.dumps({"Right": "correct-mbid"})
+        )
         monkeypatch.setattr(
-            "tracksplit.paths.cratedigger_cache_dir", lambda: cache_dir,
+            "tracksplit.paths.cratedigger_cache_dir",
+            lambda: cache_dir,
         )
         monkeypatch.setattr(
             "tracksplit.paths.walkup_cratedigger_dir",
@@ -422,7 +472,9 @@ class TestApplyCratediggerCanon:
         assert tags["location"] == "Red Rocks"
 
     def test_venue_and_festival_resolved_independently(
-        self, cd_home: Path, monkeypatch,
+        self,
+        cd_home: Path,
+        monkeypatch,
     ):
         monkeypatch.setattr(Path, "home", lambda: cd_home)
         tags = {
@@ -479,16 +531,16 @@ class TestLoadJsonNoise:
     def test_missing_files_do_not_log(self, tmp_path: Path, caplog):
         """A .cratedigger dir with no files should produce zero debug logs."""
         import logging
+
         home = tmp_path / "home"
         (home / ".cratedigger").mkdir(parents=True)
         with caplog.at_level(logging.DEBUG, logger="tracksplit.cratedigger"):
             load_config(home / "video.mkv")
-        assert not any(
-            "cratedigger.load_fail" in rec.message for rec in caplog.records
-        )
+        assert not any("cratedigger.load_fail" in rec.message for rec in caplog.records)
 
     def test_malformed_json_logs_debug(self, tmp_path: Path, caplog):
         import logging
+
         home = tmp_path / "home"
         cd = home / ".cratedigger"
         cd.mkdir(parents=True)
@@ -509,16 +561,22 @@ class TestPerFileFallback:
     """
 
     def test_walkup_without_places_falls_through_to_visible(
-        self, tmp_path: Path, monkeypatch,
+        self,
+        tmp_path: Path,
+        monkeypatch,
     ):
         walkup = tmp_path / "library" / ".cratedigger"
         walkup.mkdir(parents=True)
 
         visible = tmp_path / "visible"
         visible.mkdir()
-        (visible / "places.json").write_text(json.dumps({
-            "AMF": {"aliases": ["Amsterdam Music Festival"]},
-        }))
+        (visible / "places.json").write_text(
+            json.dumps(
+                {
+                    "AMF": {"aliases": ["Amsterdam Music Festival"]},
+                }
+            )
+        )
 
         monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
         input_file = tmp_path / "library" / "video.mkv"
@@ -529,16 +587,22 @@ class TestPerFileFallback:
         assert edition == ""
 
     def test_walkup_without_artists_falls_through_to_visible(
-        self, tmp_path: Path, monkeypatch,
+        self,
+        tmp_path: Path,
+        monkeypatch,
     ):
         walkup = tmp_path / "library" / ".cratedigger"
         walkup.mkdir(parents=True)
 
         visible = tmp_path / "visible"
         visible.mkdir()
-        (visible / "artists.json").write_text(json.dumps({
-            "aliases": {"Tiesto": ["Tiësto"]},
-        }))
+        (visible / "artists.json").write_text(
+            json.dumps(
+                {
+                    "aliases": {"Tiesto": ["Tiësto"]},
+                }
+            )
+        )
 
         monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
         input_file = tmp_path / "library" / "video.mkv"
@@ -547,40 +611,60 @@ class TestPerFileFallback:
         assert cfg.resolve_artist("Tiësto") == "Tiesto"
 
     def test_walkup_places_shadows_visible_entirely(
-        self, tmp_path: Path, monkeypatch,
+        self,
+        tmp_path: Path,
+        monkeypatch,
     ):
         walkup = tmp_path / "library" / ".cratedigger"
         walkup.mkdir(parents=True)
-        (walkup / "places.json").write_text(json.dumps({
-            "TML": {"aliases": ["Tomorrowland"]},
-        }))
+        (walkup / "places.json").write_text(
+            json.dumps(
+                {
+                    "TML": {"aliases": ["Tomorrowland"]},
+                }
+            )
+        )
 
         visible = tmp_path / "visible"
         visible.mkdir()
-        (visible / "places.json").write_text(json.dumps({
-            "AMF": {"aliases": ["Amsterdam Music Festival"]},
-            "TML": {"aliases": ["Tomorrowland"]},
-        }))
+        (visible / "places.json").write_text(
+            json.dumps(
+                {
+                    "AMF": {"aliases": ["Amsterdam Music Festival"]},
+                    "TML": {"aliases": ["Tomorrowland"]},
+                }
+            )
+        )
 
         monkeypatch.setattr("tracksplit.paths.cratedigger_data_dir", lambda: visible)
         input_file = tmp_path / "library" / "video.mkv"
         input_file.touch()
         cfg = load_config(input_file)
         assert cfg.resolve_festival("Tomorrowland") == ("TML", "")
-        assert cfg.resolve_festival("Amsterdam Music Festival") == ("Amsterdam Music Festival", "")
+        assert cfg.resolve_festival("Amsterdam Music Festival") == (
+            "Amsterdam Music Festival",
+            "",
+        )
 
     def test_legacy_festivals_json_fallback(
-        self, tmp_path: Path, monkeypatch,
+        self,
+        tmp_path: Path,
+        monkeypatch,
     ):
         """When only festivals.json exists, it is loaded for backwards compat."""
         walkup = tmp_path / "library" / ".cratedigger"
         walkup.mkdir(parents=True)
-        (walkup / "festivals.json").write_text(json.dumps({
-            "AMF": {"aliases": ["Amsterdam Music Festival"]},
-        }))
+        (walkup / "festivals.json").write_text(
+            json.dumps(
+                {
+                    "AMF": {"aliases": ["Amsterdam Music Festival"]},
+                }
+            )
+        )
 
         monkeypatch.setattr(
-            "tracksplit.paths.walkup_cratedigger_dir", lambda _: walkup,
+            "tracksplit.paths.walkup_cratedigger_dir",
+            lambda _: walkup,
         )
         input_file = tmp_path / "library" / "video.mkv"
         input_file.touch()
@@ -588,24 +672,38 @@ class TestPerFileFallback:
         assert cfg.resolve_festival("Amsterdam Music Festival") == ("AMF", "")
 
     def test_places_json_takes_priority_over_festivals_json(
-        self, tmp_path: Path, monkeypatch,
+        self,
+        tmp_path: Path,
+        monkeypatch,
     ):
         """When both exist in the same dir, places.json wins."""
         walkup = tmp_path / "library" / ".cratedigger"
         walkup.mkdir(parents=True)
-        (walkup / "places.json").write_text(json.dumps({
-            "TML": {"aliases": ["Tomorrowland"]},
-        }))
-        (walkup / "festivals.json").write_text(json.dumps({
-            "AMF": {"aliases": ["Amsterdam Music Festival"]},
-            "TML": {"aliases": ["Tomorrowland"]},
-        }))
+        (walkup / "places.json").write_text(
+            json.dumps(
+                {
+                    "TML": {"aliases": ["Tomorrowland"]},
+                }
+            )
+        )
+        (walkup / "festivals.json").write_text(
+            json.dumps(
+                {
+                    "AMF": {"aliases": ["Amsterdam Music Festival"]},
+                    "TML": {"aliases": ["Tomorrowland"]},
+                }
+            )
+        )
 
         monkeypatch.setattr(
-            "tracksplit.paths.walkup_cratedigger_dir", lambda _: walkup,
+            "tracksplit.paths.walkup_cratedigger_dir",
+            lambda _: walkup,
         )
         input_file = tmp_path / "library" / "video.mkv"
         input_file.touch()
         cfg = load_config(input_file)
         assert cfg.resolve_festival("Tomorrowland") == ("TML", "")
-        assert cfg.resolve_festival("Amsterdam Music Festival") == ("Amsterdam Music Festival", "")
+        assert cfg.resolve_festival("Amsterdam Music Festival") == (
+            "Amsterdam Music Festival",
+            "",
+        )

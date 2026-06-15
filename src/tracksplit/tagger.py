@@ -1,4 +1,5 @@
 """Tag FLAC and OGG/Opus files with Vorbis comments and cover art."""
+
 from __future__ import annotations
 
 import base64
@@ -37,10 +38,7 @@ def _count_tag_deltas(
     new_keys = set(new_map.keys())
     added = len(new_keys - existing_keys)
     removed = len(existing_keys - new_keys)
-    changed = sum(
-        1 for k in existing_keys & new_keys
-        if existing_map[k] != new_map[k]
-    )
+    changed = sum(1 for k in existing_keys & new_keys if existing_map[k] != new_map[k])
     return added, removed, changed
 
 
@@ -136,7 +134,10 @@ def tag_flac(
     if added or removed or changed:
         logger.debug(
             "tagger.write: file=%s added=%d removed=%d changed=%d",
-            Path(path).name, added, removed, changed,
+            Path(path).name,
+            added,
+            removed,
+            changed,
         )
     audio.clear()
     audio.clear_pictures()
@@ -167,7 +168,10 @@ def tag_ogg(
     if added or removed or changed:
         logger.debug(
             "tagger.write: file=%s added=%d removed=%d changed=%d",
-            Path(path).name, added, removed, changed,
+            Path(path).name,
+            added,
+            removed,
+            changed,
         )
     audio.delete()
 
@@ -210,7 +214,9 @@ def tag_all(
         except Exception as exc:
             logger.warning(
                 'tagger.fail: file=%s error="%s: %s"',
-                p.name, type(exc).__name__, exc,
+                p.name,
+                type(exc).__name__,
+                exc,
             )
             raise
 

@@ -1,4 +1,5 @@
 """Tests for tracksplit.tools config loading."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -28,7 +29,7 @@ class TestToolLoading:
     def test_reads_custom_paths_from_toml(self, tmp_path: Path):
         config = tmp_path / "config.toml"
         config.write_text(
-            '[tools]\n'
+            "[tools]\n"
             'ffmpeg = "/opt/ffmpeg/bin/ffmpeg"\n'
             'mkvmerge = "/usr/local/bin/mkvmerge"\n'
         )
@@ -39,7 +40,9 @@ class TestToolLoading:
             # Unspecified defaults still apply
             assert tools.get_tool("ffprobe") == "ffprobe"
 
-    def test_malformed_toml_logs_warning_and_uses_defaults(self, tmp_path: Path, caplog):
+    def test_malformed_toml_logs_warning_and_uses_defaults(
+        self, tmp_path: Path, caplog
+    ):
         config = tmp_path / "config.toml"
         config.write_text("this is not [valid toml")
         with patch("tracksplit.tools.paths") as mock_paths:
@@ -57,7 +60,9 @@ class TestToolLoading:
                 assert tools.get_tool("ffmpeg") == "ffmpeg"
         assert any("tools" in r.getMessage().lower() for r in caplog.records)
 
-    def test_tools_section_as_string_falls_back_to_defaults(self, tmp_path: Path, caplog):
+    def test_tools_section_as_string_falls_back_to_defaults(
+        self, tmp_path: Path, caplog
+    ):
         config = tmp_path / "config.toml"
         config.write_text('tools = "ffmpeg"\n')
         with patch("tracksplit.tools.paths") as mock_paths:
@@ -69,13 +74,13 @@ class TestToolLoading:
         """Unknown top-level sections alongside [tools] must not interfere."""
         config = tmp_path / "config.toml"
         config.write_text(
-            '[tools]\n'
+            "[tools]\n"
             'ffmpeg = "/custom/ffmpeg"\n'
-            '\n'
-            '[logging]\n'
+            "\n"
+            "[logging]\n"
             'level = "debug"\n'
-            '\n'
-            '[output]\n'
+            "\n"
+            "[output]\n"
             'format = "flac"\n'
         )
         with patch("tracksplit.tools.paths") as mock_paths:

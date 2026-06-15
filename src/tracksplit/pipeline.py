@@ -3,6 +3,7 @@
 Coordinates probing, extraction, splitting, tagging, and cover art
 composition for individual video files and directories of video files.
 """
+
 from __future__ import annotations
 
 import errno
@@ -123,10 +124,14 @@ def prune_orphan_tracks(album_dir: Path, expected: set[str]) -> list[str]:
             p.unlink()
             removed.append(p.name)
         except OSError as exc:
-            logger.warning('pipeline.orphan_prune_fail: file=%s error="%s"', p.name, exc)
+            logger.warning(
+                'pipeline.orphan_prune_fail: file=%s error="%s"', p.name, exc
+            )
     if removed:
         logger.info(
-            "pipeline.orphan_prune: dir=%s count=%d", album_dir.name, len(removed),
+            "pipeline.orphan_prune: dir=%s count=%d",
+            album_dir.name,
+            len(removed),
         )
     return removed
 
@@ -214,16 +219,22 @@ def find_prior_album_dirs(
 
 
 def _remove_stale_album_dirs(
-    output_root: Path, source_path: Path, new_album_dir: Path,
+    output_root: Path,
+    source_path: Path,
+    new_album_dir: Path,
 ) -> None:
     for stale in find_prior_album_dirs(output_root, source_path, new_album_dir):
         logger.info(
-            "pipeline.stale_dir_remove: old=%s new=%s", stale.name, new_album_dir.name,
+            "pipeline.stale_dir_remove: old=%s new=%s",
+            stale.name,
+            new_album_dir.name,
         )
         try:
             shutil.rmtree(stale)
         except OSError as exc:
-            logger.warning('pipeline.stale_dir_remove_fail: dir=%s error="%s"', stale.name, exc)
+            logger.warning(
+                'pipeline.stale_dir_remove_fail: dir=%s error="%s"', stale.name, exc
+            )
 
 
 def refresh_artist_cover(
@@ -253,14 +264,17 @@ def refresh_artist_cover(
     try:
         artist_dir.mkdir(parents=True, exist_ok=True)
         cover_bytes = compose(
-            artist=artist_name, dj_artwork_data=dj_artwork_data,
+            artist=artist_name,
+            dj_artwork_data=dj_artwork_data,
         )
         atomic_write_bytes(folder_jpg, cover_bytes)
         atomic_write_bytes(artist_jpg, cover_bytes)
         save_artist_manifest(
             artist_dir,
             ArtistManifest(
-                schema=MANIFEST_SCHEMA, artist=artist_name, dj_artwork_sha256=new_hash,
+                schema=MANIFEST_SCHEMA,
+                artist=artist_name,
+                dj_artwork_sha256=new_hash,
                 cover_schema_version=COVER_SCHEMA_VERSION,
             ),
         )
@@ -269,7 +283,9 @@ def refresh_artist_cover(
         if exc.errno in FATAL_DISK_ERRNOS:
             raise
         logger.warning(
-            'pipeline.cover_refresh_fail: artist=%s error="%s"', artist_dir.name, exc,
+            'pipeline.cover_refresh_fail: artist=%s error="%s"',
+            artist_dir.name,
+            exc,
         )
 
 
@@ -314,12 +330,14 @@ def rebuild_cover_only(
 
     if new_sha == manifest.cover_sha256:
         updated = dataclass_replace(
-            manifest, cover_schema_version=COVER_SCHEMA_VERSION,
+            manifest,
+            cover_schema_version=COVER_SCHEMA_VERSION,
         )
         save_album_manifest(album_dir, updated)
         logger.info(
             "pipeline.cover_rebuild: file=%s reason=schema_bump version=%d",
-            album_dir.name, COVER_SCHEMA_VERSION,
+            album_dir.name,
+            COVER_SCHEMA_VERSION,
         )
         return
 
@@ -339,7 +357,8 @@ def rebuild_cover_only(
     if missing:
         logger.warning(
             "pipeline.cover_rebuild_missing: dir=%s count=%d",
-            album_dir.name, len(missing),
+            album_dir.name,
+            len(missing),
         )
 
     updated = dataclass_replace(
@@ -350,7 +369,8 @@ def rebuild_cover_only(
     save_album_manifest(album_dir, updated)
     logger.info(
         "pipeline.cover_rebuild: file=%s tracks=%d",
-        album_dir.name, len(manifest.track_filenames),
+        album_dir.name,
+        len(manifest.track_filenames),
     )
 
 
@@ -386,9 +406,7 @@ def retag_album(
     track_paths = [album_dir / name for name in manifest.track_filenames]
     missing = [p for p in track_paths if not p.exists()]
     if missing:
-        raise FileNotFoundError(
-            f"{len(missing)} track(s) missing: {missing[0].name}"
-        )
+        raise FileNotFoundError(f"{len(missing)} track(s) missing: {missing[0].name}")
 
     cover_path = album_dir / "cover.jpg"
     can_reuse = (
@@ -432,7 +450,8 @@ def retag_album(
     save_album_manifest(album_dir, updated)
     logger.info(
         "pipeline.retag: file=%s tracks=%d",
-        album_dir.name, len(manifest.track_filenames),
+        album_dir.name,
+        len(manifest.track_filenames),
     )
 
 
@@ -479,7 +498,11 @@ def check_regen_level(
     try:
         current_source = SourceFingerprint.from_ffprobe(source_path, ffprobe_data)
     except ValueError as exc:
-        logger.debug('pipeline.regenerate: file=%s reason=fingerprint_failed error="%s"', name, exc)
+        logger.debug(
+            'pipeline.regenerate: file=%s reason=fingerprint_failed error="%s"',
+            name,
+            exc,
+        )
         return RegenLevel.FULL
 
     if manifest.source.path != current_source.path:
@@ -489,38 +512,55 @@ def check_regen_level(
         )
         return RegenLevel.FULL
     if manifest.source.audio != current_source.audio:
-        for field in ("codec_name", "sample_rate", "channels",
-                      "duration_ts", "time_base", "bit_rate"):
+        for field in (
+            "codec_name",
+            "sample_rate",
+            "channels",
+            "duration_ts",
+            "time_base",
+            "bit_rate",
+        ):
             old = getattr(manifest.source.audio, field)
             new = getattr(current_source.audio, field)
             if old != new:
                 logger.debug(
                     "pipeline.regenerate: file=%s reason=audio_changed field=%s old=%r new=%r",
-                    name, field, old, new,
+                    name,
+                    field,
+                    old,
+                    new,
                 )
         return RegenLevel.FULL
     if manifest.resolved_artist_folder != artist_folder:
         logger.debug(
             'pipeline.regenerate: file=%s reason=artist_folder_changed old="%s" new="%s"',
-            name, manifest.resolved_artist_folder, artist_folder,
+            name,
+            manifest.resolved_artist_folder,
+            artist_folder,
         )
         return RegenLevel.FULL
     if manifest.resolved_album_folder != album_folder:
         logger.debug(
             'pipeline.regenerate: file=%s reason=album_folder_changed old="%s" new="%s"',
-            name, manifest.resolved_album_folder, album_folder,
+            name,
+            manifest.resolved_album_folder,
+            album_folder,
         )
         return RegenLevel.FULL
     if manifest.output_format != output_format:
         logger.debug(
             "pipeline.regenerate: file=%s reason=output_format_changed old=%s new=%s",
-            name, manifest.output_format, output_format,
+            name,
+            manifest.output_format,
+            output_format,
         )
         return RegenLevel.FULL
     if manifest.codec_mode != codec_mode:
         logger.debug(
             "pipeline.regenerate: file=%s reason=codec_mode_changed old=%s new=%s",
-            name, manifest.codec_mode, codec_mode,
+            name,
+            manifest.codec_mode,
+            codec_mode,
         )
         return RegenLevel.FULL
     stored_intro = manifest.intro_min_seconds
@@ -529,13 +569,17 @@ def check_regen_level(
         if 0 < first_start < INTRO_MIN_SECONDS:
             logger.debug(
                 "pipeline.regenerate: file=%s reason=intro_policy_upgrade gap=%.3f threshold=%.1f",
-                name, first_start, INTRO_MIN_SECONDS,
+                name,
+                first_start,
+                INTRO_MIN_SECONDS,
             )
             return RegenLevel.FULL
     elif stored_intro != INTRO_MIN_SECONDS:
         logger.debug(
             "pipeline.regenerate: file=%s reason=intro_min_changed old=%s new=%.1f",
-            name, stored_intro, INTRO_MIN_SECONDS,
+            name,
+            stored_intro,
+            INTRO_MIN_SECONDS,
         )
         return RegenLevel.FULL
     stored_chapters = manifest.chapters
@@ -544,14 +588,17 @@ def check_regen_level(
     if stored_chapters != chapter_dicts:
         logger.debug(
             "pipeline.regenerate: file=%s reason=chapters_changed stored=%d current=%d",
-            name, len(stored_chapters), len(chapter_dicts),
+            name,
+            len(stored_chapters),
+            len(chapter_dicts),
         )
         if len(stored_chapters) == len(chapter_dicts):
             for i, (old, new) in enumerate(zip(stored_chapters, chapter_dicts)):
                 if old != new:
                     logger.debug(
                         "pipeline.regenerate: file=%s reason=chapter_detail index=%d",
-                        name, i,
+                        name,
+                        i,
                     )
         return RegenLevel.FULL
 
@@ -568,14 +615,17 @@ def check_regen_level(
         if old != new:
             logger.debug(
                 "pipeline.retag: file=%s reason=tag_changed tag=%s",
-                name, k,
+                name,
+                k,
             )
             return RegenLevel.RETAG
     return RegenLevel.SKIP
 
 
 def _resolve_opus_copy_packet_ms(
-    audio_path: Path, ext: str, codec_mode: str,
+    audio_path: Path,
+    ext: str,
+    codec_mode: str,
 ) -> tuple[str, int | None]:
     """Decide whether the Opus copy path can use the prefix-frame fix.
 
@@ -592,7 +642,8 @@ def _resolve_opus_copy_packet_ms(
         return "copy", 20
     logger.warning(
         "pipeline.opus_fallback: file=%s packet_ms=%s mode=libopus",
-        audio_path.name, packet_ms,
+        audio_path.name,
+        packet_ms,
     )
     return "libopus", None
 
@@ -614,6 +665,7 @@ def process_file(
 
     Returns True on success, False if skipped or failed.
     """
+
     def _progress(step: str, current: int = 0, total: int = 0) -> None:
         if on_progress:
             on_progress(step, current, total)
@@ -626,7 +678,9 @@ def process_file(
     ffprobe_data = run_ffprobe(input_path)
 
     if not has_audio(ffprobe_data):
-        logger.warning("pipeline.skip: file=%s reason=no_audio", _safe_log_name(input_path))
+        logger.warning(
+            "pipeline.skip: file=%s reason=no_audio", _safe_log_name(input_path)
+        )
         return False
 
     chapters = parse_chapters(ffprobe_data)
@@ -643,9 +697,7 @@ def process_file(
 
     # Handle no chapters: single track spanning full duration
     if not chapters:
-        duration = float(
-            ffprobe_data.get("format", {}).get("duration", 0)
-        )
+        duration = float(ffprobe_data.get("format", {}).get("duration", 0))
         if duration <= 0:
             logger.warning(
                 "pipeline.skip: file=%s reason=no_chapters_no_duration",
@@ -671,9 +723,17 @@ def process_file(
 
     skip_manifest = load_album_manifest(album_dir)
     level = check_regen_level(
-        album_dir, input_path, ffprobe_data, tags, chapter_dicts,
-        artist_folder, album_folder, ext.lstrip("."), codec_mode,
-        force=force, manifest=skip_manifest,
+        album_dir,
+        input_path,
+        ffprobe_data,
+        tags,
+        chapter_dicts,
+        artist_folder,
+        album_folder,
+        ext.lstrip("."),
+        codec_mode,
+        force=force,
+        manifest=skip_manifest,
         track_filenames=expected_filenames,
     )
 
@@ -704,14 +764,16 @@ def process_file(
                     raise
                 logger.warning(
                     'pipeline.retag: file=%s reason=failed error="%s"',
-                    _safe_log_name(input_path), exc,
+                    _safe_log_name(input_path),
+                    exc,
                 )
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
                 level = RegenLevel.FULL
             except Exception as exc:
                 logger.warning(
                     'pipeline.retag: file=%s reason=failed error="%s"',
-                    _safe_log_name(input_path), exc,
+                    _safe_log_name(input_path),
+                    exc,
                 )
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
                 level = RegenLevel.FULL
@@ -734,14 +796,16 @@ def process_file(
                     raise
                 logger.warning(
                     'pipeline.cover_rebuild: file=%s reason=failed error="%s"',
-                    _safe_log_name(input_path), exc,
+                    _safe_log_name(input_path),
+                    exc,
                 )
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
                 level = RegenLevel.FULL
             except Exception as exc:
                 logger.warning(
                     'pipeline.cover_rebuild: file=%s reason=failed error="%s"',
-                    _safe_log_name(input_path), exc,
+                    _safe_log_name(input_path),
+                    exc,
                 )
                 (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
                 level = RegenLevel.FULL
@@ -750,7 +814,9 @@ def process_file(
         primary_artist = album.albumartists[0] if album.albumartists else album.artist
         primary_slug = (tags.get("albumartist_slugs") or [""])[0]
         dj_artwork_data = find_dj_artwork(
-            input_path, slug=primary_slug, artist=primary_artist,
+            input_path,
+            slug=primary_slug,
+            artist=primary_artist,
         )
         artist_dir = output_dir / safe_filename(album.artist_folder)
         refresh_artist_cover(
@@ -774,14 +840,16 @@ def process_file(
                 raise
             logger.warning(
                 'pipeline.retag: file=%s reason=failed error="%s"',
-                _safe_log_name(input_path), exc,
+                _safe_log_name(input_path),
+                exc,
             )
             (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
             level = RegenLevel.FULL
         except Exception as exc:
             logger.warning(
                 'pipeline.retag: file=%s reason=failed error="%s"',
-                _safe_log_name(input_path), exc,
+                _safe_log_name(input_path),
+                exc,
             )
             (album_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
             level = RegenLevel.FULL
@@ -790,7 +858,9 @@ def process_file(
         primary_artist = album.albumartists[0] if album.albumartists else album.artist
         primary_slug = (tags.get("albumartist_slugs") or [""])[0]
         dj_artwork_data = find_dj_artwork(
-            input_path, slug=primary_slug, artist=primary_artist,
+            input_path,
+            slug=primary_slug,
+            artist=primary_artist,
         )
         artist_dir = output_dir / safe_filename(album.artist_folder)
         refresh_artist_cover(
@@ -801,7 +871,8 @@ def process_file(
         )
         logger.info(
             "pipeline.retag_done: file=%s dir=%s",
-            _safe_log_name(input_path), album_dir.name,
+            _safe_log_name(input_path),
+            album_dir.name,
         )
         if on_complete:
             on_complete(album_dir, len(album.tracks))
@@ -825,7 +896,9 @@ def process_file(
     album_dir.mkdir(parents=True, exist_ok=True)
     logger.debug(
         "pipeline.process_start: file=%s tracks=%d codec=%s",
-        _safe_log_name(input_path), len(album.tracks), ext.lstrip("."),
+        _safe_log_name(input_path),
+        len(album.tracks),
+        ext.lstrip("."),
     )
 
     with tempfile.TemporaryDirectory() as tmp_str:
@@ -834,21 +907,31 @@ def process_file(
         # Prepare audio (detect codec, extract if needed)
         _progress("Extracting audio")
         audio_path, ext, codec_mode = prepare_audio(
-            input_path, ext, codec_mode, tmp_dir,
+            input_path,
+            ext,
+            codec_mode,
+            tmp_dir,
             cancel_event=cancel_event,
         )
-        from_video = (audio_path == input_path)
+        from_video = audio_path == input_path
 
         codec_mode, opus_packet_ms = _resolve_opus_copy_packet_ms(
-            audio_path, ext, codec_mode,
+            audio_path,
+            ext,
+            codec_mode,
         )
 
         # Split into tracks
         _progress("Splitting tracks")
         track_paths = split_tracks(
-            audio_path, album.tracks, album_dir,
-            ext=ext, codec_mode=codec_mode, from_video=from_video,
-            on_progress=on_progress, cancel_event=cancel_event,
+            audio_path,
+            album.tracks,
+            album_dir,
+            ext=ext,
+            codec_mode=codec_mode,
+            from_video=from_video,
+            on_progress=on_progress,
+            cancel_event=cancel_event,
             opus_packet_ms=opus_packet_ms,
         )
 
@@ -858,7 +941,9 @@ def process_file(
         primary_artist = album.albumartists[0] if album.albumartists else album.artist
         primary_slug = (tags.get("albumartist_slugs") or [""])[0]
         dj_artwork_data = find_dj_artwork(
-            input_path, slug=primary_slug, artist=primary_artist,
+            input_path,
+            slug=primary_slug,
+            artist=primary_artist,
         )
 
         _progress("Composing covers")
@@ -911,7 +996,11 @@ def process_file(
         compose=compose_artist_cover,
     )
 
-    logger.info("pipeline.process_done: file=%s dir=%s", _safe_log_name(input_path), album_dir.name)
+    logger.info(
+        "pipeline.process_done: file=%s dir=%s",
+        _safe_log_name(input_path),
+        album_dir.name,
+    )
     if on_complete:
         on_complete(album_dir, len(album.tracks))
     return True
@@ -919,8 +1008,4 @@ def process_file(
 
 def find_video_files(input_dir: Path) -> list[Path]:
     """Find all video files in a directory, sorted by name."""
-    return sorted(
-        f for f in input_dir.rglob("*") if f.is_file() and is_video_file(f)
-    )
-
-
+    return sorted(f for f in input_dir.rglob("*") if f.is_file() and is_video_file(f))

@@ -1,4 +1,5 @@
 """In-place patcher for the OpusHead pre_skip field in Ogg Opus files."""
+
 from __future__ import annotations
 
 import logging
@@ -69,7 +70,7 @@ def read_opus_pre_skip(path: Path) -> int:
     page_len = _first_page_length(data)
     head = _opus_head_offset(data, page_len)
     _check_mapping_family(data, head)
-    return int.from_bytes(data[head + 10:head + 12], "little")
+    return int.from_bytes(data[head + 10 : head + 12], "little")
 
 
 def patch_opus_pre_skip(path: Path, new_pre_skip: int) -> None:
@@ -84,10 +85,10 @@ def patch_opus_pre_skip(path: Path, new_pre_skip: int) -> None:
     head = _opus_head_offset(data, page_len)
     _check_mapping_family(data, head)
 
-    data[head + 10:head + 12] = new_pre_skip.to_bytes(2, "little")
-    data[_CRC_FIELD_OFFSET:_CRC_FIELD_OFFSET + 4] = b"\x00\x00\x00\x00"
+    data[head + 10 : head + 12] = new_pre_skip.to_bytes(2, "little")
+    data[_CRC_FIELD_OFFSET : _CRC_FIELD_OFFSET + 4] = b"\x00\x00\x00\x00"
     new_crc = ogg_crc(bytes(data[:page_len]))
-    data[_CRC_FIELD_OFFSET:_CRC_FIELD_OFFSET + 4] = new_crc.to_bytes(4, "little")
+    data[_CRC_FIELD_OFFSET : _CRC_FIELD_OFFSET + 4] = new_crc.to_bytes(4, "little")
 
     path.write_bytes(bytes(data))
     logger.debug("opus_patch.applied: file=%s samples=%d", path.name, new_pre_skip)

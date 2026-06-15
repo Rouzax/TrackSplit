@@ -44,7 +44,10 @@ def test_chapter_has_tags_dict_default_empty():
 
 def test_chapter_tags_roundtrip():
     ch = Chapter(
-        index=1, title="x", start=0.0, end=1.0,
+        index=1,
+        title="x",
+        start=0.0,
+        end=1.0,
         tags={"PERFORMER": "A & B", "LABEL": "Armada"},
     )
     assert ch.tags["PERFORMER"] == "A & B"
@@ -64,7 +67,8 @@ def test_albummeta_albumartists_defaults():
 
 def test_artist_folder_multi_artist_returns_first():
     a = AlbumMeta(
-        artist="Martin Garrix & Alesso", album="X",
+        artist="Martin Garrix & Alesso",
+        album="X",
         albumartists=["Martin Garrix", "Alesso"],
     )
     assert a.artist_folder == "Martin Garrix"
@@ -72,7 +76,8 @@ def test_artist_folder_multi_artist_returns_first():
 
 def test_artist_folder_single_artist_unchanged():
     a = AlbumMeta(
-        artist="Martin Garrix", album="X",
+        artist="Martin Garrix",
+        album="X",
         albumartists=["Martin Garrix"],
     )
     assert a.artist_folder == "Martin Garrix"
@@ -116,7 +121,8 @@ def test_album_folder_three_artists_with_stage_parens():
 
 def test_album_folder_single_artist_unchanged():
     a = AlbumMeta(
-        artist="Martin Garrix", album="Tomorrowland 2025 (Mainstage)",
+        artist="Martin Garrix",
+        album="Tomorrowland 2025 (Mainstage)",
         albumartists=["Martin Garrix"],
     )
     assert a.album_folder == "Tomorrowland 2025 (Mainstage)"

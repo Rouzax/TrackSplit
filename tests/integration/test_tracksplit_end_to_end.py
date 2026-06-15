@@ -24,6 +24,7 @@ Run with:
     CRATEDIGGER_TEST_COOKIES=~/.1001tl-cookies.json \\
     pytest tests/integration/ -m integration -v
 """
+
 from __future__ import annotations
 
 import os
@@ -112,9 +113,12 @@ def _cratedigger_identify(mkv: Path, tracklist_id: str) -> None:
     """Run CrateDigger's identify against *mkv* in place."""
     subprocess.run(
         [
-            "cratedigger", "identify",
-            "--config", str(CD_CONFIG),
-            "--tracklist", tracklist_id,
+            "cratedigger",
+            "identify",
+            "--config",
+            str(CD_CONFIG),
+            "--tracklist",
+            tracklist_id,
             "--auto",
             str(mkv),
         ],
@@ -135,9 +139,12 @@ def _cratedigger_organize_and_enrich(inbox: Path, library: Path) -> None:
     """
     subprocess.run(
         [
-            "cratedigger", "organize",
-            "--config", str(CD_CONFIG),
-            "--output", str(library),
+            "cratedigger",
+            "organize",
+            "--config",
+            str(CD_CONFIG),
+            "--output",
+            str(library),
             "--enrich",
             "--yes",
             str(inbox),
@@ -170,6 +177,7 @@ def _open_audio(path: Path):
     """Open a FLAC or Opus file as a tag-bearing mutagen object."""
     if path.suffix.lower() == ".opus":
         from mutagen.oggopus import OggOpus
+
         return OggOpus(path)
     return FLAC(path)
 

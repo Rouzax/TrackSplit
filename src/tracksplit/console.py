@@ -1,4 +1,5 @@
 """Rich console helpers for TrackSplit terminal output."""
+
 from __future__ import annotations
 
 import sys
@@ -155,9 +156,12 @@ class FileProgress:
             self._live.__enter__()
         return self
 
-    def __exit__(self, exc_type: type[BaseException] | None,
-                 exc_val: BaseException | None,
-                 exc_tb: object) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
         if self._live is not None:
             self._live.update("")
             self._live.__exit__(exc_type, exc_val, exc_tb)  # type: ignore[arg-type]
@@ -171,7 +175,9 @@ class BatchProgress:
     Thread-safe: each worker calls ``worker_update`` with its file key.
     """
 
-    def __init__(self, console: Console, total_files: int, enabled: bool = True) -> None:
+    def __init__(
+        self, console: Console, total_files: int, enabled: bool = True
+    ) -> None:
         self._console = console
         self._enabled = enabled and console.is_terminal
         self._total_files = total_files
@@ -203,7 +209,12 @@ class BatchProgress:
         return Group(*parts)
 
     def worker_update(
-        self, key: str, filename: str, step: str, current: int = 0, total: int = 0,
+        self,
+        key: str,
+        filename: str,
+        step: str,
+        current: int = 0,
+        total: int = 0,
     ) -> None:
         """Update a specific worker's step display."""
         if not self._enabled:
@@ -236,9 +247,12 @@ class BatchProgress:
             self._live.__enter__()
         return self
 
-    def __exit__(self, exc_type: type[BaseException] | None,
-                 exc_val: BaseException | None,
-                 exc_tb: object) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
         if self._live is not None:
             self._live.update("")
             self._live.__exit__(exc_type, exc_val, exc_tb)  # type: ignore[arg-type]

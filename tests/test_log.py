@@ -1,4 +1,5 @@
 """Tests for tracksplit.log (per-command log files with MemoryHandler buffer)."""
+
 from __future__ import annotations
 
 import logging
@@ -16,6 +17,7 @@ from tracksplit.log import _cleanup_old_logs, setup_logging
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _reset_logger() -> None:
     """Remove all handlers from the tracksplit logger."""
@@ -49,6 +51,7 @@ def _mock_paths(tmp_path: Path):
 # _cleanup_old_logs
 # ---------------------------------------------------------------------------
 
+
 class TestCleanupOldLogs:
     def test_deletes_old_log_files(self, tmp_path: Path) -> None:
         old_log = tmp_path / "tracksplit-old.log"
@@ -56,6 +59,7 @@ class TestCleanupOldLogs:
         # Back-date the file by 10 days
         ten_days_ago = time.time() - 10 * 86400
         import os
+
         os.utime(old_log, (ten_days_ago, ten_days_ago))
 
         _cleanup_old_logs(tmp_path, max_age_days=7)
@@ -73,6 +77,7 @@ class TestCleanupOldLogs:
         txt_file.write_text("keep me")
         ten_days_ago = time.time() - 10 * 86400
         import os
+
         os.utime(txt_file, (ten_days_ago, ten_days_ago))
 
         _cleanup_old_logs(tmp_path, max_age_days=7)
@@ -86,6 +91,7 @@ class TestCleanupOldLogs:
 # ---------------------------------------------------------------------------
 # setup_logging
 # ---------------------------------------------------------------------------
+
 
 class TestSetupLogging:
     def setup_method(self) -> None:
@@ -131,7 +137,8 @@ class TestSetupLogging:
             setup_logging(command="test")
             logger = logging.getLogger("tracksplit")
             mem_handlers = [
-                h for h in logger.handlers
+                h
+                for h in logger.handlers
                 if isinstance(h, logging.handlers.MemoryHandler)
             ]
             assert len(mem_handlers) == 1
@@ -149,7 +156,8 @@ class TestSetupLogging:
             setup_logging(command="test")
             logger = logging.getLogger("tracksplit")
             mh = next(
-                h for h in logger.handlers
+                h
+                for h in logger.handlers
                 if isinstance(h, logging.handlers.MemoryHandler)
             )
             assert mh.target.delay is True
@@ -190,9 +198,12 @@ class TestSetupLogging:
             setup_logging(debug=True, command="test")
             logger = logging.getLogger("tracksplit")
             console_handler = next(
-                h for h in logger.handlers
+                h
+                for h in logger.handlers
                 if isinstance(h, logging.StreamHandler)
-                and not isinstance(h, (logging.FileHandler, logging.handlers.MemoryHandler))
+                and not isinstance(
+                    h, (logging.FileHandler, logging.handlers.MemoryHandler)
+                )
             )
             assert console_handler.level == logging.DEBUG
         finally:
@@ -204,9 +215,12 @@ class TestSetupLogging:
             setup_logging(verbose=True, command="test")
             logger = logging.getLogger("tracksplit")
             console_handler = next(
-                h for h in logger.handlers
+                h
+                for h in logger.handlers
                 if isinstance(h, logging.StreamHandler)
-                and not isinstance(h, (logging.FileHandler, logging.handlers.MemoryHandler))
+                and not isinstance(
+                    h, (logging.FileHandler, logging.handlers.MemoryHandler)
+                )
             )
             assert console_handler.level == logging.INFO
         finally:
@@ -218,9 +232,12 @@ class TestSetupLogging:
             setup_logging(command="test")
             logger = logging.getLogger("tracksplit")
             console_handler = next(
-                h for h in logger.handlers
+                h
+                for h in logger.handlers
                 if isinstance(h, logging.StreamHandler)
-                and not isinstance(h, (logging.FileHandler, logging.handlers.MemoryHandler))
+                and not isinstance(
+                    h, (logging.FileHandler, logging.handlers.MemoryHandler)
+                )
             )
             assert console_handler.level == logging.WARNING
         finally:

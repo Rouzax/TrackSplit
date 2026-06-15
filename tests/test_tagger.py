@@ -97,9 +97,17 @@ def test_build_tag_dict_minimal():
 
     # Optional tags absent
     for key in (
-        "TRACKTOTAL", "DATE", "ORIGINALDATE", "RELEASEDATE", "GENRE",
-        "PUBLISHER", "COMMENT",
-        "MUSICBRAINZ_ALBUMARTISTID", "FESTIVAL", "STAGE", "VENUE",
+        "TRACKTOTAL",
+        "DATE",
+        "ORIGINALDATE",
+        "RELEASEDATE",
+        "GENRE",
+        "PUBLISHER",
+        "COMMENT",
+        "MUSICBRAINZ_ALBUMARTISTID",
+        "FESTIVAL",
+        "STAGE",
+        "VENUE",
         "RELEASECOUNTRY",
     ):
         assert key not in tags, f"{key} should not be present when empty"
@@ -157,8 +165,10 @@ def test_tag_all_dispatches_by_extension():
         ],
     )
 
-    with patch("tracksplit.tagger.tag_flac") as mock_flac, \
-         patch("tracksplit.tagger.tag_ogg") as mock_ogg:
+    with (
+        patch("tracksplit.tagger.tag_flac") as mock_flac,
+        patch("tracksplit.tagger.tag_ogg") as mock_ogg,
+    ):
         tag_all(
             ["/tmp/01 - Flac Track.flac", "/tmp/02 - Opus Track.opus"],
             album,
@@ -170,6 +180,7 @@ def test_tag_all_dispatches_by_extension():
 
 
 # --- MBID policy: no per-track MBID, collab guard ---
+
 
 def test_no_musicbrainz_artistid_emitted():
     """The per-track MBID key must never be written (regression guard).
@@ -225,13 +236,28 @@ def test_opus_round_trip_preserves_unicode_tags(tmp_path):
     ffmpeg = shutil.which("ffmpeg")
     if ffmpeg is None:
         import pytest
+
         pytest.skip("ffmpeg not available")
 
     opus_path = tmp_path / "test.opus"
     subprocess.run(
-        [ffmpeg, "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
-         "-t", "0.5", "-c:a", "libopus", "-b:a", "32k",
-         str(opus_path), "-y", "-loglevel", "error"],
+        [
+            ffmpeg,
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=r=48000:cl=stereo",
+            "-t",
+            "0.5",
+            "-c:a",
+            "libopus",
+            "-b:a",
+            "32k",
+            str(opus_path),
+            "-y",
+            "-loglevel",
+            "error",
+        ],
         check=True,
     )
 
@@ -240,8 +266,11 @@ def test_opus_round_trip_preserves_unicode_tags(tmp_path):
         album="EDC",
         albumartists=["Tiësto"],
         albumartist_mbids=["mbid-ti"],
-        tracks=[TrackMeta(number=1, title="Strobe", start=0.0, end=30.0,
-                          artist="RÜFÜS DU SOL")],
+        tracks=[
+            TrackMeta(
+                number=1, title="Strobe", start=0.0, end=30.0, artist="RÜFÜS DU SOL"
+            )
+        ],
     )
     from tracksplit.tagger import tag_ogg
     from mutagen.oggopus import OggOpus
@@ -292,7 +321,9 @@ def test_albumartists_and_multi_albumartistid():
     )
     track = _track(artist="x")
     tags = build_tag_dict(album, track)
-    assert tags["ALBUMARTIST"] == ["Armin van Buuren"]  # display unchanged from album.artist
+    assert tags["ALBUMARTIST"] == [
+        "Armin van Buuren"
+    ]  # display unchanged from album.artist
     assert tags["ALBUMARTISTS"] == ["Armin van Buuren", "KI/KI"]
     assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["m-arm", "m-ki"]
 
@@ -326,9 +357,16 @@ def _make_silent_flac(path: Path, duration: float = 0.5) -> None:
     """Create a tiny silent FLAC at ``path`` via ffmpeg."""
     subprocess.run(
         [
-            "ffmpeg", "-y", "-f", "lavfi",
-            "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
-            "-t", str(duration), "-c:a", "flac",
+            "ffmpeg",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=channel_layout=stereo:sample_rate=44100",
+            "-t",
+            str(duration),
+            "-c:a",
+            "flac",
             str(path),
         ],
         check=True,
@@ -348,7 +386,10 @@ def test_multi_artist_tags_survive_flac_roundtrip(tmp_path):
         albumartist_mbids=["m-arm", "m-ki"],
     )
     track = TrackMeta(
-        number=1, title="t", start=0.0, end=1.0,
+        number=1,
+        title="t",
+        start=0.0,
+        end=1.0,
         artist="A & B",
         artists=["A", "B", "C"],
         artist_mbids=["m-a", "", "m-c"],
@@ -381,6 +422,7 @@ def test_replace_cover_only_flac_preserves_tags(tmp_path):
 
     new_cover = b"\xff\xd8\xff\xe0new-cover-bytes"
     from tracksplit.tagger import replace_cover_only
+
     replace_cover_only(flac_path, new_cover)
 
     reread = FLAC(flac_path)
@@ -396,14 +438,29 @@ def test_replace_cover_only_flac_preserves_tags(tmp_path):
 def test_replace_cover_only_opus_preserves_tags(tmp_path):
     opus_path = tmp_path / "test.opus"
     subprocess.run(
-        ["ffmpeg", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
-         "-t", "0.5", "-c:a", "libopus", "-b:a", "32k",
-         str(opus_path), "-y", "-loglevel", "error"],
+        [
+            "ffmpeg",
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=r=48000:cl=stereo",
+            "-t",
+            "0.5",
+            "-c:a",
+            "libopus",
+            "-b:a",
+            "32k",
+            str(opus_path),
+            "-y",
+            "-loglevel",
+            "error",
+        ],
         check=True,
     )
 
     # Seed with tags
     from mutagen.oggopus import OggOpus
+
     audio = OggOpus(str(opus_path))
     audio["artist"] = ["Original Artist"]
     audio["title"] = ["Original Title"]
@@ -411,6 +468,7 @@ def test_replace_cover_only_opus_preserves_tags(tmp_path):
 
     new_cover = b"\xff\xd8\xff\xe0new-cover-bytes"
     from tracksplit.tagger import replace_cover_only
+
     replace_cover_only(opus_path, new_cover)
 
     reread = OggOpus(str(opus_path))
@@ -423,11 +481,13 @@ def test_replace_cover_only_opus_preserves_tags(tmp_path):
 
 # --- tag-diff DEBUG logging ---
 
+
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg required")
 def test_tag_flac_logs_diff_all_adds_on_fresh_file(tmp_path, caplog):
     """Fresh FLAC has only seeded encoder tags; tag_flac should report
     mostly adds with deltas reflected in the DEBUG line."""
     import logging
+
     flac_path = tmp_path / "test.flac"
     _make_silent_flac(flac_path)
 
@@ -438,7 +498,11 @@ def test_tag_flac_logs_diff_all_adds_on_fresh_file(tmp_path, caplog):
     joined = "\n".join(r.message for r in caplog.records)
     assert "tagger.write: file=test.flac" in joined
     import re
-    m = re.search(r"tagger\.write: file=test\.flac added=(\d+) removed=(\d+) changed=(\d+)", joined)
+
+    m = re.search(
+        r"tagger\.write: file=test\.flac added=(\d+) removed=(\d+) changed=(\d+)",
+        joined,
+    )
     assert m is not None, joined
     added, removed, changed = int(m.group(1)), int(m.group(2)), int(m.group(3))
     # Fresh file has few or no pre-existing tags; build_tag_dict emits many.
@@ -451,6 +515,7 @@ def test_tag_flac_logs_diff_changes_and_additions(tmp_path, caplog):
     retag: the DEBUG diff counts ~changed for overlapping keys with new
     values and +added for the rest."""
     import logging
+
     flac_path = tmp_path / "test.flac"
     _make_silent_flac(flac_path)
 
@@ -462,12 +527,18 @@ def test_tag_flac_logs_diff_changes_and_additions(tmp_path, caplog):
     audio.save()
 
     album = _full_album()
-    track = album.tracks[0]  # ARTIST=Armin van Buuren, TITLE=Intro, ALBUM=Live @ Ultra 2024
+    track = album.tracks[
+        0
+    ]  # ARTIST=Armin van Buuren, TITLE=Intro, ALBUM=Live @ Ultra 2024
     with caplog.at_level(logging.DEBUG, logger="tracksplit.tagger"):
         tag_flac(flac_path, album, track)
     joined = "\n".join(r.message for r in caplog.records)
     import re
-    m = re.search(r"tagger\.write: file=test\.flac added=(\d+) removed=(\d+) changed=(\d+)", joined)
+
+    m = re.search(
+        r"tagger\.write: file=test\.flac added=(\d+) removed=(\d+) changed=(\d+)",
+        joined,
+    )
     assert m is not None, joined
     added, removed, changed = int(m.group(1)), int(m.group(2)), int(m.group(3))
     # ARTIST, TITLE, ALBUM all change from seeded values to the new ones
@@ -480,6 +551,7 @@ def test_tag_all_logs_warning_on_mutagen_error(tmp_path, caplog):
     the failing file before propagating. Preserves pipeline behaviour
     (exception is re-raised) but leaves a trail in the rotating log."""
     import logging
+
     broken = tmp_path / "broken.flac"
     broken.write_bytes(b"not a flac file")
 
@@ -487,13 +559,16 @@ def test_tag_all_logs_warning_on_mutagen_error(tmp_path, caplog):
     with caplog.at_level(logging.WARNING, logger="tracksplit.tagger"):
         with pytest.raises(Exception):
             tag_all([broken], album)
-    joined = "\n".join(r.message for r in caplog.records if r.levelno >= logging.WARNING)
+    joined = "\n".join(
+        r.message for r in caplog.records if r.levelno >= logging.WARNING
+    )
     assert "broken.flac" in joined
 
 
 def test_count_tag_deltas_none_existing():
     """_count_tag_deltas with existing=None counts every new tag as added."""
     from tracksplit.tagger import _count_tag_deltas
+
     new_tags = {"ARTIST": ["X"], "TITLE": ["Y"], "ALBUM": ["Z"]}
     assert _count_tag_deltas(None, new_tags) == (3, 0, 0)
 
@@ -501,6 +576,7 @@ def test_count_tag_deltas_none_existing():
 def test_count_tag_deltas_empty_existing_dict():
     """_count_tag_deltas with an empty dict (not None) also counts all as added."""
     from tracksplit.tagger import _count_tag_deltas
+
     new_tags = {"ARTIST": ["X"], "TITLE": ["Y"]}
     assert _count_tag_deltas({}, new_tags) == (2, 0, 0)
 
@@ -509,6 +585,7 @@ def test_count_tag_deltas_case_insensitive():
     """Vorbis key comparison folds case, so 'artist' in existing and
     'ARTIST' in new with equal values is a no-op."""
     from tracksplit.tagger import _count_tag_deltas
+
     existing = {"artist": ["X"], "title": ["Y"]}
     new_tags = {"ARTIST": ["X"], "TITLE": ["Y"]}
     assert _count_tag_deltas(existing, new_tags) == (0, 0, 0)
@@ -519,6 +596,7 @@ def test_tag_flac_no_debug_on_no_op_retag(tmp_path, caplog):
     """Retagging a file with the exact same album+track emits no diff DEBUG
     line, keeping the rotating log quiet on idempotent re-runs."""
     import logging
+
     flac_path = tmp_path / "test.flac"
     _make_silent_flac(flac_path)
 
@@ -537,9 +615,18 @@ def test_tag_flac_no_debug_on_no_op_retag(tmp_path, caplog):
 def _make_silent_opus(path: Path, duration: float = 0.2) -> None:
     subprocess.run(
         [
-            "ffmpeg", "-y", "-f", "lavfi",
-            "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
-            "-t", str(duration), "-c:a", "libopus", "-b:a", "64k",
+            "ffmpeg",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=channel_layout=stereo:sample_rate=48000",
+            "-t",
+            str(duration),
+            "-c:a",
+            "libopus",
+            "-b:a",
+            "64k",
             str(path),
         ],
         check=True,
@@ -551,6 +638,7 @@ def _make_silent_opus(path: Path, duration: float = 0.2) -> None:
 def test_tag_ogg_logs_diff(tmp_path, caplog):
     """tag_ogg emits the same 'Tags for X: +N -M ~K' DEBUG line as tag_flac."""
     import logging
+
     opus_path = tmp_path / "test.opus"
     _make_silent_opus(opus_path)
 
@@ -561,7 +649,11 @@ def test_tag_ogg_logs_diff(tmp_path, caplog):
     joined = "\n".join(r.message for r in caplog.records)
     assert "tagger.write: file=test.opus" in joined
     import re
-    m = re.search(r"tagger\.write: file=test\.opus added=(\d+) removed=(\d+) changed=(\d+)", joined)
+
+    m = re.search(
+        r"tagger\.write: file=test\.opus added=(\d+) removed=(\d+) changed=(\d+)",
+        joined,
+    )
     assert m is not None, joined
     added = int(m.group(1))
     assert added >= 5

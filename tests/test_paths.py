@@ -1,4 +1,5 @@
 """Tests for tracksplit.paths platform-path resolution."""
+
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -12,16 +13,20 @@ from tracksplit import paths
 
 class TestDataDir:
     def test_windows_uses_documents_dir(self):
-        with patch("tracksplit.paths.sys") as mock_sys, \
-             patch("tracksplit.paths.platformdirs") as mock_pd:
+        with (
+            patch("tracksplit.paths.sys") as mock_sys,
+            patch("tracksplit.paths.platformdirs") as mock_pd,
+        ):
             mock_sys.platform = "win32"
             mock_pd.user_documents_dir.return_value = "C:/Users/Name/Documents"
             result = paths.data_dir()
             assert result == Path("C:/Users/Name/Documents/TrackSplit")
 
     def test_non_windows_uses_home(self, tmp_path: Path):
-        with patch("tracksplit.paths.sys") as mock_sys, \
-             patch.object(Path, "home", return_value=tmp_path):
+        with (
+            patch("tracksplit.paths.sys") as mock_sys,
+            patch.object(Path, "home", return_value=tmp_path),
+        ):
             mock_sys.platform = "linux"
             result = paths.data_dir()
             assert result == tmp_path / "TrackSplit"
@@ -38,7 +43,9 @@ class TestCacheDir:
         with patch("tracksplit.paths.platformdirs") as mock_pd:
             mock_pd.user_cache_dir.return_value = "/fake/cache/TrackSplit"
             result = paths.cache_dir()
-            mock_pd.user_cache_dir.assert_called_once_with("TrackSplit", appauthor=False)
+            mock_pd.user_cache_dir.assert_called_once_with(
+                "TrackSplit", appauthor=False
+            )
             assert result == Path("/fake/cache/TrackSplit")
 
 
@@ -47,7 +54,9 @@ class TestCrateDiggerCacheDir:
         with patch("tracksplit.paths.platformdirs") as mock_pd:
             mock_pd.user_cache_dir.return_value = "/fake/cache/CrateDigger"
             result = paths.cratedigger_cache_dir()
-            mock_pd.user_cache_dir.assert_called_once_with("CrateDigger", appauthor=False)
+            mock_pd.user_cache_dir.assert_called_once_with(
+                "CrateDigger", appauthor=False
+            )
             assert result == Path("/fake/cache/CrateDigger")
 
 
@@ -82,18 +91,24 @@ class TestResolveCrateDiggerDataDir:
         result = paths.resolve_cratedigger_data_dir(tmp_path / "some.mkv")
         assert result == cd_dir
 
-    def test_env_var_ignored_when_dir_missing(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_env_var_ignored_when_dir_missing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         monkeypatch.setenv("CRATEDIGGER_DATA_DIR", str(tmp_path / "does_not_exist"))
         isolated = tmp_path / "isolated"
         isolated.mkdir()
-        with patch("tracksplit.paths.sys") as mock_sys, \
-             patch.object(Path, "home", return_value=tmp_path):
+        with (
+            patch("tracksplit.paths.sys") as mock_sys,
+            patch.object(Path, "home", return_value=tmp_path),
+        ):
             mock_sys.platform = "linux"
             result = paths.resolve_cratedigger_data_dir(isolated / "file.mkv")
             # env var pointing at missing dir is ignored; fallback to CrateDigger's visible data dir
             assert result == tmp_path / "CrateDigger"
 
-    def test_walk_up_finds_library_local_cratedigger(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_walk_up_finds_library_local_cratedigger(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         library_root = tmp_path / "library"
         cd_dir = library_root / ".cratedigger"
@@ -104,7 +119,9 @@ class TestResolveCrateDiggerDataDir:
         result = paths.resolve_cratedigger_data_dir(input_file)
         assert result == cd_dir
 
-    def test_walk_up_finds_at_exact_limit(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_walk_up_finds_at_exact_limit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         """`.cratedigger` at the 10th walked directory IS found (inclusive boundary)."""
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         # input_file is 10 levels deep: tmp_path/l0/l1/.../l9/file.mkv
@@ -121,7 +138,9 @@ class TestResolveCrateDiggerDataDir:
         result = paths.resolve_cratedigger_data_dir(input_file)
         assert result == cd_dir
 
-    def test_walk_up_stops_beyond_limit(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_walk_up_stops_beyond_limit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         """`.cratedigger` one level beyond the walk-up limit is NOT found."""
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         # Same depth as above but .cratedigger is at tmp_path (11th walk position, not visited).
@@ -133,15 +152,19 @@ class TestResolveCrateDiggerDataDir:
         input_file.touch()
         cd_dir = tmp_path / ".cratedigger"
         cd_dir.mkdir()
-        with patch("tracksplit.paths.sys") as mock_sys, \
-             patch.object(Path, "home", return_value=tmp_path / "elsewhere"):
+        with (
+            patch("tracksplit.paths.sys") as mock_sys,
+            patch.object(Path, "home", return_value=tmp_path / "elsewhere"),
+        ):
             mock_sys.platform = "linux"
             (tmp_path / "elsewhere").mkdir()
             result = paths.resolve_cratedigger_data_dir(input_file)
             assert result != cd_dir  # walk-up limit exceeded
             assert result == tmp_path / "elsewhere" / "CrateDigger"
 
-    def test_walk_up_uses_path_itself_when_not_a_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_walk_up_uses_path_itself_when_not_a_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         """When input_path is a directory (or does not exist), the walk starts
         FROM the path itself, not from its parent. Pinned so a future refactor
         of the is_file() branch does not silently change walk depth."""
@@ -152,7 +175,9 @@ class TestResolveCrateDiggerDataDir:
         result = paths.resolve_cratedigger_data_dir(library)
         assert result == library / ".cratedigger"
 
-    def test_walk_up_nonexistent_path_uses_path_itself(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_walk_up_nonexistent_path_uses_path_itself(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         """A non-existent path (dry-run, future library) walks from the path
         itself. Only existing files back off to the parent."""
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
@@ -162,34 +187,44 @@ class TestResolveCrateDiggerDataDir:
         result = paths.resolve_cratedigger_data_dir(ghost)
         assert result == tmp_path / "not_yet" / ".cratedigger"
 
-    def test_platformdirs_fallback_windows_uses_documents(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_platformdirs_fallback_windows_uses_documents(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         isolated = tmp_path / "isolated"
         isolated.mkdir()
         input_file = isolated / "file.mkv"
         input_file.touch()
-        with patch("tracksplit.paths.sys") as mock_sys, \
-             patch("tracksplit.paths.platformdirs") as mock_pd:
+        with (
+            patch("tracksplit.paths.sys") as mock_sys,
+            patch("tracksplit.paths.platformdirs") as mock_pd,
+        ):
             mock_sys.platform = "win32"
             mock_pd.user_documents_dir.return_value = "C:/Users/Name/Documents"
             result = paths.resolve_cratedigger_data_dir(input_file)
             assert result == Path("C:/Users/Name/Documents/CrateDigger")
 
-    def test_platformdirs_fallback_linux_uses_home(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_platformdirs_fallback_linux_uses_home(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         isolated = tmp_path / "isolated"
         isolated.mkdir()
         input_file = isolated / "file.mkv"
         input_file.touch()
-        with patch("tracksplit.paths.sys") as mock_sys, \
-             patch.object(Path, "home", return_value=tmp_path):
+        with (
+            patch("tracksplit.paths.sys") as mock_sys,
+            patch.object(Path, "home", return_value=tmp_path),
+        ):
             mock_sys.platform = "linux"
             result = paths.resolve_cratedigger_data_dir(input_file)
             assert result == tmp_path / "CrateDigger"
 
 
 class TestWalkupCratediggerDir:
-    def test_finds_cratedigger_in_parent(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_finds_cratedigger_in_parent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         library = tmp_path / "library"
         cd_dir = library / ".cratedigger"
@@ -199,7 +234,9 @@ class TestWalkupCratediggerDir:
         input_file.touch()
         assert paths.walkup_cratedigger_dir(input_file) == cd_dir
 
-    def test_returns_none_when_not_found(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_returns_none_when_not_found(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         isolated = tmp_path / "isolated"
         isolated.mkdir()
@@ -207,7 +244,9 @@ class TestWalkupCratediggerDir:
         input_file.touch()
         assert paths.walkup_cratedigger_dir(input_file) is None
 
-    def test_directory_input_starts_from_path_itself(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_directory_input_starts_from_path_itself(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         monkeypatch.delenv("CRATEDIGGER_DATA_DIR", raising=False)
         library = tmp_path / "library"
         library.mkdir()
@@ -217,17 +256,23 @@ class TestWalkupCratediggerDir:
 
 class TestCratediggerDataDir:
     def test_linux_returns_home_cratedigger(self, tmp_path: Path):
-        with patch("tracksplit.paths.sys") as mock_sys, \
-             patch.object(Path, "home", return_value=tmp_path):
+        with (
+            patch("tracksplit.paths.sys") as mock_sys,
+            patch.object(Path, "home", return_value=tmp_path),
+        ):
             mock_sys.platform = "linux"
             assert paths.cratedigger_data_dir() == tmp_path / "CrateDigger"
 
     def test_windows_returns_documents_cratedigger(self):
-        with patch("tracksplit.paths.sys") as mock_sys, \
-             patch("tracksplit.paths.platformdirs") as mock_pd:
+        with (
+            patch("tracksplit.paths.sys") as mock_sys,
+            patch("tracksplit.paths.platformdirs") as mock_pd,
+        ):
             mock_sys.platform = "win32"
             mock_pd.user_documents_dir.return_value = "C:/Users/Name/Documents"
-            assert paths.cratedigger_data_dir() == Path("C:/Users/Name/Documents/CrateDigger")
+            assert paths.cratedigger_data_dir() == Path(
+                "C:/Users/Name/Documents/CrateDigger"
+            )
 
 
 class TestLegacyPathDetection:
@@ -281,7 +326,9 @@ class TestLegacyPathDetection:
             found = paths._legacy_paths_present(home=tmp_path)
         assert legacy in found
 
-    def test_detects_legacy_windows_appdata_tracksplit_toml(self, tmp_path: Path, monkeypatch):
+    def test_detects_legacy_windows_appdata_tracksplit_toml(
+        self, tmp_path: Path, monkeypatch
+    ):
         appdata = tmp_path / "AppData" / "Roaming"
         legacy = appdata / "tracksplit" / "tracksplit.toml"
         legacy.parent.mkdir(parents=True)
@@ -356,15 +403,18 @@ class TestWarnIfLegacyPathsExistDedup:
 
     def _count_warnings(self, caplog) -> int:
         return sum(
-            1 for r in caplog.records
+            1
+            for r in caplog.records
             if r.name == "tracksplit.paths" and r.levelname == "WARNING"
         )
 
     def test_first_call_warns_and_writes_stamp(self, tmp_path: Path, caplog):
         self._make_legacy(tmp_path)
         state = tmp_path / "state"
-        with patch("tracksplit.paths.state_dir", return_value=state), \
-             caplog.at_level("WARNING", logger="tracksplit.paths"):
+        with (
+            patch("tracksplit.paths.state_dir", return_value=state),
+            caplog.at_level("WARNING", logger="tracksplit.paths"),
+        ):
             paths.warn_if_legacy_paths_exist(home=tmp_path)
         assert self._count_warnings(caplog) == 1
         stamp = state / "legacy-warning.stamp"
@@ -388,8 +438,10 @@ class TestWarnIfLegacyPathsExistDedup:
         state.mkdir()
         stamp = state / "legacy-warning.stamp"
         stamp.write_text("2020-01-01")
-        with patch("tracksplit.paths.state_dir", return_value=state), \
-             caplog.at_level("WARNING", logger="tracksplit.paths"):
+        with (
+            patch("tracksplit.paths.state_dir", return_value=state),
+            caplog.at_level("WARNING", logger="tracksplit.paths"),
+        ):
             paths.warn_if_legacy_paths_exist(home=tmp_path)
         assert self._count_warnings(caplog) == 1
         assert stamp.read_text().strip() == date.today().isoformat()
@@ -400,8 +452,10 @@ class TestWarnIfLegacyPathsExistDedup:
         state.mkdir()
         stamp = state / "legacy-warning.stamp"
         stamp.write_text("not a date, garbage \x00\x01")
-        with patch("tracksplit.paths.state_dir", return_value=state), \
-             caplog.at_level("WARNING", logger="tracksplit.paths"):
+        with (
+            patch("tracksplit.paths.state_dir", return_value=state),
+            caplog.at_level("WARNING", logger="tracksplit.paths"),
+        ):
             paths.warn_if_legacy_paths_exist(home=tmp_path)
         assert self._count_warnings(caplog) == 1
         assert stamp.read_text().strip() == date.today().isoformat()
@@ -414,8 +468,10 @@ class TestWarnIfLegacyPathsExistDedup:
         stamp = state / "legacy-warning.stamp"
         future = (date.today() + timedelta(days=1)).isoformat()
         stamp.write_text(future)
-        with patch("tracksplit.paths.state_dir", return_value=state), \
-             caplog.at_level("WARNING", logger="tracksplit.paths"):
+        with (
+            patch("tracksplit.paths.state_dir", return_value=state),
+            caplog.at_level("WARNING", logger="tracksplit.paths"),
+        ):
             paths.warn_if_legacy_paths_exist(home=tmp_path)
         assert self._count_warnings(caplog) == 0
 
@@ -425,7 +481,9 @@ class TestStateDir:
         with patch("tracksplit.paths.platformdirs") as mock_pd:
             mock_pd.user_state_dir.return_value = "/fake/state/TrackSplit"
             result = paths.state_dir()
-            mock_pd.user_state_dir.assert_called_once_with("TrackSplit", appauthor=False)
+            mock_pd.user_state_dir.assert_called_once_with(
+                "TrackSplit", appauthor=False
+            )
             assert result == Path("/fake/state/TrackSplit")
 
 

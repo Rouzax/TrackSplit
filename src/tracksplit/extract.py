@@ -1,4 +1,5 @@
 """Extract full audio stream from a video file into a temporary FLAC."""
+
 from __future__ import annotations
 
 import logging
@@ -91,7 +92,10 @@ def decide_codec(ffprobe_data: dict, output_format: str) -> tuple[str, str]:
     ext, codec_mode = result
     logger.debug(
         "extract.codec: input=%s format=%s output=%s mode=%s",
-        codec, output_format, ext, codec_mode,
+        codec,
+        output_format,
+        ext,
+        codec_mode,
     )
     return result
 
@@ -111,7 +115,9 @@ def prepare_audio(
     """
     if ext == ".flac" and codec_mode == "copy":
         flac_path = extract_audio(
-            input_path, temp_dir=temp_dir, cancel_event=cancel_event,
+            input_path,
+            temp_dir=temp_dir,
+            cancel_event=cancel_event,
         )
         return (flac_path, ext, codec_mode)
     return (input_path, ext, codec_mode)

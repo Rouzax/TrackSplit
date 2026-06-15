@@ -3,6 +3,7 @@
 Hand-synced with festival_organizer/update_check.py in the CrateDigger repo.
 Keep in sync when editing. Only PACKAGE_NAME, ENV_VAR, and REPO_URL differ.
 """
+
 from __future__ import annotations
 
 import importlib.metadata
@@ -184,6 +185,7 @@ def _releases_url() -> str:
 def _user_agent() -> str:
     try:
         from importlib.metadata import version
+
         return f"{PACKAGE_NAME}/{version(PACKAGE_NAME)} (+update-check)"
     except Exception:
         return f"{PACKAGE_NAME}/unknown (+update-check)"

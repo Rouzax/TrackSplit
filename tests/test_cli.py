@@ -32,6 +32,7 @@ def test_version_flag_prints_version_and_exits():
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     from importlib.metadata import version
+
     assert version("tracksplit") in result.stdout
 
 
@@ -39,6 +40,7 @@ def test_cli_invalid_format_rejected():
     """Invalid --format value should fail with a clean message."""
     import tempfile
     import os
+
     fd, path = tempfile.mkstemp(suffix=".mkv")
     os.close(fd)
     try:
@@ -77,7 +79,9 @@ def test_find_active_config_returns_existing_file(tmp_path, monkeypatch):
 
 
 def test_check_flag_exits_zero_when_all_tools_present(monkeypatch):
-    monkeypatch.setattr("tracksplit.tools.verify_tool", lambda name: (True, f"{name} version 1.0"))
+    monkeypatch.setattr(
+        "tracksplit.tools.verify_tool", lambda name: (True, f"{name} version 1.0")
+    )
     monkeypatch.setattr("tracksplit.tools.find_active_config", lambda: None)
     result = runner.invoke(app, ["--check"])
     assert result.exit_code == 0
@@ -88,6 +92,7 @@ def test_check_flag_exits_one_when_required_tool_missing(monkeypatch):
         if name == "ffmpeg":
             return False, "not found on PATH"
         return True, f"{name} version 1.0"
+
     monkeypatch.setattr("tracksplit.tools.verify_tool", fake_verify)
     monkeypatch.setattr("tracksplit.tools.find_active_config", lambda: None)
     result = runner.invoke(app, ["--check"])
@@ -99,6 +104,7 @@ def test_check_flag_exits_zero_when_only_optional_tool_missing(monkeypatch):
         if name in ("mkvextract", "mkvmerge"):
             return False, "not found on PATH"
         return True, f"{name} version 1.0"
+
     monkeypatch.setattr("tracksplit.tools.verify_tool", fake_verify)
     monkeypatch.setattr("tracksplit.tools.find_active_config", lambda: None)
     result = runner.invoke(app, ["--check"])
@@ -106,7 +112,9 @@ def test_check_flag_exits_zero_when_only_optional_tool_missing(monkeypatch):
 
 
 def test_check_flag_shows_section_headers(monkeypatch):
-    monkeypatch.setattr("tracksplit.tools.verify_tool", lambda name: (True, f"{name} 1.0"))
+    monkeypatch.setattr(
+        "tracksplit.tools.verify_tool", lambda name: (True, f"{name} 1.0")
+    )
     monkeypatch.setattr("tracksplit.tools.find_active_config", lambda: None)
     result = runner.invoke(app, ["--check"])
     assert "Tools" in result.output
@@ -117,6 +125,7 @@ def test_check_flag_shows_section_headers(monkeypatch):
 def test_run_check_missing_config_shows_expected_path(tmp_path, monkeypatch, capsys):
     """--check must print the canonical config path when the file is absent."""
     from tracksplit import cli
+
     fake_config = tmp_path / "TrackSplit" / "config.toml"
     monkeypatch.setattr("tracksplit.tools.paths.config_file", lambda: fake_config)
     # Stub out tool/package probing so we only inspect the Config section.
@@ -187,8 +196,9 @@ def test_version_honours_env_suppression(monkeypatch):
     from tracksplit import cli, update_check
 
     fetch_calls = []
-    monkeypatch.setattr(update_check, "_fetch_latest_release",
-                        lambda: fetch_calls.append(1) or "9.9.9")
+    monkeypatch.setattr(
+        update_check, "_fetch_latest_release", lambda: fetch_calls.append(1) or "9.9.9"
+    )
     monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")
 
     runner = CliRunner()

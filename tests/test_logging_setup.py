@@ -1,4 +1,5 @@
 """Tests for tracksplit.log.setup_logging (CLI integration contract)."""
+
 from __future__ import annotations
 
 import logging
@@ -31,14 +32,14 @@ class TestSetupLogging:
         with patch("tracksplit.log.paths") as mock_paths:
             mock_paths.log_dir.return_value = tmp_path
             mock_paths.ensure_parent.side_effect = lambda p: (
-                p.parent.mkdir(parents=True, exist_ok=True), p,
+                p.parent.mkdir(parents=True, exist_ok=True),
+                p,
             )[1]
             log.setup_logging(command="split")
 
         logger = logging.getLogger("tracksplit")
         mem_handlers = [
-            h for h in logger.handlers
-            if isinstance(h, logging.handlers.MemoryHandler)
+            h for h in logger.handlers if isinstance(h, logging.handlers.MemoryHandler)
         ]
         assert len(mem_handlers) == 1
 
@@ -47,7 +48,8 @@ class TestSetupLogging:
         with patch("tracksplit.log.paths") as mock_paths:
             mock_paths.log_dir.return_value = nested
             mock_paths.ensure_parent.side_effect = lambda p: (
-                p.parent.mkdir(parents=True, exist_ok=True), p,
+                p.parent.mkdir(parents=True, exist_ok=True),
+                p,
             )[1]
             log.setup_logging(command="split")
 
@@ -57,14 +59,17 @@ class TestSetupLogging:
         """Returns None and logs warning when ensure_parent raises."""
         with patch("tracksplit.log.paths") as mock_paths:
             mock_paths.log_dir.return_value = tmp_path
-            mock_paths.ensure_parent.side_effect = PermissionError("read-only filesystem")
+            mock_paths.ensure_parent.side_effect = PermissionError(
+                "read-only filesystem"
+            )
             result = log.setup_logging(command="fail")
 
         assert result is None
         # Console handler should still be configured
         logger = logging.getLogger("tracksplit")
         stream_handlers = [
-            h for h in logger.handlers
+            h
+            for h in logger.handlers
             if isinstance(h, logging.StreamHandler)
             and not isinstance(h, (logging.FileHandler, logging.handlers.MemoryHandler))
         ]
@@ -74,14 +79,14 @@ class TestSetupLogging:
         with patch("tracksplit.log.paths") as mock_paths:
             mock_paths.log_dir.return_value = tmp_path
             mock_paths.ensure_parent.side_effect = lambda p: (
-                p.parent.mkdir(parents=True, exist_ok=True), p,
+                p.parent.mkdir(parents=True, exist_ok=True),
+                p,
             )[1]
             log.setup_logging(command="split")
 
         logger = logging.getLogger("tracksplit")
         mh = next(
-            h for h in logger.handlers
-            if isinstance(h, logging.handlers.MemoryHandler)
+            h for h in logger.handlers if isinstance(h, logging.handlers.MemoryHandler)
         )
         assert mh.target.level == logging.DEBUG
         assert logger.level == logging.DEBUG
@@ -91,7 +96,8 @@ class TestSetupLogging:
         with patch("tracksplit.log.paths") as mock_paths:
             mock_paths.log_dir.return_value = tmp_path
             mock_paths.ensure_parent.side_effect = lambda p: (
-                p.parent.mkdir(parents=True, exist_ok=True), p,
+                p.parent.mkdir(parents=True, exist_ok=True),
+                p,
             )[1]
 
             log.setup_logging(command="first")

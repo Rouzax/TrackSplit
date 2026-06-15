@@ -11,7 +11,15 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps, UnidentifiedImageError
+from PIL import (
+    Image,
+    ImageDraw,
+    ImageEnhance,
+    ImageFilter,
+    ImageFont,
+    ImageOps,
+    UnidentifiedImageError,
+)
 
 from tracksplit.cratedigger import find_cratedigger_dirs
 from tracksplit.fonts import get_font_path
@@ -25,6 +33,7 @@ logger = logging.getLogger(__name__)
 # vs current value of this constant to decide whether an existing album
 # needs a cover-only rebuild on the skip path.
 COVER_SCHEMA_VERSION = 3
+
 
 # ---------------------------------------------------------------------------
 # Font helpers
@@ -114,7 +123,10 @@ def _balanced_word_split(text: str) -> list[str] | None:
 
 
 def _word_wrap_lines(
-    lines: list[str], bold: bool, max_width: int, min_size: int,
+    lines: list[str],
+    bold: bool,
+    max_width: int,
+    min_size: int,
 ) -> list[str]:
     """Re-split any line that doesn't fit at min_size."""
     result: list[str] = []
@@ -184,7 +196,9 @@ def _ensure_contrast(
 # ---------------------------------------------------------------------------
 # Accent color extraction
 # ---------------------------------------------------------------------------
-def _circular_hue_mean(h_array: np.ndarray, s_array: np.ndarray, min_sat: int = 40) -> float:
+def _circular_hue_mean(
+    h_array: np.ndarray, s_array: np.ndarray, min_sat: int = 40
+) -> float:
     """Circular mean of hue (0-360) weighted by saturation.
 
     Filters pixels below min_sat. Uses sin/cos decomposition to handle
@@ -272,20 +286,27 @@ def _draw_centered(
         tw = _measure_w(font, text)
         x = (canvas_w - tw) // 2
         draw.text(
-            (x, y), text, font=font, fill=fill,
-            stroke_width=sw, stroke_fill=sf,
+            (x, y),
+            text,
+            font=font,
+            fill=fill,
+            stroke_width=sw,
+            stroke_fill=sf,
         )
     else:
-        total_w = (
-            sum(_measure_w(font, c) for c in text)
-            + letter_spacing * (len(text) - 1)
+        total_w = sum(_measure_w(font, c) for c in text) + letter_spacing * (
+            len(text) - 1
         )
         x = (canvas_w - total_w) // 2
         for c in text:
             cw = _measure_w(font, c)
             draw.text(
-                (x, y), c, fill=fill, font=font,
-                stroke_width=sw, stroke_fill=sf,
+                (x, y),
+                c,
+                fill=fill,
+                font=font,
+                stroke_width=sw,
+                stroke_fill=sf,
             )
             x += cw + letter_spacing
 
@@ -365,7 +386,9 @@ def _prepare_background(
     if reject_non_landscape and src_w / max(src_h, 1) < _LANDSCAPE_MIN_RATIO:
         logger.warning(
             "cover.bg_reject: reason=not_landscape ratio=%.2f size=%dx%d",
-            src_w / max(src_h, 1), src_w, src_h,
+            src_w / max(src_h, 1),
+            src_w,
+            src_h,
         )
         return _gradient_background(size)
 
@@ -406,8 +429,19 @@ def format_date_display(date: str) -> str:
     parts = date.split("-")
     if len(parts) == 3:
         months = [
-            "", "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December",
+            "",
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
         ]
         year, month, day = parts
         month_idx = int(month)
@@ -477,7 +511,7 @@ def _apply_dark_gradient(canvas: Image.Image) -> None:
     span = h - start
     for y in range(start, h):
         progress = (y - start) / span
-        a = int(GRADIENT_MAX_ALPHA * (progress ** GRADIENT_GAMMA))
+        a = int(GRADIENT_MAX_ALPHA * (progress**GRADIENT_GAMMA))
         dg.line([(0, y), (w, y)], fill=(0, 0, 0, a))
     canvas.alpha_composite(overlay)
 
@@ -638,7 +672,9 @@ def compose_cover(
     fading into a darkening gradient below; accent line with artist above,
     festival / date / stage / venue below.
     """
-    L = _layout_album_cover(artist, festival, date, stage, venue, size, albumartists=albumartists)
+    L = _layout_album_cover(
+        artist, festival, date, stage, venue, size, albumartists=albumartists
+    )
 
     bg, accent = _prepare_background(
         background_data, size, darkness=0.18, reject_non_landscape=True
@@ -654,20 +690,32 @@ def compose_cover(
     s = size / 1000.0
     cursor = L["artist_block_top"]
     for line in L["artist_lines"]:
-        sp = max(int(2 * s), min(
-            int(14 * s),
-            (max_text_w - _measure_w(L["artist_font"], line))
-            // max(len(line), 1),
-        ))
+        sp = max(
+            int(2 * s),
+            min(
+                int(14 * s),
+                (max_text_w - _measure_w(L["artist_font"], line)) // max(len(line), 1),
+            ),
+        )
         _draw_centered(
-            draw, size, cursor, line, L["artist_font"], (255, 255, 255, 255),
+            draw,
+            size,
+            cursor,
+            line,
+            L["artist_font"],
+            (255, 255, 255, 255),
             letter_spacing=sp,
         )
         cursor += L["artist_line_h"] + L["artist_pad_lines"]
 
     result = canvas.convert("RGB")
     result = _draw_glow_line(
-        result, L["line_y"], L["line_w"], L["line_h"], accent, glow_radius=16,
+        result,
+        L["line_y"],
+        L["line_w"],
+        L["line_h"],
+        accent,
+        glow_radius=16,
     )
 
     draw = ImageDraw.Draw(result)
@@ -678,7 +726,9 @@ def compose_cover(
         cursor_y += L["fest_h"] + L["pad_fest_to_date"]
 
     if L["date_font"] is not None:
-        _draw_centered(draw, size, cursor_y, L["date_text"], L["date_font"], (255, 255, 255))
+        _draw_centered(
+            draw, size, cursor_y, L["date_text"], L["date_font"], (255, 255, 255)
+        )
         cursor_y += L["date_h"] + L["pad_date_to_detail"]
 
     for part, sf, sh in zip(L["stage_parts"], L["stage_fonts"], L["stage_heights"]):
@@ -703,7 +753,9 @@ def _check_artist_dir(artist_dir: Path, artist: str, source: str) -> bytes | Non
         if candidate.is_file():
             logger.debug(
                 "cover.dj_lookup: artist=%s found=true source=%s path=%s",
-                artist, source, candidate,
+                artist,
+                source,
+                candidate,
             )
             return candidate.read_bytes()
     return None
@@ -778,7 +830,9 @@ def compose_artist_cover(
 
     # Artist name
     artist_text = artist.upper()
-    artist_font = _auto_fit(artist_text, True, max_text_w, start=int(100 * s), minimum=int(54 * s))
+    artist_font = _auto_fit(
+        artist_text, True, max_text_w, start=int(100 * s), minimum=int(54 * s)
+    )
     artist_h = _font_height(artist_font)
 
     # Center the photo + artist + line block vertically on the canvas.
@@ -814,13 +868,21 @@ def compose_artist_cover(
         except Exception:
             logger.warning("cover.dj_artwork_fail: error=processing_failed")
 
-    sp = max(int(2 * s), min(
-        int(14 * s),
-        (max_text_w - _measure_w(artist_font, artist_text))
-        // max(len(artist_text), 1),
-    ))
+    sp = max(
+        int(2 * s),
+        min(
+            int(14 * s),
+            (max_text_w - _measure_w(artist_font, artist_text))
+            // max(len(artist_text), 1),
+        ),
+    )
     _draw_centered(
-        draw, size, artist_y, artist_text, artist_font, (255, 255, 255, 255),
+        draw,
+        size,
+        artist_y,
+        artist_text,
+        artist_font,
+        (255, 255, 255, 255),
         letter_spacing=sp,
     )
 
@@ -854,11 +916,18 @@ def build_cover_command(input_path: Path, output_path: Path) -> list[str]:
 
 _IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp")
 _IMAGE_CODECS = ("png", "mjpeg", "jpeg", "webp", "bmp")
-_STREAM_EXT = {"png": ".png", "mjpeg": ".jpg", "jpeg": ".jpg", "webp": ".webp", "bmp": ".bmp"}
+_STREAM_EXT = {
+    "png": ".png",
+    "mjpeg": ".jpg",
+    "jpeg": ".jpg",
+    "webp": ".webp",
+    "bmp": ".bmp",
+}
 
 
 def extract_cover_from_mkv(
-    input_path: Path, ffprobe_data: dict | None = None,
+    input_path: Path,
+    ffprobe_data: dict | None = None,
 ) -> bytes | None:
     """Extract embedded cover art from a video file.
 
@@ -901,20 +970,29 @@ def _find_cover_stream(ffprobe_data: dict) -> tuple[int, str] | None:
 
 
 def _extract_cover_ffmpeg_stream(
-    input_path: Path, ffprobe_data: dict | None,
+    input_path: Path,
+    ffprobe_data: dict | None,
 ) -> bytes | None:
     """Extract cover art by mapping a specific image stream via ffmpeg."""
     if ffprobe_data is None:
         try:
             from tracksplit.probe import run_ffprobe
+
             ffprobe_data = run_ffprobe(input_path)
         except (subprocess.CalledProcessError, OSError) as exc:
-            logger.debug('cover.source_fail: file=%s method=ffprobe error="%s"', input_path.name, exc)
+            logger.debug(
+                'cover.source_fail: file=%s method=ffprobe error="%s"',
+                input_path.name,
+                exc,
+            )
             return None
 
     found = _find_cover_stream(ffprobe_data)
     if found is None:
-        logger.debug("cover.source_fail: file=%s method=ffprobe error=no_cover_stream", input_path.name)
+        logger.debug(
+            "cover.source_fail: file=%s method=ffprobe error=no_cover_stream",
+            input_path.name,
+        )
         return None
     stream_index, ext = found
 
@@ -922,17 +1000,26 @@ def _extract_cover_ffmpeg_stream(
     try:
         fd, tmp_path_str = tempfile.mkstemp(prefix="tracksplit_cover_", suffix=ext)
         import os
+
         os.close(fd)
         tmp_file = Path(tmp_path_str)
 
         cmd = [
             get_tool("ffmpeg"),
-            "-hide_banner", "-loglevel", "error", "-y",
-            "-i", str(input_path),
-            "-map", f"0:{stream_index}",
-            "-c", "copy",
-            "-frames:v", "1",
-            "-update", "1",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(input_path),
+            "-map",
+            f"0:{stream_index}",
+            "-c",
+            "copy",
+            "-frames:v",
+            "1",
+            "-update",
+            "1",
             str(tmp_file),
         ]
         logger.debug("cover.source: file=%s method=ffmpeg_stream", input_path.name)
@@ -941,11 +1028,14 @@ def _extract_cover_ffmpeg_stream(
         if tmp_file.exists() and tmp_file.stat().st_size > 0:
             data = tmp_file.read_bytes()
             logger.info(
-                "cover.source: file=%s method=ffmpeg", input_path.name,
+                "cover.source: file=%s method=ffmpeg",
+                input_path.name,
             )
             return data
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
-        logger.debug('cover.source_fail: file=%s method=ffmpeg error="%s"', input_path.name, exc)
+        logger.debug(
+            'cover.source_fail: file=%s method=ffmpeg error="%s"', input_path.name, exc
+        )
     finally:
         if tmp_file is not None:
             tmp_file.unlink(missing_ok=True)
@@ -993,14 +1083,21 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
         ]
         logger.debug("cover.source: file=%s method=mkvmerge_identify", input_path.name)
         identify_result = subprocess.run(
-            identify_cmd, capture_output=True, check=True, text=True,
-            timeout=30, encoding="utf-8",
+            identify_cmd,
+            capture_output=True,
+            check=True,
+            text=True,
+            timeout=30,
+            encoding="utf-8",
         )
         info = json.loads(identify_result.stdout)
 
         image_attachment = _pick_image_attachment(info.get("attachments", []))
         if image_attachment is None:
-            logger.debug("cover.source_fail: file=%s method=mkvextract error=no_attachments", input_path.name)
+            logger.debug(
+                "cover.source_fail: file=%s method=mkvextract error=no_attachments",
+                input_path.name,
+            )
             return None
 
         att_id = image_attachment["id"]
@@ -1008,6 +1105,7 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
         # Create a unique temp file to avoid collisions under parallel workers
         fd, tmp_path_str = tempfile.mkstemp(prefix="tracksplit_cover_", suffix=".jpg")
         import os
+
         os.close(fd)
         tmp_file = Path(tmp_path_str)
 
@@ -1023,15 +1121,23 @@ def _extract_cover_mkvtools(input_path: Path) -> bytes | None:
         if tmp_file.exists() and tmp_file.stat().st_size > 0:
             data = tmp_file.read_bytes()
             logger.info(
-                "cover.source: file=%s method=mkvextract", input_path.name,
+                "cover.source: file=%s method=mkvextract",
+                input_path.name,
             )
             return data
 
     except (
-        subprocess.CalledProcessError, subprocess.TimeoutExpired,
-        json.JSONDecodeError, KeyError, OSError,
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+        json.JSONDecodeError,
+        KeyError,
+        OSError,
     ) as exc:
-        logger.debug('cover.source_fail: file=%s method=mkvtools error="%s"', input_path.name, exc)
+        logger.debug(
+            'cover.source_fail: file=%s method=mkvtools error="%s"',
+            input_path.name,
+            exc,
+        )
     finally:
         if tmp_file is not None:
             tmp_file.unlink(missing_ok=True)

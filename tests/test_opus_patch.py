@@ -1,4 +1,5 @@
 """Tests for the Ogg Opus in-place patcher."""
+
 import subprocess
 from pathlib import Path
 
@@ -27,9 +28,21 @@ def _make_tiny_opus(tmp_path: Path) -> Path:
     out = tmp_path / "tiny.opus"
     subprocess.run(
         [
-            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-            "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
-            "-t", "0.1", "-c:a", "libopus", "-b:a", "64k",
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=r=48000:cl=stereo",
+            "-t",
+            "0.1",
+            "-c:a",
+            "libopus",
+            "-b:a",
+            "64k",
             str(out),
         ],
         check=True,
@@ -67,12 +80,18 @@ class TestReadAndPatchPreSkip:
         patch_opus_pre_skip(f, 960)
         result = subprocess.run(
             [
-                "ffprobe", "-v", "error", "-show_entries",
+                "ffprobe",
+                "-v",
+                "error",
+                "-show_entries",
                 "stream=codec_name,sample_rate,channels",
-                "-of", "default=noprint_wrappers=1",
+                "-of",
+                "default=noprint_wrappers=1",
                 str(f),
             ],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         )
         assert "codec_name=opus" in result.stdout
 
@@ -109,6 +128,7 @@ class TestPatchOpusPreSkipDebugLogging:
     def test_debug_on_success(self, tmp_path, caplog):
         """Successful patch logs DEBUG naming path and new pre_skip value."""
         import logging
+
         f = _make_tiny_opus(tmp_path)
         with caplog.at_level(logging.DEBUG, logger="tracksplit.opus_patch"):
             patch_opus_pre_skip(f, 960)
