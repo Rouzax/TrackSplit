@@ -33,6 +33,7 @@ Cache files are read from :func:`cratedigger_cache_dir` (platformdirs cache).
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
 import re
@@ -281,10 +282,8 @@ def _write_legacy_stamp() -> None:
                 f.write(date.today().isoformat())
             os.replace(tmp_path, target)
         except BaseException:
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
-            except OSError:
-                pass
             raise
     except OSError as e:
         logger.debug("Failed to write legacy-warning stamp at %s: %s", target, e)

@@ -6,6 +6,7 @@ composition for individual video files and directories of video files.
 
 from __future__ import annotations
 
+import contextlib
 import errno
 import hashlib
 import logging
@@ -16,6 +17,7 @@ from collections.abc import Callable
 from dataclasses import replace as dataclass_replace
 from enum import Enum
 from pathlib import Path
+from typing import TypedDict
 
 from tracksplit.cover import (
     COVER_SCHEMA_VERSION,
@@ -28,20 +30,20 @@ from tracksplit.cratedigger import apply_cratedigger_canon_with, load_config
 from tracksplit.extract import decide_codec, prepare_audio
 from tracksplit.manifest import (
     ALBUM_MANIFEST_FILENAME,
-    AlbumManifest,
-    ArtistManifest,
     LEGACY_CHAPTER_CACHE_FILENAME,
     MANIFEST_SCHEMA,
     TAG_KEYS,
+    AlbumManifest,
+    ArtistManifest,
     SourceFingerprint,
     artwork_sha256,
-    tag_default,
     atomic_write_bytes,
     build_album_manifest,
     load_album_manifest,
     load_artist_manifest,
     save_album_manifest,
     save_artist_manifest,
+    tag_default,
 )
 from tracksplit.metadata import build_album_meta, safe_filename
 from tracksplit.models import AlbumMeta, Chapter, TrackMeta
@@ -374,6 +376,19 @@ def rebuild_cover_only(
     )
 
 
+class _RetagKwargs(TypedDict):
+    album_dir: Path
+    album: AlbumMeta
+    source_path: Path
+    ffprobe_data: dict
+    tags: dict
+    chapter_dicts: list[dict]
+    artist_folder: str
+    album_folder: str
+    codec_mode: str
+    on_progress: Callable[[str, int, int], None] | None
+
+
 def retag_album(
     *,
     album_dir: Path,
@@ -593,7 +608,9 @@ def check_regen_level(
             len(chapter_dicts),
         )
         if len(stored_chapters) == len(chapter_dicts):
-            for i, (old, new) in enumerate(zip(stored_chapters, chapter_dicts)):
+            for i, (old, new) in enumerate(
+                zip(stored_chapters, chapter_dicts, strict=True)
+            ):
                 if old != new:
                     logger.debug(
                         "pipeline.regenerate: file=%s reason=chapter_detail index=%d",
@@ -738,18 +755,18 @@ def process_file(
     )
 
     _retag_done = False
-    _retag_kwargs = dict(
-        album_dir=album_dir,
-        album=album,
-        source_path=input_path,
-        ffprobe_data=ffprobe_data,
-        tags=tags,
-        chapter_dicts=chapter_dicts,
-        artist_folder=artist_folder,
-        album_folder=album_folder,
-        codec_mode=codec_mode,
-        on_progress=on_progress,
-    )
+    _retag_kwargs: _RetagKwargs = {
+        "album_dir": album_dir,
+        "album": album,
+        "source_path": input_path,
+        "ffprobe_data": ffprobe_data,
+        "tags": tags,
+        "chapter_dicts": chapter_dicts,
+        "artist_folder": artist_folder,
+        "album_folder": album_folder,
+        "codec_mode": codec_mode,
+        "on_progress": on_progress,
+    }
 
     # -- SKIP path: check schema version bumps -------------------------
     if level == RegenLevel.SKIP:
@@ -983,10 +1000,8 @@ def process_file(
         save_album_manifest(album_dir, manifest)
         legacy = album_dir / LEGACY_CHAPTER_CACHE_FILENAME
         if legacy.exists():
-            try:
+            with contextlib.suppress(OSError):
                 legacy.unlink()
-            except OSError:
-                pass
 
     artist_dir = output_dir / safe_filename(album.artist_folder)
     refresh_artist_cover(

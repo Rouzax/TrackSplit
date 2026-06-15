@@ -136,7 +136,7 @@ def build_album_meta(
     chapters: list[Chapter],
     filename_stem: str,
     tier: int,
-    cd_config: "CrateDiggerConfig | None" = None,
+    cd_config: CrateDiggerConfig | None = None,
 ) -> AlbumMeta:
     """Build album metadata from parsed tags and chapters.
 
@@ -177,10 +177,7 @@ def build_album_meta(
             venue = tags.get("venue", "")
             place = venue or tags.get("location", "") or stage
             if place:
-                if year and year not in place:
-                    album = f"{place} {year}"
-                else:
-                    album = place
+                album = f"{place} {year}" if year and year not in place else place
             else:
                 album = filename_stem
     else:
@@ -291,7 +288,7 @@ def build_album_meta(
 
     pre_dedup = list(clean_titles)
     clean_titles = deduplicate_titles(clean_titles)
-    dedup_count = sum(1 for a, b in zip(pre_dedup, clean_titles) if a != b)
+    dedup_count = sum(1 for a, b in zip(pre_dedup, clean_titles, strict=True) if a != b)
     if dedup_count:
         logger.debug(
             "metadata.title_dedup: file=%s count=%d", filename_stem, dedup_count

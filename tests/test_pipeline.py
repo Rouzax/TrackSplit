@@ -9,10 +9,9 @@ import pytest
 from tracksplit.models import AlbumMeta, Chapter, TrackMeta
 from tracksplit.pipeline import (
     _apply_intro_track,
-    build_intro_track,
     _safe_log_name,
+    build_intro_track,
 )
-
 
 # ---------------------------------------------------------------------------
 # build_intro_track
@@ -131,8 +130,8 @@ class TestApplyIntroTrack:
 
 class TestShouldRegenerate:
     def _write_manifest(self, album_dir, **overrides):
-        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import make_manifest_dict
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
 
         data = make_manifest_dict(**overrides)
         (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(data))
@@ -148,7 +147,7 @@ class TestShouldRegenerate:
         return make_ffprobe(make_audio_fp(**audio_overrides))
 
     def test_no_existing_dir(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         assert (
@@ -168,7 +167,7 @@ class TestShouldRegenerate:
         )
 
     def test_force_always_true(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -191,8 +190,8 @@ class TestShouldRegenerate:
         )
 
     def test_unchanged_everything(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -216,10 +215,11 @@ class TestShouldRegenerate:
 
     def test_source_mtime_change_does_not_regenerate(self, tmp_path):
         """Regression test: mtime bump from a tag-only mkvpropedit must not invalidate."""
-        from tracksplit.pipeline import check_regen_level, RegenLevel
-        from tests._manifest_helpers import default_tags
         import os
         import time
+
+        from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -244,8 +244,8 @@ class TestShouldRegenerate:
         )
 
     def test_audio_codec_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -268,8 +268,8 @@ class TestShouldRegenerate:
         )
 
     def test_audio_sample_rate_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -292,8 +292,8 @@ class TestShouldRegenerate:
         )
 
     def test_audio_channels_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -316,8 +316,8 @@ class TestShouldRegenerate:
         )
 
     def test_audio_duration_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -340,8 +340,8 @@ class TestShouldRegenerate:
         )
 
     def test_chapter_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -367,8 +367,8 @@ class TestShouldRegenerate:
         )
 
     def test_allowlisted_tag_change_returns_retag(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -392,8 +392,8 @@ class TestShouldRegenerate:
         )
 
     def test_genres_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -417,8 +417,8 @@ class TestShouldRegenerate:
         )
 
     def test_comment_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -442,8 +442,8 @@ class TestShouldRegenerate:
         )
 
     def test_albumartists_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -467,8 +467,8 @@ class TestShouldRegenerate:
         )
 
     def test_albumartist_display_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -492,8 +492,8 @@ class TestShouldRegenerate:
         )
 
     def test_albumartist_mbids_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -518,8 +518,8 @@ class TestShouldRegenerate:
 
     def test_non_allowlisted_tag_change_does_not_regenerate(self, tmp_path):
         """dj_artwork and enriched_at must NOT trigger regen."""
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -547,7 +547,7 @@ class TestShouldRegenerate:
         )
 
     def test_format_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -576,7 +576,7 @@ class TestShouldRegenerate:
     def test_missing_manifest_triggers_regenerate_even_with_legacy_cache(
         self, tmp_path
     ):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -601,8 +601,8 @@ class TestShouldRegenerate:
         )
 
     def test_corrupt_manifest_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -626,8 +626,8 @@ class TestShouldRegenerate:
 
     def test_schema_2_manifest_triggers_regenerate(self, tmp_path):
         """Schema-2 manifests on disk after upgrade must force regen."""
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -670,8 +670,8 @@ class TestShouldRegenerate:
         )
 
     def test_should_regenerate_skips_when_intro_policy_matches(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel, INTRO_MIN_SECONDS
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import INTRO_MIN_SECONDS, RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -698,8 +698,8 @@ class TestShouldRegenerate:
         )
 
     def test_should_regenerate_skips_legacy_manifest_with_zero_gap(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -722,8 +722,8 @@ class TestShouldRegenerate:
         )
 
     def test_should_regenerate_rebuilds_legacy_manifest_with_short_gap(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -747,8 +747,8 @@ class TestShouldRegenerate:
         )
 
     def test_should_regenerate_skips_legacy_manifest_with_long_intro(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -772,8 +772,8 @@ class TestShouldRegenerate:
         )
 
     def test_should_regenerate_rebuilds_when_stored_threshold_differs(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel, INTRO_MIN_SECONDS
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import INTRO_MIN_SECONDS, RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -803,8 +803,8 @@ class TestShouldRegenerate:
         )
 
     def test_chapter_tag_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -845,8 +845,8 @@ class TestShouldRegenerate:
         )
 
     def test_chapter_tag_added_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -879,9 +879,9 @@ class TestShouldRegenerate:
 
     def test_legacy_manifest_no_tags_key_skips_when_no_current_tags(self, tmp_path):
         """Old manifests without chapter tags should not regenerate if current chapters also have no tags."""
-        from tracksplit.pipeline import check_regen_level, RegenLevel
-        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import default_tags, make_manifest_dict
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -912,9 +912,9 @@ class TestShouldRegenerate:
 
     def test_legacy_manifest_no_tags_key_regenerates_when_tags_present(self, tmp_path):
         """Old manifests without chapter tags should regenerate if current chapters have tags."""
-        from tracksplit.pipeline import check_regen_level, RegenLevel
-        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import default_tags, make_manifest_dict
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -950,8 +950,8 @@ class TestShouldRegenerate:
         )
 
     def test_track_filename_change_regenerates(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -975,8 +975,8 @@ class TestShouldRegenerate:
         )
 
     def test_track_filename_unchanged_skips(self, tmp_path):
-        from tracksplit.pipeline import check_regen_level, RegenLevel
         from tests._manifest_helpers import default_tags
+        from tracksplit.pipeline import RegenLevel, check_regen_level
 
         src = self._mk_source(tmp_path)
         album = tmp_path / "album"
@@ -1016,18 +1016,18 @@ class TestRetagAlbum:
         mock_tag,
         tmp_path,
     ):
-        from tracksplit.pipeline import retag_album
-        from tracksplit.manifest import (
-            load_album_manifest,
-            ALBUM_MANIFEST_FILENAME,
-        )
-        from tracksplit.tagger import TAG_SCHEMA_VERSION
         from tests._manifest_helpers import (
             default_tags,
-            make_manifest_dict,
-            make_ffprobe,
             make_audio_fp,
+            make_ffprobe,
+            make_manifest_dict,
         )
+        from tracksplit.manifest import (
+            ALBUM_MANIFEST_FILENAME,
+            load_album_manifest,
+        )
+        from tracksplit.pipeline import retag_album
+        from tracksplit.tagger import TAG_SCHEMA_VERSION
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 10)
@@ -1081,14 +1081,14 @@ class TestRetagAlbum:
         assert m.tags["festival"] == "Updated Fest"
 
     def test_retag_album_raises_on_missing_track(self, tmp_path):
-        from tracksplit.pipeline import retag_album
         from tests._manifest_helpers import (
             default_tags,
-            make_manifest_dict,
-            make_ffprobe,
             make_audio_fp,
+            make_ffprobe,
+            make_manifest_dict,
         )
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tracksplit.pipeline import retag_album
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 10)
@@ -1133,15 +1133,15 @@ class TestRetagAlbum:
     ):
         """reuse_cover=True with current cover schema reads cover.jpg
         from disk instead of extracting from MKV and recomposing."""
-        from tracksplit.pipeline import retag_album
-        from tracksplit.cover import COVER_SCHEMA_VERSION
-        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import (
             default_tags,
-            make_manifest_dict,
-            make_ffprobe,
             make_audio_fp,
+            make_ffprobe,
+            make_manifest_dict,
         )
+        from tracksplit.cover import COVER_SCHEMA_VERSION
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tracksplit.pipeline import retag_album
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 10)
@@ -1195,14 +1195,14 @@ class TestRetagAlbum:
     ):
         """reuse_cover=True but cover_schema_version is outdated: must
         recompose from MKV, not reuse cover.jpg."""
-        from tracksplit.pipeline import retag_album
-        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import (
             default_tags,
-            make_manifest_dict,
-            make_ffprobe,
             make_audio_fp,
+            make_ffprobe,
+            make_manifest_dict,
         )
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tracksplit.pipeline import retag_album
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 10)
@@ -1257,15 +1257,15 @@ class TestRetagAlbum:
     ):
         """reuse_cover=True but cover.jpg does not exist on disk:
         must recompose."""
-        from tracksplit.pipeline import retag_album
-        from tracksplit.cover import COVER_SCHEMA_VERSION
-        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import (
             default_tags,
-            make_manifest_dict,
-            make_ffprobe,
             make_audio_fp,
+            make_ffprobe,
+            make_manifest_dict,
         )
+        from tracksplit.cover import COVER_SCHEMA_VERSION
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tracksplit.pipeline import retag_album
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 10)
@@ -1324,15 +1324,17 @@ class TestRetagAlbum:
         ORIGINALDATE/RELEASEDATE/DISCTOTAL), run retag_album, and
         verify the new Vorbis comments appear on disk."""
         import subprocess
+
         from mutagen.flac import FLAC
-        from tracksplit.pipeline import retag_album
-        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+
         from tests._manifest_helpers import (
             default_tags,
-            make_manifest_dict,
-            make_ffprobe,
             make_audio_fp,
+            make_ffprobe,
+            make_manifest_dict,
         )
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
+        from tracksplit.pipeline import retag_album
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 10)
@@ -1701,9 +1703,9 @@ class TestProcessFileManifest:
         mock_tag,
         tmp_path,
     ):
+        from tests._manifest_helpers import make_manifest_dict
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tracksplit.pipeline import process_file
-        from tests._manifest_helpers import make_manifest_dict
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"x" * 100)
@@ -1767,8 +1769,8 @@ class TestProcessFileManifest:
         """When the album is unchanged but DJ artwork bytes differ, artist
         cover is rewritten during the skip path."""
         from tracksplit.manifest import (
-            ArtistManifest,
             MANIFEST_SCHEMA,
+            ArtistManifest,
             artwork_sha256,
             build_album_manifest,
             save_album_manifest,
@@ -1836,12 +1838,12 @@ class TestProcessFileRetag:
     ):
         """When only tags changed, process_file calls retag_album
         instead of the full extract+split pipeline."""
+        from tests._manifest_helpers import default_tags
         from tracksplit.manifest import (
             build_album_manifest,
             save_album_manifest,
         )
         from tracksplit.pipeline import process_file
-        from tests._manifest_helpers import default_tags
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"data" * 64)
@@ -1906,13 +1908,13 @@ class TestProcessFileRetag:
     ):
         """Skip path: source tags unchanged, but tag_schema_version is
         outdated. Should trigger retag_album."""
+        from tests._manifest_helpers import default_tags
         from tracksplit.manifest import (
+            ALBUM_MANIFEST_FILENAME,
             build_album_manifest,
             save_album_manifest,
-            ALBUM_MANIFEST_FILENAME,
         )
         from tracksplit.pipeline import process_file
-        from tests._manifest_helpers import default_tags
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"data" * 64)
@@ -1990,12 +1992,12 @@ class TestProcessFileRetag:
     ):
         """If retag_album raises, process_file deletes the manifest
         and falls through to the full pipeline."""
+        from tests._manifest_helpers import default_tags
         from tracksplit.manifest import (
             build_album_manifest,
             save_album_manifest,
         )
         from tracksplit.pipeline import process_file
-        from tests._manifest_helpers import default_tags
 
         src = tmp_path / "src.mkv"
         src.write_bytes(b"data" * 64)
@@ -2139,8 +2141,8 @@ class TestFindPriorAlbumDirs:
     def _write_manifest(
         self, album_dir, source_path, artist_folder=None, album_folder=None
     ):
-        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
         from tests._manifest_helpers import make_manifest_dict
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME
 
         album_dir.mkdir(parents=True, exist_ok=True)
         data = make_manifest_dict(
@@ -2281,8 +2283,8 @@ class TestRefreshArtistCover:
     def test_skips_when_artwork_hash_unchanged(self, tmp_path):
         from tracksplit.cover import COVER_SCHEMA_VERSION
         from tracksplit.manifest import (
-            ArtistManifest,
             MANIFEST_SCHEMA,
+            ArtistManifest,
             artwork_sha256,
             save_artist_manifest,
         )
@@ -2322,8 +2324,8 @@ class TestRefreshArtistCover:
         hash is unchanged, so cover-rendering changes reach existing libraries."""
         from tracksplit.cover import COVER_SCHEMA_VERSION
         from tracksplit.manifest import (
-            ArtistManifest,
             MANIFEST_SCHEMA,
+            ArtistManifest,
             artwork_sha256,
             load_artist_manifest,
             save_artist_manifest,
@@ -2356,8 +2358,8 @@ class TestRefreshArtistCover:
 
     def test_rewrites_when_artwork_hash_changes(self, tmp_path):
         from tracksplit.manifest import (
-            ArtistManifest,
             MANIFEST_SCHEMA,
+            ArtistManifest,
             artwork_sha256,
             load_artist_manifest,
             save_artist_manifest,
@@ -2387,8 +2389,8 @@ class TestRefreshArtistCover:
 
     def test_rewrites_when_jpg_missing_even_if_hash_matches(self, tmp_path):
         from tracksplit.manifest import (
-            ArtistManifest,
             MANIFEST_SCHEMA,
+            ArtistManifest,
             artwork_sha256,
             save_artist_manifest,
         )
@@ -2446,8 +2448,9 @@ class TestRefreshArtistCover:
     def test_enospc_propagates(self, tmp_path, monkeypatch):
         """Disk-full errors must not be swallowed."""
         import errno
-        from tracksplit.pipeline import refresh_artist_cover
+
         from tracksplit import manifest as mf
+        from tracksplit.pipeline import refresh_artist_cover
 
         artist = tmp_path / "A"
         artist.mkdir()
@@ -2589,9 +2592,9 @@ class TestRebuildCoverOnly:
         schema_version: int = 0,
     ):
         from tracksplit.manifest import (
+            MANIFEST_SCHEMA,
             AlbumManifest,
             AudioFingerprint,
-            MANIFEST_SCHEMA,
             SourceFingerprint,
             save_album_manifest,
         )
@@ -2624,7 +2627,9 @@ class TestRebuildCoverOnly:
 
     def test_rewrites_cover_and_embeds_in_tracks(self, tmp_path):
         import hashlib
+
         from mutagen.flac import FLAC
+
         from tracksplit.cover import COVER_SCHEMA_VERSION
         from tracksplit.manifest import load_album_manifest
         from tracksplit.pipeline import rebuild_cover_only
@@ -2673,6 +2678,7 @@ class TestRebuildCoverOnly:
 
     def test_updates_folder_jpg_when_present(self, tmp_path):
         import hashlib
+
         from tracksplit.pipeline import rebuild_cover_only
 
         album_dir = tmp_path / "Artist" / "Album"
@@ -2702,6 +2708,7 @@ class TestRebuildCoverOnly:
         """If compose produces the same bytes as the stored cover_sha256,
         only bump the schema version; do not rewrite files."""
         import hashlib
+
         from tracksplit.cover import COVER_SCHEMA_VERSION
         from tracksplit.manifest import load_album_manifest
         from tracksplit.pipeline import rebuild_cover_only
@@ -2766,9 +2773,10 @@ class TestSkipBranchCoverRebuild:
         }
 
     def _write_manifest_with_stale_cover_version(self, src, album_dir):
-        from tracksplit.manifest import build_album_manifest, save_album_manifest
-        from tests._manifest_helpers import default_tags
         from dataclasses import replace as _replace
+
+        from tests._manifest_helpers import default_tags
+        from tracksplit.manifest import build_album_manifest, save_album_manifest
 
         tags = {**default_tags(), "artist": "DJ X", "festival": "Show", "date": "2025"}
         m = build_album_manifest(
@@ -2887,8 +2895,8 @@ class TestSkipBranchCoverRebuild:
         src.write_bytes(b"data" * 64)
         album_dir = tmp_path / "out" / "DJ X" / "Show 2025"
         album_dir.mkdir(parents=True)
-        from tracksplit.manifest import build_album_manifest, save_album_manifest
         from tests._manifest_helpers import default_tags
+        from tracksplit.manifest import build_album_manifest, save_album_manifest
 
         tags = {**default_tags(), "artist": "DJ X", "festival": "Show", "date": "2025"}
         m = build_album_manifest(
@@ -2916,9 +2924,10 @@ class TestRebuildCoverPassesAlbumartists:
         import hashlib
         import json
         from unittest.mock import MagicMock
+
+        from tests._manifest_helpers import default_tags, make_manifest_dict
         from tracksplit.manifest import ALBUM_MANIFEST_FILENAME, load_album_manifest
         from tracksplit.pipeline import rebuild_cover_only
-        from tests._manifest_helpers import make_manifest_dict, default_tags
 
         fake = b"FAKECOVERBYTES"
         sha = hashlib.sha256(fake).hexdigest()

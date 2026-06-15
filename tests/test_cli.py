@@ -3,7 +3,9 @@
 from typer.testing import CliRunner
 
 from tracksplit.cli import app
-from tracksplit.tools import find_active_config  # type: ignore[reportAttributeAccessIssue]
+from tracksplit.tools import (
+    find_active_config,  # type: ignore[reportAttributeAccessIssue]
+)
 
 runner = CliRunner()
 
@@ -38,8 +40,8 @@ def test_version_flag_prints_version_and_exits():
 
 def test_cli_invalid_format_rejected():
     """Invalid --format value should fail with a clean message."""
-    import tempfile
     import os
+    import tempfile
 
     fd, path = tempfile.mkstemp(suffix=".mkv")
     os.close(fd)
@@ -139,7 +141,9 @@ def test_run_check_missing_config_shows_expected_path(tmp_path, monkeypatch, cap
 def test_version_prints_latest_when_current(monkeypatch):
     """When installed == latest, --version output ends with '(latest)'."""
     from importlib.metadata import version
+
     from typer.testing import CliRunner
+
     from tracksplit import cli, update_check
 
     installed = version("tracksplit")
@@ -156,7 +160,9 @@ def test_version_prints_latest_when_current(monkeypatch):
 def test_version_prints_stale_when_newer_available(monkeypatch):
     """When a newer release exists, the stale notice prints."""
     from importlib.metadata import version
+
     from typer.testing import CliRunner
+
     from tracksplit import cli, update_check
 
     installed = version("tracksplit")
@@ -175,7 +181,9 @@ def test_version_prints_stale_when_newer_available(monkeypatch):
 def test_version_silent_on_fetch_failure(monkeypatch):
     """Fetch returning None yields just the version line."""
     from importlib.metadata import version
+
     from typer.testing import CliRunner
+
     from tracksplit import cli, update_check
 
     installed = version("tracksplit")
@@ -193,6 +201,7 @@ def test_version_silent_on_fetch_failure(monkeypatch):
 def test_version_honours_env_suppression(monkeypatch):
     """TRACKSPLIT_NO_UPDATE_CHECK=1 skips the network call."""
     from typer.testing import CliRunner
+
     from tracksplit import cli, update_check
 
     fetch_calls = []
@@ -211,7 +220,9 @@ def test_version_honours_env_suppression(monkeypatch):
 def test_check_update_status_row_current(monkeypatch):
     """Update status: current version reports (latest) and does not warn."""
     from importlib.metadata import version
+
     from typer.testing import CliRunner
+
     from tracksplit import cli, update_check
 
     monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
@@ -227,7 +238,9 @@ def test_check_update_status_row_current(monkeypatch):
 def test_check_update_status_row_stale(monkeypatch):
     """Update status: newer release counts as a warning."""
     from importlib.metadata import version
+
     from typer.testing import CliRunner
+
     from tracksplit import cli, update_check
 
     monkeypatch.delenv("TRACKSPLIT_NO_UPDATE_CHECK", raising=False)
@@ -246,6 +259,7 @@ def test_check_update_status_row_stale(monkeypatch):
 def test_check_update_status_row_suppressed(monkeypatch):
     """Update status: env-suppressed shows informational ~ row."""
     from typer.testing import CliRunner
+
     from tracksplit import cli
 
     monkeypatch.setenv("TRACKSPLIT_NO_UPDATE_CHECK", "1")

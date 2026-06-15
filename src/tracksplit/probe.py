@@ -218,9 +218,9 @@ def get_opus_packet_duration_ms(path: Path) -> int | None:
         "default=noprint_wrappers=1",
         str(path),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
     durations_ms: set[int] = set()
-    for line in result.stdout.splitlines():
+    for line in proc.stdout.splitlines():
         if not line.startswith("duration_time="):
             continue
         try:
@@ -232,7 +232,7 @@ def get_opus_packet_duration_ms(path: Path) -> int | None:
                 line,
             )
             return None
-        durations_ms.add(int(round(seconds * 1000)))
+        durations_ms.add(round(seconds * 1000))
     if not durations_ms:
         logger.debug(
             "probe.opus_packet: file=%s error=no_packets",

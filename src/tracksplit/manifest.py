@@ -6,6 +6,7 @@ decide whether anything meaningful changed since the last run.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import logging
@@ -69,7 +70,7 @@ class AudioFingerprint:
     bit_rate: int
 
     @classmethod
-    def from_ffprobe(cls, ffprobe_data: dict) -> "AudioFingerprint":
+    def from_ffprobe(cls, ffprobe_data: dict) -> AudioFingerprint:
         for stream in ffprobe_data.get("streams", []):
             if stream.get("codec_type") == "audio":
                 return cls(
@@ -83,7 +84,7 @@ class AudioFingerprint:
         raise ValueError("ffprobe data has no audio stream")
 
     @classmethod
-    def from_dict(cls, d: dict) -> "AudioFingerprint":
+    def from_dict(cls, d: dict) -> AudioFingerprint:
         return cls(
             codec_name=d.get("codec_name", ""),
             sample_rate=int(d.get("sample_rate", 0) or 0),
@@ -100,7 +101,7 @@ class SourceFingerprint:
     audio: AudioFingerprint
 
     @classmethod
-    def from_ffprobe(cls, path: Path, ffprobe_data: dict) -> "SourceFingerprint":
+    def from_ffprobe(cls, path: Path, ffprobe_data: dict) -> SourceFingerprint:
         return cls(
             path=str(path),
             audio=AudioFingerprint.from_ffprobe(ffprobe_data),
@@ -134,7 +135,7 @@ class AlbumManifest:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d: dict) -> "AlbumManifest":
+    def from_dict(cls, d: dict) -> AlbumManifest:
         src = d["source"]
         return cls(
             schema=d["schema"],
@@ -173,8 +174,8 @@ def build_album_manifest(
     track_filenames: list[str],
     cover_bytes: bytes,
 ) -> AlbumManifest:
-    from tracksplit.pipeline import INTRO_MIN_SECONDS  # local import avoids cycle
     from tracksplit.cover import COVER_SCHEMA_VERSION  # local import avoids cycle
+    from tracksplit.pipeline import INTRO_MIN_SECONDS  # local import avoids cycle
     from tracksplit.tagger import TAG_SCHEMA_VERSION  # local import avoids cycle
 
     return AlbumManifest(
@@ -202,10 +203,8 @@ def atomic_write_bytes(path: Path, data: bytes) -> None:
             f.write(data)
         os.replace(tmp, path)
     except Exception:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp)
-        except OSError:
-            pass
         raise
 
 

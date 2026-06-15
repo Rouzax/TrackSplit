@@ -4,10 +4,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from mutagen import MutagenError
 from mutagen.flac import FLAC, Picture
 
 from tracksplit.models import AlbumMeta, TrackMeta
-from tracksplit.tagger import build_tag_dict, tag_flac, tag_ogg, tag_all
+from tracksplit.tagger import build_tag_dict, tag_all, tag_flac, tag_ogg
 
 
 def _full_album():
@@ -272,8 +273,9 @@ def test_opus_round_trip_preserves_unicode_tags(tmp_path):
             )
         ],
     )
-    from tracksplit.tagger import tag_ogg
     from mutagen.oggopus import OggOpus
+
+    from tracksplit.tagger import tag_ogg
 
     tag_ogg(opus_path, album, album.tracks[0])
     reread = OggOpus(str(opus_path))
@@ -475,7 +477,7 @@ def test_replace_cover_only_opus_preserves_tags(tmp_path):
     assert reread["artist"] == ["Original Artist"]
     assert reread["title"] == ["Original Title"]
     # Opus stores pics as base64 METADATA_BLOCK_PICTURE
-    key_lower = {k.lower() for k in reread.keys()}
+    key_lower = {k.lower() for k in reread}
     assert "metadata_block_picture" in key_lower
 
 
@@ -504,7 +506,7 @@ def test_tag_flac_logs_diff_all_adds_on_fresh_file(tmp_path, caplog):
         joined,
     )
     assert m is not None, joined
-    added, removed, changed = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    added, _removed, _changed = int(m.group(1)), int(m.group(2)), int(m.group(3))
     # Fresh file has few or no pre-existing tags; build_tag_dict emits many.
     assert added >= 5
 
@@ -540,7 +542,7 @@ def test_tag_flac_logs_diff_changes_and_additions(tmp_path, caplog):
         joined,
     )
     assert m is not None, joined
-    added, removed, changed = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    _added, _removed, changed = int(m.group(1)), int(m.group(2)), int(m.group(3))
     # ARTIST, TITLE, ALBUM all change from seeded values to the new ones
     assert changed >= 3
 
@@ -557,7 +559,7 @@ def test_tag_all_logs_warning_on_mutagen_error(tmp_path, caplog):
 
     album = _full_album()
     with caplog.at_level(logging.WARNING, logger="tracksplit.tagger"):
-        with pytest.raises(Exception):
+        with pytest.raises(MutagenError):
             tag_all([broken], album)
     joined = "\n".join(
         r.message for r in caplog.records if r.levelno >= logging.WARNING

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import logging.handlers
 import re
@@ -9,10 +10,7 @@ import time
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from tracksplit.log import _cleanup_old_logs, setup_logging
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -23,10 +21,8 @@ def _reset_logger() -> None:
     """Remove all handlers from the tracksplit logger."""
     logger = logging.getLogger("tracksplit")
     for h in list(logger.handlers):
-        try:
+        with contextlib.suppress(Exception):
             h.close()
-        except Exception:
-            pass
     logger.handlers.clear()
 
 
@@ -101,7 +97,7 @@ class TestSetupLogging:
         _reset_logger()
 
     def test_returns_path(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             result = setup_logging(command="split")
             assert result is not None
@@ -110,7 +106,7 @@ class TestSetupLogging:
             patcher.stop()
 
     def test_per_command_filename_format(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             result = setup_logging(command="split")
             assert result is not None
@@ -123,7 +119,7 @@ class TestSetupLogging:
             patcher.stop()
 
     def test_default_command_uses_tracksplit(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             result = setup_logging()
             assert result is not None
@@ -132,7 +128,7 @@ class TestSetupLogging:
             patcher.stop()
 
     def test_memory_handler_wraps_file_handler(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             setup_logging(command="test")
             logger = logging.getLogger("tracksplit")
@@ -151,7 +147,7 @@ class TestSetupLogging:
             patcher.stop()
 
     def test_file_handler_uses_delayed_open(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             setup_logging(command="test")
             logger = logging.getLogger("tracksplit")
@@ -174,7 +170,7 @@ class TestSetupLogging:
             patcher.stop()
 
     def test_closes_existing_handlers_on_repeated_calls(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             setup_logging(command="first")
             logger = logging.getLogger("tracksplit")
@@ -193,7 +189,7 @@ class TestSetupLogging:
             patcher.stop()
 
     def test_console_level_debug(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             setup_logging(debug=True, command="test")
             logger = logging.getLogger("tracksplit")
@@ -210,7 +206,7 @@ class TestSetupLogging:
             patcher.stop()
 
     def test_console_level_info_when_verbose(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             setup_logging(verbose=True, command="test")
             logger = logging.getLogger("tracksplit")
@@ -227,7 +223,7 @@ class TestSetupLogging:
             patcher.stop()
 
     def test_console_level_warning_default(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             setup_logging(command="test")
             logger = logging.getLogger("tracksplit")
@@ -244,7 +240,7 @@ class TestSetupLogging:
             patcher.stop()
 
     def test_logger_level_always_debug(self, tmp_path: Path) -> None:
-        patcher, mock = _mock_paths(tmp_path)
+        patcher, _mock = _mock_paths(tmp_path)
         try:
             setup_logging(command="test")
             logger = logging.getLogger("tracksplit")

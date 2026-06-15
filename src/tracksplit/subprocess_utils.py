@@ -13,6 +13,7 @@ Successful invocations produce no log output.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import shlex
 import subprocess
@@ -31,10 +32,8 @@ def kill_active_processes() -> None:
     """Kill all tracked subprocesses."""
     with _active_processes_lock:
         for proc in _active_processes:
-            try:
+            with contextlib.suppress(OSError):
                 proc.kill()
-            except OSError:
-                pass
 
 
 class CancelledError(Exception):
@@ -102,11 +101,8 @@ def tracked_run(
         proc.wait()
         raise
     finally:
-        with _active_processes_lock:
-            try:
-                _active_processes.remove(proc)
-            except ValueError:
-                pass
+        with _active_processes_lock, contextlib.suppress(ValueError):
+            _active_processes.remove(proc)
 
     if cancel_event is not None and cancel_event.is_set():
         logger.debug("subprocess.cancel: cmd=%s reason=during_execution", cmd_str)

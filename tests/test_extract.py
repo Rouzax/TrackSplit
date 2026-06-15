@@ -220,8 +220,9 @@ class TestDecideCodec:
         assert decide_codec(self._data("aac"), "opus") == (".opus", "libopus")
 
     def test_unknown_format_raises(self):
-        from tracksplit.extract import decide_codec
         import pytest
+
+        from tracksplit.extract import decide_codec
 
         with pytest.raises(ValueError):
             decide_codec(self._data("aac"), "wav")
@@ -234,6 +235,7 @@ class TestDecideCodecDebugLog:
     def test_debug_logs_decision_copy_path(self, caplog):
         """decide_codec emits DEBUG naming input codec, output ext, and codec_mode."""
         import logging
+
         from tracksplit.extract import decide_codec
 
         with caplog.at_level(logging.DEBUG, logger="tracksplit.extract"):
@@ -249,6 +251,7 @@ class TestDecideCodecDebugLog:
         """AAC source with auto -> libopus re-encode. DEBUG should name both
         the input codec and that the output requires re-encode."""
         import logging
+
         from tracksplit.extract import decide_codec
 
         with caplog.at_level(logging.DEBUG, logger="tracksplit.extract"):

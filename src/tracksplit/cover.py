@@ -731,7 +731,9 @@ def compose_cover(
         )
         cursor_y += L["date_h"] + L["pad_date_to_detail"]
 
-    for part, sf, sh in zip(L["stage_parts"], L["stage_fonts"], L["stage_heights"]):
+    for part, sf, sh in zip(
+        L["stage_parts"], L["stage_fonts"], L["stage_heights"], strict=True
+    ):
         _draw_centered(draw, size, cursor_y, part, sf, (255, 255, 255))
         cursor_y += sh + L["pad_detail_lines"]
 

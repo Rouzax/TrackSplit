@@ -2,15 +2,14 @@
 
 from tracksplit.cratedigger import CrateDiggerConfig
 from tracksplit.metadata import (
-    strip_label,
-    safe_filename,
-    parse_filename,
-    deduplicate_titles,
-    split_track_artist,
     build_album_meta,
+    deduplicate_titles,
+    parse_filename,
+    safe_filename,
+    split_track_artist,
+    strip_label,
 )
 from tracksplit.models import Chapter
-
 
 # --- strip_label ---
 

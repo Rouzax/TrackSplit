@@ -31,7 +31,7 @@ from tracksplit import paths
 
 logger = logging.getLogger(__name__)
 
-_config_cache: dict[tuple[str, ...], "CrateDiggerConfig"] = {}
+_config_cache: dict[tuple[str, ...], CrateDiggerConfig] = {}
 _config_cache_lock = threading.Lock()
 
 _logged_festival_aliases: set[str] = set()
@@ -146,7 +146,9 @@ class CrateDiggerConfig:
     festival_config: dict = field(default_factory=dict)
     festival_aliases: dict[str, str] = field(default_factory=dict)
     artist_aliases: dict[str, str] = field(default_factory=dict)
-    mbid_cache: dict[str, str] = field(default_factory=dict)
+    # Values are normally MBID strings, but legacy/enriched cache files may
+    # store a {"mbid": ...} object; lookup_mbid handles both shapes.
+    mbid_cache: dict[str, str | dict[str, str]] = field(default_factory=dict)
 
     # -- Festival resolution -------------------------------------------------
 

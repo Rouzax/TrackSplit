@@ -11,12 +11,10 @@ import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Optional
 
 import typer
 
 from tracksplit import paths
-from tracksplit.log import setup_logging
 from tracksplit.console import (
     BatchProgress,
     FileProgress,
@@ -25,6 +23,7 @@ from tracksplit.console import (
     status_text,
     summary_panel,
 )
+from tracksplit.log import setup_logging
 from tracksplit.pipeline import find_video_files, process_file
 from tracksplit.probe import is_video_file
 from tracksplit.subprocess_utils import CancelledError, kill_active_processes
@@ -128,7 +127,7 @@ def _process_single_file(
     except (CancelledError, KeyboardInterrupt):
         _cancel_event.set()
         console.print(status_text("cancelled", input_path.name))
-        raise typer.Exit(code=130)
+        raise typer.Exit(code=130) from None
     except Exception as exc:
         detail = _report_failure(input_path.name, exc)
         console.print(status_text("error", input_path.name, detail))
@@ -213,7 +212,7 @@ def _process_directory(
             console, total_files=len(video_files), enabled=use_live
         ) as batch:
 
-            def _make_callback(key: str, filename: str):  # noqa: ANN202
+            def _make_callback(key: str, filename: str):
                 """Create a progress callback bound to a specific worker key."""
 
                 def _cb(step: str, current: int = 0, total: int = 0) -> None:
@@ -297,8 +296,9 @@ _PACKAGES: list[str] = ["Pillow", "mutagen", "rich", "numpy", "ftfy", "typer"]
 
 def _run_check() -> int:
     """Probe tools, config, and packages. Returns exit code (1 if required check fails)."""
-    from tracksplit.tools import find_active_config, install_hint, verify_tool
     from importlib.metadata import PackageNotFoundError, version
+
+    from tracksplit.tools import find_active_config, install_hint, verify_tool
 
     out = make_console(file=sys.stdout)
     errors = 0
@@ -334,8 +334,8 @@ def _run_check() -> int:
     out.print("\n[bold]Update status[/bold]")
     from tracksplit.update_check import (
         PACKAGE_NAME,
-        _is_suppressed_explicit,
         _is_newer,
+        _is_suppressed_explicit,
         _read_cache,
         format_freshness_line,
         refresh_update_cache,
@@ -418,10 +418,11 @@ def _print_version_with_freshness() -> None:
     that swap sys.stdout (e.g. typer.testing.CliRunner) capture the output;
     the module-level console caches the original sys.stdout at import time.
     """
-    from importlib.metadata import version, PackageNotFoundError
+    from importlib.metadata import PackageNotFoundError, version
+
     from tracksplit.update_check import (
-        _is_suppressed_explicit,
         _is_newer,
+        _is_suppressed_explicit,
         _read_cache,
         _upgrade_command,
         refresh_update_cache,
@@ -458,7 +459,7 @@ def _print_version_with_freshness() -> None:
 
 @app.command()
 def main(
-    input_path: Optional[Path] = typer.Argument(
+    input_path: Path | None = typer.Argument(
         None,
         exists=True,
         help="Video file or directory of video files to process.",
@@ -468,7 +469,7 @@ def main(
         "--version",
         help="Show version and check for updates, then exit.",
     ),
-    output: Optional[Path] = typer.Option(
+    output: Path | None = typer.Option(
         None,
         "--output",
         "-o",

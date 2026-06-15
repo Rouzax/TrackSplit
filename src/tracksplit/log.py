@@ -9,12 +9,13 @@ I/O while still capturing a full DEBUG trail for post-mortem analysis.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import logging.handlers
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -49,7 +50,7 @@ def _cleanup_old_logs(log_directory: Path, max_age_days: int = 7) -> None:
 def setup_logging(
     verbose: bool = False,
     debug: bool = False,
-    console: "Console | None" = None,
+    console: Console | None = None,
     command: str = "",
 ) -> Path | None:
     """Configure the ``tracksplit`` logger with console and per-command file output.
@@ -78,14 +79,10 @@ def setup_logging(
     # Close and clear existing handlers, including MemoryHandler targets.
     for handler in list(logger.handlers):
         if isinstance(handler, logging.handlers.MemoryHandler) and handler.target:
-            try:
+            with contextlib.suppress(Exception):
                 handler.target.close()
-            except Exception:
-                pass
-        try:
+        with contextlib.suppress(Exception):
             handler.close()
-        except Exception:
-            pass
     logger.handlers.clear()
 
     logger.setLevel(logging.DEBUG)
@@ -114,7 +111,7 @@ def setup_logging(
 
     # -- Per-command file handler ------------------------------------------
     prefix = command or "tracksplit"
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")
+    stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H-%M-%S")
     hex_suffix = os.urandom(2).hex()
     filename = f"{prefix}-{stamp}-{hex_suffix}.log"
 

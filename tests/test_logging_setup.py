@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import logging.handlers
 from pathlib import Path
@@ -14,10 +15,8 @@ def _reset_logger() -> None:
     """Remove all handlers from the tracksplit logger."""
     logger = logging.getLogger("tracksplit")
     for h in list(logger.handlers):
-        try:
+        with contextlib.suppress(Exception):
             h.close()
-        except Exception:
-            pass
     logger.handlers.clear()
 
 

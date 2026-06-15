@@ -85,7 +85,7 @@ def _chapters_from_menu(menu_track: dict) -> list[Chapter]:
 
     if not times:
         return []
-    for i, (start, title) in enumerate(zip(times, titles)):
+    for i, (start, title) in enumerate(zip(times, titles, strict=True)):
         end = times[i + 1] if i + 1 < len(times) else start + 1.0
         chapters.append(Chapter(index=i + 1, title=title, start=start, end=end))
     return chapters

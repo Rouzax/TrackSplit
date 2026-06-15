@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from tracksplit.manifest import MANIFEST_SCHEMA
 
-
 DEFAULT_AUDIO_FP = {
     "codec_name": "opus",
     "sample_rate": 48000,

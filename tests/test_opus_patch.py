@@ -71,7 +71,9 @@ class TestReadAndPatchPreSkip:
         patch_opus_pre_skip(f, 960)
         after = f.read_bytes()
         assert len(before) == len(after)
-        diffs = [i for i, (a, b) in enumerate(zip(before, after)) if a != b]
+        diffs = [
+            i for i, (a, b) in enumerate(zip(before, after, strict=True)) if a != b
+        ]
         # 2 bytes for pre_skip, 4 bytes for the Ogg page CRC.
         assert len(diffs) == 6
 

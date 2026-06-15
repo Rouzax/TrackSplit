@@ -71,10 +71,7 @@ def build_track_filename(track: TrackMeta, ext: str = ".flac") -> str:
     Format: {number:02d} - {artist} - {title}{ext}
     Or:     {number:02d} - {title}{ext} (when no track artist)
     """
-    if track.artist:
-        name = f"{track.artist} - {track.title}"
-    else:
-        name = track.title
+    name = f"{track.artist} - {track.title}" if track.artist else track.title
     return f"{track.number:02d} - {safe_filename(name)}{ext}"
 
 
@@ -126,10 +123,7 @@ def split_tracks(
         filename = build_track_filename(track, ext=ext)
         output_path = output_dir / filename
 
-        if i + 1 < len(tracks):
-            end = tracks[i + 1].start
-        else:
-            end = None
+        end = tracks[i + 1].start if i + 1 < len(tracks) else None
 
         use_prefix = (
             apply_opus_prefix and i > 0 and track.start - OPUS_PREFIX_SECONDS >= 0.0

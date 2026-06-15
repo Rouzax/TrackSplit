@@ -1,5 +1,6 @@
 """Tests for tracksplit.cover module."""
 
+import contextlib
 import io
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -520,12 +521,10 @@ class TestExtractCoverFromMkv:
         def side_effect(cmd, **kwargs):
             if any("ffmpeg" in str(c) for c in cmd):
                 # Find the output path (last arg) and write fake image
-                for i, part in enumerate(cmd):
+                for _i, part in enumerate(cmd):
                     if str(part).endswith((".png", ".jpg", ".webp")):
-                        try:
+                        with contextlib.suppress(OSError):
                             Path(str(part)).write_bytes(fake_image)
-                        except OSError:
-                            pass
                 return MagicMock(returncode=0)
             return MagicMock(returncode=0)
 

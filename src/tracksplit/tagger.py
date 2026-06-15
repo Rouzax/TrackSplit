@@ -31,7 +31,9 @@ def _count_tag_deltas(
     """
     existing_map: dict[str, list[str]] = {}
     if existing:
-        for key in existing.keys():
+        # `existing` is a mutagen VComment (a list subclass): iterating it
+        # yields (key, value) tuples, so .keys() is required to get key names.
+        for key in existing.keys():  # noqa: SIM118
             existing_map[key.upper()] = list(existing[key])
     new_map = {k.upper(): list(v) for k, v in new_tags.items()}
     existing_keys = set(existing_map.keys())
@@ -227,6 +229,7 @@ def replace_cover_only(path: str | Path, cover_data: bytes) -> None:
     """
     p = Path(path)
     ext = p.suffix.lower()
+    audio: OggOpus | FLAC
     if ext in (".ogg", ".opus"):
         audio = OggOpus(str(p))
         pic = Picture()

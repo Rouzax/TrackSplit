@@ -82,10 +82,7 @@ def decide_codec(ffprobe_data: dict, output_format: str) -> tuple[str, str]:
     elif output_format == "flac":
         result = (".flac", "copy")
     elif output_format == "opus":
-        if codec == "opus":
-            result = (".opus", "copy")
-        else:
-            result = (".opus", "libopus")
+        result = (".opus", "copy") if codec == "opus" else (".opus", "libopus")
     else:
         raise ValueError(f"Unknown output format: {output_format}")
 

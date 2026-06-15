@@ -572,7 +572,9 @@ def test_is_suppressed_explicit_ignores_tty(monkeypatch):
 
 
 def test_refresh_force_bypasses_freshness(monkeypatch, tmp_path):
-    import json, time
+    import json
+    import time
+
     from tracksplit import update_check
 
     cache_file = tmp_path / "update-check.json"
@@ -604,7 +606,9 @@ def test_refresh_force_bypasses_freshness(monkeypatch, tmp_path):
 
 
 def test_refresh_default_respects_fresh_cache(monkeypatch, tmp_path):
-    import json, time
+    import json
+    import time
+
     from tracksplit import update_check
 
     cache_file = tmp_path / "update-check.json"

@@ -1,25 +1,24 @@
 """Tests for the probe module."""
 
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import json
 import subprocess
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from tracksplit.models import Chapter
 from tracksplit.probe import (
-    run_ffprobe,
+    detect_tier,
+    get_audio_codec,
+    get_opus_packet_duration_ms,
+    has_audio,
+    is_lossless_codec,
+    is_video_file,
     parse_chapters,
     parse_tags,
-    detect_tier,
-    has_audio,
-    is_video_file,
-    get_audio_codec,
-    is_lossless_codec,
-    get_opus_packet_duration_ms,
+    run_ffprobe,
 )
-from tracksplit.models import Chapter
-
 
 # ---------------------------------------------------------------------------
 # Fixtures: representative ffprobe JSON structures
@@ -407,11 +406,14 @@ class TestRunFfprobe:
         assert "/fake/video.mkv" in cmd
 
     def test_raises_on_ffprobe_failure(self):
-        with patch(
-            "subprocess.run", side_effect=subprocess.CalledProcessError(1, "ffprobe")
+        with (
+            patch(
+                "subprocess.run",
+                side_effect=subprocess.CalledProcessError(1, "ffprobe"),
+            ),
+            pytest.raises(subprocess.CalledProcessError),
         ):
-            with pytest.raises(subprocess.CalledProcessError):
-                run_ffprobe(Path("/fake/video.mkv"))
+            run_ffprobe(Path("/fake/video.mkv"))
 
 
 # ---------------------------------------------------------------------------

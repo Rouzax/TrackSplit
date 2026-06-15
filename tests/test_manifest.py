@@ -126,6 +126,7 @@ def test_load_album_manifest_schema_mismatch_returns_none(tmp_path):
 def test_load_album_manifest_schema_2_is_rejected(tmp_path, caplog):
     """Schema-2 manifests on disk after upgrade must trigger forced regen."""
     import logging
+
     from tracksplit.manifest import ALBUM_MANIFEST_FILENAME, load_album_manifest
 
     (tmp_path / ALBUM_MANIFEST_FILENAME).write_text(
