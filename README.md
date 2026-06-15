@@ -12,7 +12,10 @@
 
 TrackSplit is a Python CLI that reads chapter markers from video files (MKV, MP4, WebM, and more), splits the audio into individual tracks at sample-accurate boundaries, and writes a fully tagged music album with embedded cover art and an artist folder picture. FLAC sources stay lossless; Opus and other lossy sources are stream-copied when possible. Re-runs are skipped automatically unless the audio, chapters, or embedded tags actually changed.
 
-It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), which embeds chapter markers, canonical metadata, and DJ artwork into your MKV library. Together the two tools keep artist names, festival spellings, and MusicBrainz IDs consistent across your video and music libraries. TrackSplit also works on any chaptered video without CrateDigger.
+> **Pair it with [CrateDigger](https://rouzax.github.io/CrateDigger/):** a sibling CLI that matches festival sets and concert recordings against 1001Tracklists, embeds chapter markers and canonical metadata into MKV files, generates artwork and posters, and syncs your video library into Kodi. TrackSplit reads the chapters and metadata CrateDigger writes, so canonical artist names, festival spellings, and MusicBrainz IDs stay consistent across your video and music libraries. TrackSplit also works on any chaptered video without CrateDigger.
+> [Landing page](https://rouzax.github.io/CrateDigger/) · [Documentation](https://rouzax.github.io/CrateDigger/docs/) · [GitHub](https://github.com/Rouzax/CrateDigger)
+
+**Documentation:** [rouzax.github.io/TrackSplit/docs/](https://rouzax.github.io/TrackSplit/docs/) · [Landing page](https://rouzax.github.io/TrackSplit/)
 
 ## Cover Gallery
 
@@ -42,17 +45,39 @@ It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), wh
 
 ## Features
 
-- **Chapter-accurate splitting.** Sample-accurate cuts at chapter boundaries, gapless playback across tracks.
-- **Codec-aware output.** FLAC for lossless sources, Opus stream-copy when safe, transparent re-encode when not. Pick with `--format`.
-- **Rich metadata.** Writes TITLE, ARTIST, ARTISTS, ALBUMARTIST, ALBUMARTISTS, ALBUM, TRACKNUMBER, TRACKTOTAL, DISCNUMBER, DATE, GENRE, PUBLISHER, COMMENT, MUSICBRAINZ_ARTISTID, MUSICBRAINZ_ALBUMARTISTID, FESTIVAL, STAGE, VENUE as Vorbis comments.
-- **Multi-artist aware.** Writes Picard-standard `ARTISTS` and aligned per-artist `MUSICBRAINZ_ARTISTID` so Lyrion and Jellyfin link every collaborator and remixer, not just the headliner.
-- **Album and artist artwork.** Generates 1:1 cover art (embedded in every track and written to `cover.jpg` / `folder.jpg`) and an artist folder image.
-- **Two metadata tiers.** Basic tagging for any chaptered video. Full enrichment when CrateDigger-style tags are present.
-- **Re-run detection.** A manifest in each album folder records a fingerprint of the audio stream and the embedded tag set, so repeat runs are near-instant unless the audio or embedded tags actually changed.
-- **Parallel batch mode.** Process a directory of videos with multiple workers and a live progress display.
-- **Update notifications.** Interactive runs check GitHub for newer releases and show a one-line upgrade hint. See [Update Notifications](#update-notifications).
+### Split
+
+Sample-accurate cuts at chapter boundaries produce gapless playback across tracks. Works with any video container that carries chapter markers: MKV, MP4, WebM, and more.
+
+### Encode
+
+FLAC sources stay lossless. Opus sources are stream-copied when safe; a transparent re-encode is applied when not. Use `--format` to select `auto`, `flac`, or `opus`.
+
+### Tag
+
+Writes a full set of Vorbis comments to every track:
+
+`TITLE`, `ARTIST`, `ARTISTS`, `ALBUMARTIST`, `ALBUMARTISTS`, `ALBUM`, `TRACKNUMBER`, `TRACKTOTAL`, `DISCNUMBER`, `DATE`, `GENRE`, `PUBLISHER`, `COMMENT`, `MUSICBRAINZ_ARTISTID`, `MUSICBRAINZ_ALBUMARTISTID`, `FESTIVAL`, `STAGE`, `VENUE`.
+
+Multi-artist handling follows the Picard standard: `ARTISTS` lists every collaborator and remixer, and per-artist `MUSICBRAINZ_ARTISTID` values are aligned to that list so Lyrion and Jellyfin can link every contributor, not just the headliner.
+
+Two metadata tiers: basic tagging works for any chaptered video; full enrichment (festival, stage, venue, MusicBrainz IDs) is available when CrateDigger-style tags are present.
+
+### Artwork
+
+Generates a 1:1 album cover, embeds it in every track, and writes it as both `cover.jpg` and `folder.jpg` in the album folder. An artist folder image (`artist.jpg`) is composed from DJ artwork and the artist name.
+
+### Batch and re-run
+
+Process a directory of videos in parallel with multiple workers and a live progress display. A per-album manifest records a fingerprint of the audio stream and the embedded tag set; repeat runs are near-instant unless the audio or tags actually changed.
+
+### Update notifications
+
+Interactive runs check GitHub for newer stable releases and show a one-line upgrade hint. See [Update Notifications](#update-notifications) below.
 
 ## Quick Start
+
+New to TrackSplit? The [Getting Started guide](https://rouzax.github.io/TrackSplit/docs/getting-started/) walks through your first split from install to tagged album.
 
 ### Prerequisites
 
@@ -124,9 +149,11 @@ tracksplit video.mkv --format opus
 tracksplit video.mkv --dry-run --verbose
 ```
 
+See the [usage guide](https://rouzax.github.io/TrackSplit/docs/usage/) for every flag, what a skipped file means, and what Ctrl+C does mid-run.
+
 ## Configuration
 
-TrackSplit works out of the box if `ffmpeg`, `ffprobe`, and (optionally) the MKVToolNix tools are on your `PATH`. If they are installed elsewhere, point TrackSplit at them via a TOML config. Copy [`tracksplit.toml.example`](tracksplit.toml.example) and uncomment the keys you need.
+TrackSplit works out of the box if `ffmpeg`, `ffprobe`, and (optionally) the MKVToolNix tools are on your `PATH`. If they are installed elsewhere, point TrackSplit at them via a TOML config. Copy [`tracksplit.toml.example`](tracksplit.toml.example) to `config.toml` at the location for your platform and uncomment the keys you need.
 
 Place your config file at the location for your platform:
 
@@ -144,14 +171,14 @@ mkvextract = "/usr/bin/mkvextract"
 mkvmerge   = "/usr/bin/mkvmerge"
 ```
 
-See [`docs/troubleshooting.md`](docs/troubleshooting.md) if something goes wrong on first run.
+See the [configuration reference](https://rouzax.github.io/TrackSplit/docs/configuration/) for every available key, or the [troubleshooting guide](https://rouzax.github.io/TrackSplit/docs/troubleshooting/) if something goes wrong on first run.
 
 ## Update Notifications
 
 When you run TrackSplit interactively and a newer stable release is available on GitHub, it prints a one-line notice showing the new version and the upgrade command for your install method:
 
 ```
-! TrackSplit 0.6.9 is available. Run: pipx upgrade tracksplit
+! TrackSplit 0.15.0 is available. Run: pipx upgrade tracksplit
 ```
 
 The check runs in the background with a 2-second timeout, never delays your run, and is silent on any network failure. Results are cached locally for 24 hours.
@@ -160,7 +187,7 @@ The check runs in the background with a 2-second timeout, never delays your run,
 
 **Disable explicitly.** Set `TRACKSPLIT_NO_UPDATE_CHECK=1` before running. The values `true` and `yes` are also accepted, case-insensitively.
 
-No telemetry: the check is a read-only request to the GitHub Releases API. See [`docs/usage.md#update-notifications`](docs/usage.md#update-notifications) for the full reference, including cache location and the failed-check interval.
+No telemetry: the check is a read-only request to the GitHub Releases API. See the [usage reference](https://rouzax.github.io/TrackSplit/docs/usage/#update-notifications) for full details, including cache location and the failed-check interval.
 
 ## Output Structure
 
@@ -180,9 +207,7 @@ Artist/
 
 `.tracksplit_manifest.json` is a record TrackSplit uses to detect whether the audio or embedded tags have changed since the last run. Safe to delete if you want to force one album to rebuild; safe to ignore in version control.
 
-## Related projects
-
-**[CrateDigger](https://github.com/Rouzax/CrateDigger)** is the sibling CLI that matches festival sets and concert recordings against 1001Tracklists, embeds chapter markers and metadata into MKV files, generates artwork and posters, and syncs your video library into Kodi. TrackSplit consumes the chapters and metadata CrateDigger writes, so the two tools share canonical artist names, festival spellings, and MusicBrainz IDs across your video and music libraries.
+See the [output reference](https://rouzax.github.io/TrackSplit/docs/output/) for the full folder layout, file naming, and the complete list of tags written to each track.
 
 ## Development
 
