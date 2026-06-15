@@ -1,0 +1,31 @@
+# Local git hooks. Run `pre-commit install` once to enable them, then they run
+# on every commit. This mirrors the CI lint job in .github/workflows/tests.yml;
+# hook versions are pinned to match the dev dependencies in pyproject.toml.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.5
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # mypy runs from the project environment (pyproject dev deps) rather than an
+  # isolated env: it needs the runtime deps (rich, Pillow, ...) importable, or
+  # dep-dependent `# type: ignore` comments are wrongly flagged as unused.
+  # Requires `pip install .[dev]` (or .[dev] in your active venv) first.
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+        # Honour [tool.mypy] (files = ["src"]) instead of the changed-file list.
+        pass_filenames: false
+
+  - repo: https://github.com/mgedmin/check-manifest
+    rev: "0.51"
+    hooks:
+      - id: check-manifest
+        # Building the sdist is slow, so only run this before pushing.
+        stages: [pre-push]

@@ -19,6 +19,21 @@ tracksplit --check
 pytest --ignore=tests/test_integration.py
 ```
 
+`pip install -e ".[dev]"` also installs ruff, mypy, check-manifest, and pre-commit. Run the checks locally before pushing:
+
+```bash
+ruff check .          # lint
+ruff format .         # format (use --check to verify without changing files)
+mypy                  # type-check src/
+check-manifest        # verify sdist completeness
+```
+
+Enable the git hooks once so they run automatically on every commit and push:
+
+```bash
+pre-commit install
+```
+
 To run the integration tests you need a real video fixture:
 
 ```bash
@@ -28,7 +43,7 @@ TRACKSPLIT_TEST_VIDEO=/path/to/some.mkv pytest tests/test_integration.py -v
 ## Pull requests
 
 - Keep changes focused. One logical change per PR is easier to review and revert.
-- Add or update tests for any behavior change. The unit suite should pass on 3.11, 3.12, and 3.13 (CI verifies this).
+- Add or update tests for any behavior change. The unit suite must pass on 3.11, 3.12, and 3.13, and CI also runs a `lint` job that enforces `ruff check .`, `ruff format --check .`, `mypy`, and `check-manifest`.
 - Keep the scope of commits clean: `feat(...)`, `fix(...)`, `docs(...)`, `refactor(...)`, `test(...)`, `ci(...)`, `chore(...)` prefixes are appreciated but not required.
 - No em dashes in user-facing text or commit messages.
 - Do not add `Co-Authored-By` lines to commit messages.
@@ -44,7 +59,7 @@ Then visit http://127.0.0.1:8000/.
 
 ## Style
 
-- Follow the existing code style; no formatter is enforced but stick to PEP 8.
+- Code is formatted with `ruff format`, linted with `ruff check`, and type-checked with `mypy`. All three are enforced by pre-commit hooks and the CI `lint` job. Run them locally before opening a PR (see Development setup above).
 - Trust framework guarantees. Do not add defensive checks for things that cannot happen.
 - Comments explain *why*, not *what*. Well-named identifiers describe *what* already.
 

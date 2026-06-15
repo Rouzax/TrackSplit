@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "tracksplit"
 version = "0.14.1"
@@ -51,6 +55,10 @@ Issues = "https://github.com/Rouzax/TrackSplit/issues"
 dev = [
     "pytest>=7.0",
     "pytest-mock>=3.10",
+    "ruff==0.15.5",
+    "mypy==2.1.0",
+    "check-manifest==0.51",
+    "pre-commit==4.6.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -66,4 +74,64 @@ tracksplit = "tracksplit.cli:run"
 pythonpath = ["src"]
 markers = [
     "integration: opt-in tests that run the real pipeline against local MKVs",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/F: pycodestyle + pyflakes. I: isort. B: bugbear. C4: comprehensions.
+# SIM: simplify. UP: pyupgrade. A: builtin shadowing. RUF: ruff-native.
+# This set replaces the flake8 + isort + black plugin stack with one tool.
+select = ["E", "F", "I", "B", "C4", "SIM", "UP", "A", "RUF"]
+# E501 (line length) is owned by the formatter, which wraps what it can and
+# leaves long strings/URLs alone; enforcing it again here just adds noise.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# typer's `param: T = typer.Option(...)` defaults trip B008 by design.
+"src/tracksplit/cli.py" = ["B008"]
+# Tests may shadow builtins (A) and idiomatically nest `with pytest.raises(...)`
+# inside `caplog`/`patch` context managers (SIM117), which reads clearer than a
+# single combined statement.
+"tests/**" = ["A", "SIM117"]
+# Integration fixtures embed real MKV filenames that contain fullwidth
+# punctuation (e.g. U+FF5C "｜" from YouTube titles); it must match disk verbatim.
+"tests/integration/**" = ["A", "SIM117", "RUF001"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+# Resolve the src/ layout without requiring an (editable) install, so `mypy`
+# behaves identically locally and in CI.
+mypy_path = "src"
+explicit_package_bases = true
+# Gradual mode: type-check what is annotated, do not force annotations yet.
+# Third-party packages without stubs (mutagen, ftfy, ...) are not flagged.
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+
+[tool.check-manifest]
+# The sdist ships the importable package (src/tracksplit, including the bundled
+# fonts) plus README and LICENSE. Everything below is dev tooling, docs sources,
+# the generated docs site, tests, or examples, intentionally not in the sdist.
+# check-manifest still guards that new package data under src/ gets shipped.
+ignore = [
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "TODO.md",
+    ".editorconfig",
+    ".pre-commit-config.yaml",
+    "mkdocs.yml",
+    "*.example",
+    ".github/**",
+    "docs/**",
+    "site/**",
+    "scripts/**",
+    "tests/**",
 ]
