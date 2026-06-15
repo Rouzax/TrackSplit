@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0">
-  <img src="https://img.shields.io/badge/version-v0.14.0-orange" alt="v0.14.0">
+  <img src="https://img.shields.io/badge/version-v0.14.1-orange" alt="v0.14.1">
 </p>
 
 <p align="center"><em>Turn chaptered videos into gapless, tagged albums. Lossless FLAC or Opus, fully tagged with cover art, ready for Jellyfin, Lyrion, Navidrome, and Plex.</em></p>
@@ -20,11 +20,11 @@ It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), wh
 
 <table>
   <tr>
-    <td><img src="docs/assets/posters/album-01.jpg" width="200"></td>
-    <td><img src="docs/assets/posters/album-02.jpg" width="200"></td>
-    <td><img src="docs/assets/posters/album-03.jpg" width="200"></td>
-    <td><img src="docs/assets/posters/album-04.jpg" width="200"></td>
-    <td><img src="docs/assets/posters/album-05.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/album-hardwell-tomorrowland-2025-mainstage.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/album-david-guetta-unvrs-ibiza-2025.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/album-martin-garrix-red-rocks-2025.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/album-swedish-house-mafia-tomorrowland-2025-mainstage.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/album-tiesto-edc-las-vegas-2025-in-search-of-sunrise-kineticfield.jpg" width="200"></td>
   </tr>
 </table>
 
@@ -32,11 +32,11 @@ It pairs naturally with [CrateDigger](https://github.com/Rouzax/CrateDigger), wh
 
 <table>
   <tr>
-    <td><img src="docs/assets/posters/artist-01.jpg" width="200"></td>
-    <td><img src="docs/assets/posters/artist-02.jpg" width="200"></td>
-    <td><img src="docs/assets/posters/artist-03.jpg" width="200"></td>
-    <td><img src="docs/assets/posters/artist-04.jpg" width="200"></td>
-    <td><img src="docs/assets/posters/artist-05.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/artist-tiesto.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/artist-david-guetta.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/artist-martin-garrix.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/artist-armin-van-buuren.jpg" width="200"></td>
+    <td><img src="docs/assets/posters/artist-hardwell.jpg" width="200"></td>
   </tr>
 </table>
 
