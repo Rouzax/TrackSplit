@@ -31,7 +31,7 @@ from tracksplit.tools import install_hint, verify_required_tools
 
 app = typer.Typer(
     name="tracksplit",
-    help="Extract audio from video chapters into FLAC music albums.",
+    help="Turn chaptered videos into gapless, tagged albums.",
     no_args_is_help=True,
     add_completion=False,
 )
@@ -549,7 +549,7 @@ def main(
     is_main_thread = threading.current_thread() is threading.main_thread()
     original_handler = signal.getsignal(signal.SIGINT) if is_main_thread else None
 
-    def _sigint_handler(signum: int, frame: object) -> None:
+    def _sigint_handler(_signum: int, _frame: object) -> None:
         _cancel_event.set()
         kill_active_processes()
         console.print("\n[yellow]Interrupted, stopping...[/yellow]")

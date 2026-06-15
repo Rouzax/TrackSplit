@@ -1,1 +1,1 @@
-"""TrackSplit: extract audio from video chapters into FLAC music albums."""
+"""TrackSplit: turn chaptered videos into gapless, tagged albums."""
