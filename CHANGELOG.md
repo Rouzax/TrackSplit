@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-06-15
+
+### Changed
+
+- Developer tooling and internal code quality only; no change to TrackSplit's behaviour or output. Added ruff (linting and formatting), mypy (type checking), check-manifest (source-distribution packaging), and a pre-commit configuration, all enforced by a new CI lint job that runs alongside the existing 3.11/3.12/3.13 test matrix. Resolved the lint and type findings these tools surfaced; every change preserves behaviour and the full test suite still passes.
+- Declared an explicit `[build-system]` (setuptools) in `pyproject.toml` so building from source uses PEP 517 directly instead of the legacy fallback. The published wheel and sdist are unchanged.
+
 ## [0.14.1] - 2026-06-13
 
 ### Fixed
