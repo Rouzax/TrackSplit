@@ -16,12 +16,17 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
-
 jobs:
+  # Gate: run the full lint + test matrix on the release ref before building.
+  # Reuses tests.yml so the release checks and the push/PR checks stay identical.
+  verify:
+    uses: ./.github/workflows/tests.yml
+
   release:
+    needs: verify
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
