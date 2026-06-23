@@ -242,6 +242,26 @@ def sweep_temp_renames(album_dir: Path) -> None:
             pass
 
 
+# Multiple album worker threads (ThreadPoolExecutor) can share one artist
+# directory: every album of an artist refreshes that artist's cover. Two
+# threads writing folder.jpg/artist.jpg at once race, and concurrent
+# os.replace onto the same destination fails on Windows (WinError 5
+# "Access is denied"). Serialize per artist dir so only one thread writes a
+# given artist's cover at a time; different artists still run in parallel.
+_ARTIST_COVER_LOCKS: dict[str, threading.Lock] = {}
+_ARTIST_COVER_LOCKS_GUARD = threading.Lock()
+
+
+def _artist_cover_lock(artist_dir: Path) -> threading.Lock:
+    key = str(artist_dir.resolve(strict=False)).casefold()
+    with _ARTIST_COVER_LOCKS_GUARD:
+        lock = _ARTIST_COVER_LOCKS.get(key)
+        if lock is None:
+            lock = threading.Lock()
+            _ARTIST_COVER_LOCKS[key] = lock
+        return lock
+
+
 def refresh_artist_cover(
     artist_dir: Path,
     *,
@@ -253,45 +273,51 @@ def refresh_artist_cover(
 
     ``compose`` is a callable matching ``cover.compose_artist_cover``'s
     keyword signature, injected so tests can substitute a stub.
+
+    Serialized per artist directory: parallel album workers share an artist's
+    cover files, so concurrent writes are held off to avoid a Windows
+    os.replace race. The hash/schema guard is re-checked inside the lock so a
+    later worker skips the redundant write once the first has finished.
     """
     new_hash = artwork_sha256(dj_artwork_data)
-    existing = load_artist_manifest(artist_dir)
     folder_jpg = artist_dir / "folder.jpg"
     artist_jpg = artist_dir / "artist.jpg"
-    if (
-        existing is not None
-        and existing.dj_artwork_sha256 == new_hash
-        and existing.cover_schema_version >= COVER_SCHEMA_VERSION
-        and folder_jpg.exists()
-        and artist_jpg.exists()
-    ):
-        return
-    try:
-        artist_dir.mkdir(parents=True, exist_ok=True)
-        cover_bytes = compose(
-            artist=artist_name,
-            dj_artwork_data=dj_artwork_data,
-        )
-        atomic_write_bytes(folder_jpg, cover_bytes)
-        atomic_write_bytes(artist_jpg, cover_bytes)
-        save_artist_manifest(
-            artist_dir,
-            ArtistManifest(
-                schema=MANIFEST_SCHEMA,
+    with _artist_cover_lock(artist_dir):
+        existing = load_artist_manifest(artist_dir)
+        if (
+            existing is not None
+            and existing.dj_artwork_sha256 == new_hash
+            and existing.cover_schema_version >= COVER_SCHEMA_VERSION
+            and folder_jpg.exists()
+            and artist_jpg.exists()
+        ):
+            return
+        try:
+            artist_dir.mkdir(parents=True, exist_ok=True)
+            cover_bytes = compose(
                 artist=artist_name,
-                dj_artwork_sha256=new_hash,
-                cover_schema_version=COVER_SCHEMA_VERSION,
-            ),
-        )
-        logger.info("pipeline.cover_refresh: artist=%s", artist_dir.name)
-    except OSError as exc:
-        if exc.errno in FATAL_DISK_ERRNOS:
-            raise
-        logger.warning(
-            'pipeline.cover_refresh_fail: artist=%s error="%s"',
-            artist_dir.name,
-            exc,
-        )
+                dj_artwork_data=dj_artwork_data,
+            )
+            atomic_write_bytes(folder_jpg, cover_bytes)
+            atomic_write_bytes(artist_jpg, cover_bytes)
+            save_artist_manifest(
+                artist_dir,
+                ArtistManifest(
+                    schema=MANIFEST_SCHEMA,
+                    artist=artist_name,
+                    dj_artwork_sha256=new_hash,
+                    cover_schema_version=COVER_SCHEMA_VERSION,
+                ),
+            )
+            logger.info("pipeline.cover_refresh: artist=%s", artist_dir.name)
+        except OSError as exc:
+            if exc.errno in FATAL_DISK_ERRNOS:
+                raise
+            logger.warning(
+                'pipeline.cover_refresh_fail: artist=%s error="%s"',
+                artist_dir.name,
+                exc,
+            )
 
 
 def rebuild_cover_only(

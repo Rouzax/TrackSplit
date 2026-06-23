@@ -2972,3 +2972,57 @@ class TestDryRunNoMutation:
         assert old_track.read_bytes() == track_bytes
         # Manifest not rewritten.
         assert (old_album / ".tracksplit_manifest.json").read_bytes() == manifest_before
+
+
+class TestArtistCoverConcurrency:
+    """Regression: parallel album workers for the same artist must not race on
+    the shared artist.jpg/folder.jpg (Windows os.replace -> WinError 5).
+    refresh_artist_cover serializes per artist and the in-lock guard dedups
+    redundant writes."""
+
+    def test_refresh_artist_cover_serializes_same_artist(self, tmp_path):
+        import threading
+        import time
+
+        from tracksplit.pipeline import refresh_artist_cover
+
+        artist_dir = tmp_path / "DJ X"
+        state = {"current": 0, "max": 0, "composes": 0}
+        guard = threading.Lock()
+
+        def compose(*, artist, dj_artwork_data):
+            with guard:
+                state["composes"] += 1
+                state["current"] += 1
+                state["max"] = max(state["max"], state["current"])
+            time.sleep(0.02)  # widen the window a real race would exploit
+            with guard:
+                state["current"] -= 1
+            return b"JPEGDATA"
+
+        errors: list[Exception] = []
+
+        def worker():
+            try:
+                refresh_artist_cover(
+                    artist_dir,
+                    artist_name="DJ X",
+                    dj_artwork_data=b"ARTWORK",
+                    compose=compose,
+                )
+            except Exception as exc:  # pragma: no cover - failure path
+                errors.append(exc)
+
+        threads = [threading.Thread(target=worker) for _ in range(6)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert not errors
+        # Never two composes for the same artist at once (serialized).
+        assert state["max"] == 1
+        # The in-lock guard means only the first worker actually writes.
+        assert state["composes"] == 1
+        assert (artist_dir / "artist.jpg").exists()
+        assert (artist_dir / "folder.jpg").exists()
