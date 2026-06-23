@@ -240,35 +240,68 @@ def nfc_tags(tags: dict) -> dict:
     return out
 
 
+def _album_tags_from_meta(album) -> dict:
+    """Project album-level fields from an AlbumMeta into the manifest tag dict."""
+    return {
+        "artist": album.artist,
+        "festival": album.festival,
+        "date": album.date,
+        "stage": album.stage,
+        "venue": album.venue,
+        "genres": list(album.genre),
+        "comment": album.comment,
+        "country": album.country,
+        "albumartist_display": album.artist,
+        "albumartists": list(album.albumartists),
+        "albumartist_mbids": list(album.albumartist_mbids),
+    }
+
+
 def build_album_manifest(
     *,
     source_path: Path,
     ffprobe_data: dict,
-    chapters: list[dict],
-    tags: dict,
+    album,  # AlbumMeta (untyped import-cycle avoidance)
+    track_filenames: list[str],
     artist_folder: str,
     album_folder: str,
     output_format: str,
     codec_mode: str,
-    track_filenames: list[str],
+    source_id: str | None,
     cover_bytes: bytes,
 ) -> AlbumManifest:
     from tracksplit.cover import COVER_SCHEMA_VERSION  # local import avoids cycle
-    from tracksplit.pipeline import INTRO_MIN_SECONDS  # local import avoids cycle
     from tracksplit.tagger import TAG_SCHEMA_VERSION  # local import avoids cycle
 
+    tracks = [
+        TrackEntry(
+            index=t.number,
+            filename=fn,
+            start=t.start,
+            end=t.end,
+            title=t.title,
+            artist=t.artist,
+            publisher=t.publisher,
+            genre=list(t.genre),
+            artists=list(t.artists),
+            artist_mbids=list(t.artist_mbids),
+        )
+        for t, fn in zip(album.tracks, track_filenames, strict=True)
+    ]
     return AlbumManifest(
         schema=MANIFEST_SCHEMA,
-        source=SourceFingerprint.from_ffprobe(source_path, ffprobe_data),
+        identity=SourceIdentity(
+            source_id=source_id or None,
+            audio=AudioFingerprint.from_ffprobe(ffprobe_data),
+        ),
+        source_path=str(source_path),
         resolved_artist_folder=artist_folder,
         resolved_album_folder=album_folder,
         output_format=output_format,
         codec_mode=codec_mode,
-        chapters=list(chapters),
-        tags=_filter_tags(tags),
-        track_filenames=list(track_filenames),
+        album_tags=_album_tags_from_meta(album),
+        tracks=tracks,
         cover_sha256=_sha256(cover_bytes) if cover_bytes else "",
-        intro_min_seconds=INTRO_MIN_SECONDS,
         cover_schema_version=COVER_SCHEMA_VERSION,
         tag_schema_version=TAG_SCHEMA_VERSION,
     )

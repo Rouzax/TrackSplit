@@ -15,6 +15,7 @@ from tracksplit.manifest import (
     load_album_manifest,
     save_album_manifest,
 )
+from tracksplit.models import AlbumMeta, TrackMeta
 
 
 def _sample_manifest() -> AlbumManifest:
@@ -54,67 +55,48 @@ def _src(tmp_path: Path) -> Path:
     return p
 
 
-def test_build_album_manifest_captures_source(tmp_path):
-    src = _src(tmp_path)
-    chapters = [{"index": 1, "title": "A", "start": 0.0, "end": 60.0, "tags": {}}]
-    tags = {"artist": "DJ", "festival": "F", "date": "2025"}
-    ffprobe = {
-        "streams": [
-            {
-                "codec_type": "audio",
-                "codec_name": "opus",
-                "sample_rate": "48000",
-                "channels": 2,
-                "duration_ts": 100,
-                "time_base": "1/48000",
-                "bit_rate": "192000",
-            }
+def test_build_album_manifest_v4_maps_tracks_and_identity():
+    album = AlbumMeta(
+        artist="MORTEN",
+        album="Tomorrowland 2025 (Mainstage)",
+        genre=["Trance"],
+        albumartists=["MORTEN"],
+        tracks=[
+            TrackMeta(number=0, title="Intro", start=0.0, end=12.0),
+            TrackMeta(
+                number=2, title="Culture", start=172.0, end=292.0,
+                artist="MORTEN & ARTBAT", publisher="INSOMNIAC",
+                genre=["Melodic House/Techno"], artists=["MORTEN", "ARTBAT"],
+                artist_mbids=["m1", "m2"],
+            ),
         ],
-    }
-    m = build_album_manifest(
-        source_path=src,
-        ffprobe_data=ffprobe,
-        chapters=chapters,
-        tags=tags,
-        artist_folder="DJ",
-        album_folder="F 2025",
-        output_format="flac",
-        codec_mode="copy",
-        track_filenames=["01 - DJ - A.flac"],
-        cover_bytes=b"jpeg",
     )
-    assert m.schema == MANIFEST_SCHEMA
-    assert m.source.path == str(src)
-    assert m.source.audio.codec_name == "opus"
-    assert m.source.audio.sample_rate == 48000
-    assert m.source.audio.channels == 2
-    assert m.source.audio.duration_ts == 100
-    assert m.resolved_artist_folder == "DJ"
-    assert m.resolved_album_folder == "F 2025"
-    assert m.output_format == "flac"
-    assert m.codec_mode == "copy"
-    assert m.chapters == chapters
-    assert m.track_filenames == ["01 - DJ - A.flac"]
-    assert m.tags["artist"] == "DJ"
-    assert len(m.cover_sha256) == 64
+    ffprobe = {"streams": [{"codec_type": "audio", "codec_name": "opus",
+                            "sample_rate": "48000", "channels": 2, "time_base": "1/1000"}]}
+    m = build_album_manifest(
+        source_path=Path("E:/v/x.mkv"),
+        ffprobe_data=ffprobe,
+        album=album,
+        track_filenames=["00 - Intro.opus", "02 - MORTEN & ARTBAT - Culture.opus"],
+        artist_folder="MORTEN",
+        album_folder="Tomorrowland 2025 (Mainstage)",
+        output_format="opus",
+        codec_mode="copy",
+        source_id="xfg8qrk",
+        cover_bytes=b"x",
+    )
+    assert m.schema == 4
+    assert m.identity.source_id == "xfg8qrk"
+    assert [t.filename for t in m.tracks] == [
+        "00 - Intro.opus", "02 - MORTEN & ARTBAT - Culture.opus"
+    ]
+    assert m.tracks[1].artists == ["MORTEN", "ARTBAT"]
+    assert m.tracks[1].publisher == "INSOMNIAC"
+    assert m.album_tags["artist"] == "MORTEN"
 
 
 def test_save_and_load_roundtrip(tmp_path):
-    from tests._manifest_helpers import make_ffprobe
-
-    src = _src(tmp_path)
-    m = build_album_manifest(
-        source_path=src,
-        ffprobe_data=make_ffprobe(),
-        chapters=[],
-        tags={"artist": "A"},
-        artist_folder="A",
-        album_folder="B",
-        output_format="flac",
-        codec_mode="copy",
-        track_filenames=[],
-        cover_bytes=b"",
-    )
+    m = _sample_manifest()
     album_dir = tmp_path / "album"
     album_dir.mkdir()
     save_album_manifest(album_dir, m)
@@ -184,29 +166,14 @@ def test_load_artist_manifest_schema_mismatch_returns_none(tmp_path):
 
 def test_save_album_manifest_is_atomic(tmp_path, monkeypatch):
     """A failure inside the atomic write leaves no partial file behind."""
-    from tests._manifest_helpers import make_ffprobe
     from tracksplit.manifest import (
         ALBUM_MANIFEST_FILENAME,
-        build_album_manifest,
         save_album_manifest,
     )
 
-    src = tmp_path / "s.mkv"
-    src.write_bytes(b"x")
     album = tmp_path / "album"
     album.mkdir()
-    m = build_album_manifest(
-        source_path=src,
-        ffprobe_data=make_ffprobe(),
-        chapters=[],
-        tags={},
-        artist_folder="A",
-        album_folder="B",
-        output_format="flac",
-        codec_mode="copy",
-        track_filenames=[],
-        cover_bytes=b"",
-    )
+    m = _sample_manifest()
     save_album_manifest(album, m)
     content = (album / ALBUM_MANIFEST_FILENAME).read_text()
 
@@ -231,105 +198,40 @@ def test_save_album_manifest_is_atomic(tmp_path, monkeypatch):
     monkeypatch.setattr(_os, "replace", orig_replace)
 
 
-def test_album_manifest_from_dict_defaults_intro_min_seconds_to_none():
-    # Direct from_dict with no intro_min_seconds key: simulates loading
-    # a manifest dict (e.g. via downstream tooling) that omits the optional field.
-    raw = {
-        "schema": MANIFEST_SCHEMA,
-        "source": {
-            "path": "/x.mkv",
-            "audio": {
-                "codec_name": "opus",
-                "sample_rate": 48000,
-                "channels": 2,
-                "duration_ts": 0,
-                "time_base": "1/48000",
-                "bit_rate": 0,
-            },
-        },
-        "resolved_artist_folder": "Artist",
-        "resolved_album_folder": "Album",
-        "output_format": "flac",
-        "codec_mode": "copy",
-        "chapters": [],
-        "tags": {},
-        "track_filenames": [],
-        "cover_sha256": "",
-    }
-    m = AlbumManifest.from_dict(raw)
-    assert m.intro_min_seconds is None
-
-
-def test_album_manifest_round_trip_preserves_intro_min_seconds(tmp_path):
-    # Build, save, load. The value written now should be the current constant.
-    from tests._manifest_helpers import make_ffprobe
-    from tracksplit.pipeline import INTRO_MIN_SECONDS
-
-    src = tmp_path / "x.mkv"
-    src.write_bytes(b"\x00")
-    m = build_album_manifest(
-        source_path=src,
-        ffprobe_data=make_ffprobe(),
-        chapters=[],
-        tags={},
-        artist_folder="A",
-        album_folder="B",
-        output_format="flac",
-        codec_mode="copy",
-        track_filenames=[],
-        cover_bytes=b"",
-    )
-    assert m.intro_min_seconds == INTRO_MIN_SECONDS
-
-
 def test_album_manifest_legacy_dict_without_cover_schema_version_defaults_to_zero():
+    # A schema-4 manifest dict that omits cover_schema_version should default to 0.
     raw = {
         "schema": MANIFEST_SCHEMA,
-        "source": {
-            "path": "/x.mkv",
+        "identity": {
+            "source_id": None,
             "audio": {
                 "codec_name": "opus",
                 "sample_rate": 48000,
                 "channels": 2,
-                "duration_ts": 0,
                 "time_base": "1/48000",
-                "bit_rate": 0,
             },
         },
+        "source_path": "/x.mkv",
         "resolved_artist_folder": "Artist",
         "resolved_album_folder": "Album",
         "output_format": "flac",
         "codec_mode": "copy",
-        "chapters": [],
-        "tags": {},
-        "track_filenames": [],
+        "album_tags": {},
+        "tracks": [],
         "cover_sha256": "",
+        # cover_schema_version deliberately omitted
     }
     m = AlbumManifest.from_dict(raw)
     assert m.cover_schema_version == 0
 
 
-def test_album_manifest_round_trip_preserves_cover_schema_version(tmp_path):
-    from tests._manifest_helpers import make_ffprobe
+def test_album_manifest_round_trip_preserves_cover_schema_version():
     from tracksplit.cover import COVER_SCHEMA_VERSION
 
-    src = tmp_path / "x.mkv"
-    src.write_bytes(b"\x00")
-    m = build_album_manifest(
-        source_path=src,
-        ffprobe_data=make_ffprobe(),
-        chapters=[],
-        tags={},
-        artist_folder="A",
-        album_folder="B",
-        output_format="flac",
-        codec_mode="copy",
-        track_filenames=[],
-        cover_bytes=b"",
-    )
-    assert m.cover_schema_version == COVER_SCHEMA_VERSION
+    m = _sample_manifest()
     roundtrip = AlbumManifest.from_dict(m.to_dict())
-    assert roundtrip.cover_schema_version == COVER_SCHEMA_VERSION
+    assert roundtrip.cover_schema_version == m.cover_schema_version
+    assert m.cover_schema_version == COVER_SCHEMA_VERSION
 
 
 def test_audio_fingerprint_omits_duration_and_bitrate():
