@@ -12,7 +12,7 @@ import json
 import logging
 import os
 import tempfile
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -95,6 +95,69 @@ class SourceFingerprint:
         return cls(
             path=str(path),
             audio=AudioFingerprint.from_ffprobe(ffprobe_data),
+        )
+
+
+@dataclass(frozen=True)
+class SourceIdentity:
+    source_id: str | None
+    audio: AudioFingerprint
+
+    def to_dict(self) -> dict:
+        return {"source_id": self.source_id, "audio": asdict(self.audio)}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> SourceIdentity:
+        return cls(
+            source_id=d.get("source_id"),
+            audio=AudioFingerprint.from_dict(d.get("audio", {})),
+        )
+
+
+@dataclass
+class TrackEntry:
+    index: int
+    filename: str
+    start: float
+    end: float
+    title: str = ""
+    artist: str = ""
+    publisher: str = ""
+    genre: list[str] = field(default_factory=list)
+    artists: list[str] = field(default_factory=list)
+    artist_mbids: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        from tracksplit.paths import nfc
+
+        return {
+            "index": self.index,
+            "filename": nfc(self.filename),
+            "start": self.start,
+            "end": self.end,
+            "title": nfc(self.title),
+            "artist": nfc(self.artist),
+            "publisher": nfc(self.publisher),
+            "genre": [nfc(g) for g in self.genre],
+            "artists": [nfc(a) for a in self.artists],
+            "artist_mbids": list(self.artist_mbids),
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> TrackEntry:
+        from tracksplit.paths import nfc
+
+        return cls(
+            index=int(d["index"]),
+            filename=nfc(d.get("filename", "")),
+            start=float(d.get("start", 0.0)),
+            end=float(d.get("end", 0.0)),
+            title=nfc(d.get("title", "")),
+            artist=nfc(d.get("artist", "")),
+            publisher=nfc(d.get("publisher", "")),
+            genre=[nfc(g) for g in d.get("genre", [])],
+            artists=[nfc(a) for a in d.get("artists", [])],
+            artist_mbids=list(d.get("artist_mbids", [])),
         )
 
 

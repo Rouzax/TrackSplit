@@ -7,7 +7,10 @@ from tracksplit.manifest import (
     LEGACY_CHAPTER_CACHE_FILENAME,
     MANIFEST_SCHEMA,
     AlbumManifest,
+    AudioFingerprint,
     SourceFingerprint,
+    SourceIdentity,
+    TrackEntry,
     build_album_manifest,
     load_album_manifest,
     save_album_manifest,
@@ -429,3 +432,31 @@ def test_filter_tags_preserves_provided_lists():
     assert out["genres"] == ["House", "Trance"]
     assert out["albumartists"] == ["A", "B"]
     assert out["albumartist_mbids"] == ["mbid-a", ""]
+
+
+def test_track_entry_roundtrip_and_nfc():
+    import unicodedata
+
+    e = TrackEntry(
+        index=2,
+        filename="02 - A - B.opus",
+        start=1.0,
+        end=2.0,
+        title=unicodedata.normalize("NFD", "Café"),
+        artist="A",
+        publisher="LABEL",
+        genre=["Trance"],
+        artists=["A", "B"],
+        artist_mbids=["m1", "m2"],
+    )
+    d = e.to_dict()
+    assert d["title"] == unicodedata.normalize("NFC", "Café")  # stored NFC
+    assert TrackEntry.from_dict(d) == TrackEntry.from_dict(e.to_dict())
+
+
+def test_source_identity_roundtrip():
+    si = SourceIdentity(
+        source_id="xfg8qrk",
+        audio=AudioFingerprint("opus", 48000, 2, "1/1000"),
+    )
+    assert SourceIdentity.from_dict(si.to_dict()) == si
