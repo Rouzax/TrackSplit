@@ -17,6 +17,49 @@ from tracksplit.manifest import (
 from tracksplit.paths import fold, nfc
 
 
+def build_desired_album(
+    *,
+    album,  # AlbumMeta
+    ffprobe_data: dict,
+    tags: dict,
+    artist_folder: str,
+    album_folder: str,
+    output_format: str,
+    codec_mode: str,
+    source_path: str,
+    cover_sha256: str,
+    track_filenames: list[str],
+) -> DesiredAlbum:
+    # Local imports mirror manifest.build_album_manifest: cover/tagger pull in
+    # heavier modules, and _album_tags_from_meta lives in manifest.
+    from tracksplit.cover import COVER_SCHEMA_VERSION
+    from tracksplit.manifest import _album_tags_from_meta  # projection helper
+    from tracksplit.tagger import TAG_SCHEMA_VERSION
+
+    tracks = [
+        TrackEntry(
+            index=t.number, filename=fn, start=t.start, end=t.end, title=t.title,
+            artist=t.artist, publisher=t.publisher, genre=list(t.genre),
+            artists=list(t.artists), artist_mbids=list(t.artist_mbids),
+        )
+        for t, fn in zip(album.tracks, track_filenames, strict=True)
+    ]
+    return DesiredAlbum(
+        source_id=tags.get("CRATEDIGGER_1001TL_ID") or None,
+        audio=AudioFingerprint.from_ffprobe(ffprobe_data),
+        source_path=source_path,
+        artist_folder=artist_folder,
+        album_folder=album_folder,
+        output_format=output_format,
+        codec_mode=codec_mode,
+        album_tags=_album_tags_from_meta(album),
+        tracks=tracks,
+        cover_sha256=cover_sha256,
+        cover_schema_version=COVER_SCHEMA_VERSION,
+        tag_schema_version=TAG_SCHEMA_VERSION,
+    )
+
+
 class RegenLevel(Enum):
     SKIP = "skip"
     RETAG = "retag"
