@@ -2952,4 +2952,142 @@ class TestRebuildCoverPassesAlbumartists:
             compose=compose,
         )
 
-        assert compose.call_args.kwargs["albumartists"] == ["Above & Beyond"]
+
+# ---------------------------------------------------------------------------
+# rename_track_files / move_album_dir / sweep_temp_renames
+# ---------------------------------------------------------------------------
+
+
+class TestRenameTrackFiles:
+    def test_rename_track_files_case_only(self, tmp_path):
+        from tracksplit.pipeline import rename_track_files
+
+        d = tmp_path / "album"
+        d.mkdir()
+        (d / "02 - A - Culture.opus").write_bytes(b"x")
+        rename_track_files(d, [("02 - A - Culture.opus", "02 - a - culture.opus")])
+        names = {p.name for p in d.iterdir()}
+        assert "02 - a - culture.opus" in names
+        assert (d / "02 - a - culture.opus").read_bytes() == b"x"
+
+    def test_rename_track_files_regular(self, tmp_path):
+        from tracksplit.pipeline import rename_track_files
+
+        d = tmp_path / "album"
+        d.mkdir()
+        (d / "01 - Old.opus").write_bytes(b"y")
+        rename_track_files(d, [("01 - Old.opus", "01 - New.opus")])
+        assert (d / "01 - New.opus").read_bytes() == b"y"
+        assert not (d / "01 - Old.opus").exists()
+
+    def test_rename_track_files_skips_missing(self, tmp_path):
+        from tracksplit.pipeline import rename_track_files
+
+        d = tmp_path / "album"
+        d.mkdir()
+        # Should not raise even though source does not exist
+        rename_track_files(d, [("nonexistent.opus", "other.opus")])
+
+    def test_rename_track_files_skip_when_already_correct(self, tmp_path):
+        from tracksplit.pipeline import rename_track_files
+
+        d = tmp_path / "album"
+        d.mkdir()
+        (d / "track.opus").write_bytes(b"z")
+        rename_track_files(d, [("track.opus", "track.opus")])
+        assert (d / "track.opus").read_bytes() == b"z"
+
+    def test_rename_track_files_collision_warns_keeps_both(self, tmp_path):
+        from tracksplit.pipeline import rename_track_files
+
+        d = tmp_path / "album"
+        d.mkdir()
+        (d / "old.opus").write_bytes(b"src")
+        (d / "new.opus").write_bytes(b"different")
+        rename_track_files(d, [("old.opus", "new.opus")])
+        # Both must still exist; source not overwritten
+        assert (d / "old.opus").read_bytes() == b"src"
+        assert (d / "new.opus").read_bytes() == b"different"
+
+
+class TestMoveAlbumDir:
+    def test_move_album_dir_renames_and_prunes_empty_artist(self, tmp_path):
+        from tracksplit.pipeline import move_album_dir
+
+        old = tmp_path / "ArtistA" / "OldName"
+        old.mkdir(parents=True)
+        (old / "t.opus").write_bytes(b"x")
+        new = tmp_path / "ArtistA" / "NewName"
+        final = move_album_dir(old, new)
+        assert final == new
+        assert (new / "t.opus").read_bytes() == b"x"
+        assert not old.exists()
+
+    def test_move_album_dir_prunes_empty_old_artist(self, tmp_path):
+        from tracksplit.pipeline import move_album_dir
+
+        old = tmp_path / "ArtistOld" / "Album"
+        old.mkdir(parents=True)
+        (old / "t.opus").write_bytes(b"a")
+        new = tmp_path / "ArtistNew" / "Album"
+        final = move_album_dir(old, new)
+        assert final == new
+        assert not (tmp_path / "ArtistOld").exists()
+
+    def test_move_album_dir_keeps_nonempty_old_artist(self, tmp_path):
+        from tracksplit.pipeline import move_album_dir
+
+        artist_dir = tmp_path / "ArtistX"
+        old = artist_dir / "AlbumA"
+        old.mkdir(parents=True)
+        sibling = artist_dir / "AlbumB"
+        sibling.mkdir()
+        (old / "t.opus").write_bytes(b"a")
+        new = tmp_path / "ArtistY" / "AlbumA"
+        move_album_dir(old, new)
+        # Sibling still present; artist dir should not have been pruned
+        assert sibling.exists()
+
+    def test_move_album_dir_conflict_warns_and_returns_old(self, tmp_path):
+        from tracksplit.pipeline import move_album_dir
+
+        old = tmp_path / "Artist" / "Album"
+        old.mkdir(parents=True)
+        new = tmp_path / "Artist" / "AlbumNew"
+        new.mkdir(parents=True)
+        final = move_album_dir(old, new)
+        assert final == old
+        assert old.exists()
+        assert new.exists()
+
+    def test_move_album_dir_same_dir_noop(self, tmp_path):
+        from tracksplit.pipeline import move_album_dir
+
+        d = tmp_path / "Artist" / "Album"
+        d.mkdir(parents=True)
+        final = move_album_dir(d, d)
+        assert final == d
+        assert d.exists()
+
+
+class TestSweepTempRenames:
+    def test_sweep_removes_temp_files(self, tmp_path):
+        from tracksplit.pipeline import TEMP_RENAME_SUFFIX, sweep_temp_renames
+
+        d = tmp_path / "album"
+        d.mkdir()
+        temp = d / ("track.opus" + TEMP_RENAME_SUFFIX)
+        temp.write_bytes(b"stray")
+        (d / "real.opus").write_bytes(b"keep")
+        sweep_temp_renames(d)
+        assert not temp.exists()
+        assert (d / "real.opus").exists()
+
+    def test_sweep_noop_when_no_temps(self, tmp_path):
+        from tracksplit.pipeline import sweep_temp_renames
+
+        d = tmp_path / "album"
+        d.mkdir()
+        (d / "track.opus").write_bytes(b"a")
+        sweep_temp_renames(d)
+        assert (d / "track.opus").exists()

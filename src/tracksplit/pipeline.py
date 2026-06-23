@@ -10,6 +10,7 @@ import contextlib
 import errno
 import hashlib
 import logging
+import os
 import shutil
 import tempfile
 import threading
@@ -64,6 +65,8 @@ logger = logging.getLogger(__name__)
 FATAL_DISK_ERRNOS = (errno.ENOSPC, errno.EDQUOT, errno.EROFS)
 
 INTRO_MIN_SECONDS = 5.0
+
+TEMP_RENAME_SUFFIX = ".tsmv-"
 
 
 class RegenLevel(Enum):
@@ -237,6 +240,81 @@ def _remove_stale_album_dirs(
             logger.warning(
                 'pipeline.stale_dir_remove_fail: dir=%s error="%s"', stale.name, exc
             )
+
+
+def rename_track_files(album_dir: Path, renames: list[tuple[str, str]]) -> None:
+    """Rename track files inside album_dir according to the given list of (old, new) pairs.
+
+    Case-only changes use a two-step rename via a temp name to satisfy
+    case-insensitive filesystems. Missing source files are skipped with a
+    warning. When the target already exists with different content, a warning
+    is emitted and both files are kept (no overwrite).
+    """
+    for old_name, new_name in renames:
+        src = album_dir / old_name
+        dst = album_dir / new_name
+        if not src.exists():
+            logger.warning("pipeline.rename_skip: missing=%s", old_name)
+            continue
+        if src == dst:
+            continue
+        if dst.exists() and src.resolve() != dst.resolve():
+            logger.warning(
+                "pipeline.rename_conflict: target_exists=%s (kept both)", new_name
+            )
+            continue
+        if old_name.casefold() == new_name.casefold():
+            # Case-only: two-step via temp to satisfy case-insensitive FS.
+            tmp = album_dir / (new_name + TEMP_RENAME_SUFFIX)
+            os.replace(src, tmp)
+            os.replace(tmp, dst)
+        else:
+            os.replace(src, dst)
+        logger.info("pipeline.rename: %s -> %s", old_name, new_name)
+
+
+def move_album_dir(old_dir: Path, new_dir: Path) -> Path:
+    """Move old_dir to new_dir, returning the final directory path.
+
+    Creates the new parent directory as needed. When old and new differ only
+    in case, a two-step rename via a temp name is used to satisfy
+    case-insensitive filesystems. If new_dir already exists (and is not the
+    same inode), logs a warning and returns old_dir unchanged. After a
+    successful move, prunes the old artist directory if it is now empty.
+    """
+    if old_dir.resolve() == new_dir.resolve():
+        return new_dir
+    new_dir.parent.mkdir(parents=True, exist_ok=True)
+    if new_dir.exists():
+        logger.warning(
+            "pipeline.move_conflict: target_exists=%s (left source in place)",
+            new_dir.name,
+        )
+        return old_dir
+    if str(old_dir).casefold() == str(new_dir).casefold():
+        tmp = new_dir.parent / (new_dir.name + TEMP_RENAME_SUFFIX)
+        os.replace(old_dir, tmp)
+        os.replace(tmp, new_dir)
+    else:
+        os.replace(old_dir, new_dir)
+    logger.info("pipeline.move: %s -> %s", old_dir.name, new_dir.name)
+    old_artist = old_dir.parent
+    try:
+        if old_artist.exists() and not any(old_artist.iterdir()):
+            old_artist.rmdir()
+    except OSError:
+        pass
+    return new_dir
+
+
+def sweep_temp_renames(album_dir: Path) -> None:
+    """Remove stray temp files left by an interrupted rename_track_files call."""
+    for p in album_dir.glob("*" + TEMP_RENAME_SUFFIX):
+        try:
+            p.unlink()
+            logger.info("pipeline.temp_sweep: removed=%s", p.name)
+        except OSError:
+            pass
 
 
 def refresh_artist_cover(
