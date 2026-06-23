@@ -223,7 +223,7 @@ If none of the locations has the file, TrackSplit continues without it (raw tag 
 
 `.tracksplit_manifest.json` is the album's internal cache (schema version 4). It contains:
 
-- **Source identity:** the CrateDigger 1001Tracklists ID (`CRATEDIGGER_1001TL_ID`) embedded in the MKV, which is the primary stable identifier for CrateDigger-tagged sources. For sources without that tag, a best-effort fingerprint of the audio stream (codec, sample rate, channels) plus chapter boundaries is used as a fallback.
+- **Source identity:** the CrateDigger 1001Tracklists ID (`CRATEDIGGER_1001TL_ID`) embedded in the MKV, which is the primary stable identifier for CrateDigger-tagged sources. For sources without that tag, a best-effort fingerprint of the audio stream (codec, sample rate, channels, and Matroska time base (the audio stream tick rate, which changes if the file is re-muxed)) plus chapter boundaries is used as a fallback.
 - **Source path:** the file path where the source MKV was last found. Stored for reference only; a path change does not by itself mean the album has to be rebuilt.
 - **Album tags:** the album-level metadata used for the last run (artist, festival, venue, date, stage, format, and similar).
 - **Track list:** one entry per output track (including the intro at position 0 when present), each recording its filename, start and end times, and the tags embedded into that file.
@@ -238,7 +238,7 @@ The manifest JSON is written with literal Unicode: accented characters appear as
 | Album or artist folder name changed (e.g. artist spelling fix) | Renames/moves the album folder and rewrites tags in place | No |
 | A track title or performer changed | Renames the affected track file and rewrites its tags | No |
 | Per-track or album-level tags changed (label, genre, MBIDs, etc.) | Rewrites tags in place across affected tracks | No |
-| Audio stream changed (re-encode, codec, sample rate, channels), output format changed, number of tracks changed, or a chapter boundary moved | Full re-split: audio is re-extracted and re-encoded | Yes |
+| Audio stream changed (re-encode, codec, sample rate, channels), output format changed, number of tracks changed, or a chapter boundary moved | Full re-split: audio is re-extracted from the source (and re-encoded, unless the Opus copy path applies) | Yes |
 
 "Tags rewritten" means TrackSplit opens the existing audio file and updates its Vorbis comment block. The audio data is untouched. "Folder renamed/moved" means the album folder is moved to its new location on disk; track files inside stay intact.
 

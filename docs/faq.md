@@ -31,18 +31,18 @@ Re-run with `--verbose` to see which reason triggered.
 
 TrackSplit now identifies each album by the stable CrateDigger 1001Tracklists ID (`CRATEDIGGER_1001TL_ID`) embedded in the source MKV, not by the source file path. When you reorganize your library (move files to a new folder, rename the library root, or restructure year/artist subdirectories), the identity stays the same. TrackSplit finds the album by its ID, notes that the path changed, updates the stored path in the manifest, and moves on without re-splitting or re-tagging anything.
 
-For sources that do not carry the CrateDigger ID tag, TrackSplit falls back to a best-effort fingerprint of the audio stream and chapter boundaries. This is less precise: if the audio or chapters differ from the stored fingerprint, a re-split follows as before. Re-enriching the source with a current CrateDigger version embeds the stable ID and removes this ambiguity.
+For sources that do not carry the CrateDigger ID tag, TrackSplit falls back to a best-effort fingerprint of the audio stream (codec, sample rate, channels, and Matroska time base (the audio stream tick rate, which changes if the file is re-muxed)) and chapter boundaries. This is less precise: if the audio or chapters differ from the stored fingerprint, a re-split follows as before. Re-enriching the source with a current CrateDigger version embeds the stable ID and removes this ambiguity.
 
 ## When does TrackSplit re-split vs. just re-tag or rename?
 
 TrackSplit always chooses the cheapest operation that brings the album up to date:
 
 - **Skip:** nothing changed. The album folder and all track files stay exactly as they are.
-- **Path refresh only:** the source MKV moved or was renamed, but the recording is the same (same CrateDigger ID or audio fingerprint). The manifest is updated; no files on disk change.
+- **Path refresh only:** the source MKV moved or was renamed, but the recording is the same (same CrateDigger ID or audio fingerprint). The manifest is updated to record the new path. No audio files or tags change.
 - **Retag:** per-track or album-level metadata changed (label, genre, MBIDs, artist spelling, etc.). The existing audio files are opened and their tag blocks are rewritten. Audio data is not touched and no new audio file is written.
 - **Rename + retag:** a track title or performer changed. The track file is renamed to match the new title and its tags are rewritten. Audio is not re-extracted.
 - **Move + retag:** the album folder name changed (because the artist, festival, venue, or stage name changed). The album folder is moved to its new location and tags are rewritten inside it. Audio is not re-extracted.
-- **Full re-split:** the audio itself must change. This happens when: the audio stream changed (re-encode, different codec, different sample rate or channels), the output format or codec mode changed, the number of tracks changed, or a chapter boundary (start or end time) moved.
+- **Full re-split:** the audio itself must change. This happens when: the audio stream changed (re-encode, different codec, different sample rate, channels, or time base), the output format or codec mode changed, the number of tracks changed, or a chapter boundary (start or end time) moved.
 
 A full re-split is always the most expensive path. TrackSplit only takes it when the audio output would genuinely differ from what is already on disk.
 
