@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -64,15 +65,29 @@ def test_build_album_manifest_v4_maps_tracks_and_identity():
         tracks=[
             TrackMeta(number=0, title="Intro", start=0.0, end=12.0),
             TrackMeta(
-                number=2, title="Culture", start=172.0, end=292.0,
-                artist="MORTEN & ARTBAT", publisher="INSOMNIAC",
-                genre=["Melodic House/Techno"], artists=["MORTEN", "ARTBAT"],
+                number=2,
+                title="Culture",
+                start=172.0,
+                end=292.0,
+                artist="MORTEN & ARTBAT",
+                publisher="INSOMNIAC",
+                genre=["Melodic House/Techno"],
+                artists=["MORTEN", "ARTBAT"],
                 artist_mbids=["m1", "m2"],
             ),
         ],
     )
-    ffprobe = {"streams": [{"codec_type": "audio", "codec_name": "opus",
-                            "sample_rate": "48000", "channels": 2, "time_base": "1/1000"}]}
+    ffprobe = {
+        "streams": [
+            {
+                "codec_type": "audio",
+                "codec_name": "opus",
+                "sample_rate": "48000",
+                "channels": 2,
+                "time_base": "1/1000",
+            }
+        ]
+    }
     m = build_album_manifest(
         source_path=Path("E:/v/x.mkv"),
         ffprobe_data=ffprobe,
@@ -88,7 +103,8 @@ def test_build_album_manifest_v4_maps_tracks_and_identity():
     assert m.schema == 4
     assert m.identity.source_id == "xfg8qrk"
     assert [t.filename for t in m.tracks] == [
-        "00 - Intro.opus", "02 - MORTEN & ARTBAT - Culture.opus"
+        "00 - Intro.opus",
+        "02 - MORTEN & ARTBAT - Culture.opus",
     ]
     assert m.tracks[1].artists == ["MORTEN", "ARTBAT"]
     assert m.tracks[1].publisher == "INSOMNIAC"
@@ -402,3 +418,51 @@ def test_manifest_written_with_literal_unicode(tmp_path):
     text = (tmp_path / ALBUM_MANIFEST_FILENAME).read_text(encoding="utf-8")
     assert "Beyoncé" in text
     assert "Beyonc\\u00e9" not in text
+
+
+def test_load_migrates_schema_3_without_discarding(tmp_path):
+    v3 = {
+        "schema": 3,
+        "source": {
+            "path": "E:/v/x.mkv",
+            "audio": {
+                "codec_name": "opus",
+                "sample_rate": 48000,
+                "channels": 2,
+                "duration_ts": 0,
+                "time_base": "1/1000",
+                "bit_rate": 0,
+            },
+        },
+        "resolved_artist_folder": "MORTEN",
+        "resolved_album_folder": "TML 2025",
+        "output_format": "opus",
+        "codec_mode": "copy",
+        "chapters": [
+            {
+                "index": 2,
+                "title": "Culture",
+                "start": 172.0,
+                "end": 292.0,
+                "tags": {"CRATEDIGGER_TRACK_LABEL": "INSOMNIAC"},
+            }
+        ],
+        "tags": {"artist": "MORTEN", "genres": ["Trance"]},
+        "track_filenames": ["00 - Intro.opus", "02 - MORTEN & ARTBAT - Culture.opus"],
+        "cover_sha256": "abc",
+        "intro_min_seconds": 5.0,
+        "cover_schema_version": 3,
+        "tag_schema_version": 2,
+    }
+    (tmp_path / ".tracksplit_manifest.json").write_text(json.dumps(v3))
+    m = load_album_manifest(tmp_path)
+    assert m is not None
+    assert m.migrated_from == 3
+    assert m.source_path == "E:/v/x.mkv"
+    assert m.identity.source_id is None  # not in a v3 manifest
+    assert m.identity.audio.codec_name == "opus"
+    assert [t.filename for t in m.tracks] == [
+        "00 - Intro.opus",
+        "02 - MORTEN & ARTBAT - Culture.opus",
+    ]
+    assert m.album_tags["artist"] == "MORTEN"

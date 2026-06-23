@@ -183,6 +183,7 @@ class AlbumManifest:
     cover_sha256: str
     cover_schema_version: int = 0
     tag_schema_version: int = 0
+    migrated_from: int | None = None
 
     def to_dict(self) -> dict:
         from tracksplit.paths import nfc  # local: paths imports manifest (cycle)
@@ -326,7 +327,9 @@ def atomic_write_text(path: Path, data: str) -> None:
 
 def save_album_manifest(album_dir: Path, manifest: AlbumManifest) -> None:
     path = album_dir / ALBUM_MANIFEST_FILENAME
-    atomic_write_text(path, json.dumps(manifest.to_dict(), indent=2, ensure_ascii=False))
+    atomic_write_text(
+        path, json.dumps(manifest.to_dict(), indent=2, ensure_ascii=False)
+    )
 
 
 def load_album_manifest(album_dir: Path) -> AlbumManifest | None:
@@ -334,19 +337,76 @@ def load_album_manifest(album_dir: Path) -> AlbumManifest | None:
     if not path.is_file():
         return None
     try:
-        data = json.loads(path.read_text())
-        if data.get("schema") != MANIFEST_SCHEMA:
-            logger.debug(
-                "manifest.schema_mismatch: file=%s found=%s expected=%d",
-                path.name,
-                data.get("schema"),
-                MANIFEST_SCHEMA,
-            )
-            return None
-        return AlbumManifest.from_dict(data)
-    except (json.JSONDecodeError, OSError, KeyError, TypeError) as exc:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
         logger.warning('manifest.unreadable: file=%s error="%s"', path.name, exc)
         return None
+    schema = data.get("schema")
+    try:
+        if schema == MANIFEST_SCHEMA:
+            return AlbumManifest.from_dict(data)
+        if schema == 3:
+            return _migrate_v3(data)
+        logger.debug(
+            "manifest.schema_mismatch: file=%s found=%s expected=%d",
+            path.name,
+            schema,
+            MANIFEST_SCHEMA,
+        )
+        return None
+    except (KeyError, TypeError, ValueError) as exc:
+        logger.warning('manifest.unreadable: file=%s error="%s"', path.name, exc)
+        return None
+
+
+def _migrate_v3(data: dict) -> AlbumManifest:
+    """Map a schema-3 manifest into the schema-4 model in memory.
+
+    The filename list and chapter boundaries are preserved; per-track embedded
+    tag values are left empty (re-derived from the source during reconciliation),
+    so a migrated manifest yields SKIP/RETAG, never a forced resplit.
+    """
+    from tracksplit.paths import nfc  # local: paths imports manifest (cycle)
+
+    src = data["source"]
+    filenames = list(data.get("track_filenames", []))
+    chapters = list(data.get("chapters", []))
+    tracks: list[TrackEntry] = []
+    has_intro = bool(filenames) and "intro" in Path(filenames[0]).stem.lower()
+    fn_iter = iter(filenames)
+    if has_intro:
+        intro_fn = next(fn_iter)
+        first_start = chapters[0]["start"] if chapters else 0.0
+        tracks.append(TrackEntry(0, intro_fn, 0.0, float(first_start), "Intro"))
+    for ch in chapters:
+        try:
+            fn = next(fn_iter)
+        except StopIteration:
+            break
+        tracks.append(
+            TrackEntry(
+                index=int(ch.get("index", len(tracks))),
+                filename=fn,
+                start=float(ch.get("start", 0.0)),
+                end=float(ch.get("end", 0.0)),
+                title=ch.get("title", ""),
+            )
+        )
+    return AlbumManifest(
+        schema=MANIFEST_SCHEMA,
+        identity=SourceIdentity(None, AudioFingerprint.from_dict(src.get("audio", {}))),
+        source_path=src.get("path", ""),
+        resolved_artist_folder=nfc(data.get("resolved_artist_folder", "")),
+        resolved_album_folder=nfc(data.get("resolved_album_folder", "")),
+        output_format=data.get("output_format", ""),
+        codec_mode=data.get("codec_mode", ""),
+        album_tags=data.get("tags", {}),
+        tracks=tracks,
+        cover_sha256=data.get("cover_sha256", ""),
+        cover_schema_version=data.get("cover_schema_version", 0),
+        tag_schema_version=data.get("tag_schema_version", 0),
+        migrated_from=3,
+    )
 
 
 @dataclass
