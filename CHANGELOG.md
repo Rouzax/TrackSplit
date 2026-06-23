@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-06-23
+
+### Fixed
+
+- The first run after upgrading to the schema-4 manifest no longer triggers spurious full re-splits. Two migration issues are corrected: the migrated first track's start is normalized to 0.0 to match the actual split (an album always begins at 0.0, via an intro track or by sliding the first track), and an intro track is now detected by the file/chapter count relationship rather than a filename substring, so a track whose title contains the word "Intro" (for example an "Intro Mix") is no longer mistaken for an intro track and does not shift every track by one. Validated across the full library: all sources reconcile without re-splitting.
+- Artist cover refresh is now serialized per artist, preventing a race between parallel workers that produced "[WinError 5] Access is denied" on Windows when multiple albums of the same artist refreshed `artist.jpg` / `folder.jpg` at the same time.
+
 ## [0.15.0] - 2026-06-23
 
 ### Changed
