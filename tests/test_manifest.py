@@ -9,7 +9,6 @@ from tracksplit.manifest import (
     MANIFEST_SCHEMA,
     AlbumManifest,
     AudioFingerprint,
-    SourceFingerprint,
     SourceIdentity,
     TrackEntry,
     build_album_manifest,
@@ -134,15 +133,6 @@ def test_legacy_chapter_cache_name_is_stable():
     assert LEGACY_CHAPTER_CACHE_FILENAME == ".tracksplit_chapters.json"
 
 
-def test_source_fingerprint_equality(tmp_path):
-    from tests._manifest_helpers import make_ffprobe
-
-    src = _src(tmp_path)
-    a = SourceFingerprint.from_ffprobe(src, make_ffprobe())
-    b = SourceFingerprint.from_ffprobe(src, make_ffprobe())
-    assert a == b
-
-
 def test_load_album_manifest_schema_mismatch_returns_none(tmp_path):
     from tracksplit.manifest import ALBUM_MANIFEST_FILENAME, load_album_manifest
 
@@ -168,7 +158,9 @@ def test_load_album_manifest_schema_2_is_rejected(tmp_path, caplog):
     )
     with caplog.at_level(logging.DEBUG, logger="tracksplit.manifest"):
         assert load_album_manifest(tmp_path) is None
-    assert any("schema_unsupported" in rec.getMessage().lower() for rec in caplog.records)
+    assert any(
+        "schema_unsupported" in rec.getMessage().lower() for rec in caplog.records
+    )
 
 
 def test_load_artist_manifest_schema_mismatch_returns_none(tmp_path):
@@ -334,53 +326,6 @@ def test_audio_fingerprint_equality():
     c = AudioFingerprint("opus", 48000, 2, "1/96000")
     assert a == b
     assert a != c
-
-
-def test_tag_keys_match_build_tag_dict_inputs():
-    """Allowlist must include every parse_tags key that build_tag_dict consumes."""
-    from tracksplit.manifest import TAG_KEYS
-
-    expected = {
-        "artist",
-        "festival",
-        "date",
-        "stage",
-        "venue",
-        "genres",
-        "comment",
-        "country",
-        "albumartist_display",
-        "albumartists",
-        "albumartist_mbids",
-    }
-    assert set(TAG_KEYS) == expected
-
-
-def test_filter_tags_uses_list_default_for_list_keys():
-    """List-valued allowlist entries must default to [], not ''."""
-    from tracksplit.manifest import _filter_tags
-
-    out = _filter_tags({})
-    assert out["genres"] == []
-    assert out["albumartists"] == []
-    assert out["albumartist_mbids"] == []
-    assert out["artist"] == ""
-    assert out["festival"] == ""
-
-
-def test_filter_tags_preserves_provided_lists():
-    from tracksplit.manifest import _filter_tags
-
-    out = _filter_tags(
-        {
-            "genres": ["House", "Trance"],
-            "albumartists": ["A", "B"],
-            "albumartist_mbids": ["mbid-a", ""],
-        }
-    )
-    assert out["genres"] == ["House", "Trance"]
-    assert out["albumartists"] == ["A", "B"]
-    assert out["albumartist_mbids"] == ["mbid-a", ""]
 
 
 def test_track_entry_roundtrip_and_nfc():

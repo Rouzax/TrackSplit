@@ -23,27 +23,6 @@ LEGACY_CHAPTER_CACHE_FILENAME = ".tracksplit_chapters.json"
 MANIFEST_SCHEMA = 4
 
 
-TAG_KEYS = (
-    "artist",
-    "festival",
-    "date",
-    "stage",
-    "venue",
-    "genres",
-    "comment",
-    "country",
-    "albumartist_display",
-    "albumartists",
-    "albumartist_mbids",
-)
-
-_LIST_TAG_KEYS = frozenset({"genres", "albumartists", "albumartist_mbids"})
-
-
-def tag_default(key: str):
-    return [] if key in _LIST_TAG_KEYS else ""
-
-
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -82,19 +61,6 @@ class AudioFingerprint:
             sample_rate=int(d.get("sample_rate", 0) or 0),
             channels=int(d.get("channels", 0) or 0),
             time_base=d.get("time_base", ""),
-        )
-
-
-@dataclass(frozen=True)
-class SourceFingerprint:
-    path: str
-    audio: AudioFingerprint
-
-    @classmethod
-    def from_ffprobe(cls, path: Path, ffprobe_data: dict) -> SourceFingerprint:
-        return cls(
-            path=str(path),
-            audio=AudioFingerprint.from_ffprobe(ffprobe_data),
         )
 
 
@@ -221,10 +187,6 @@ class AlbumManifest:
             cover_schema_version=d.get("cover_schema_version", 0),
             tag_schema_version=d.get("tag_schema_version", 0),
         )
-
-
-def _filter_tags(tags: dict) -> dict:
-    return {k: tags.get(k, tag_default(k)) for k in TAG_KEYS}
 
 
 def nfc_tags(tags: dict) -> dict:

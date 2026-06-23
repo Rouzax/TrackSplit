@@ -38,9 +38,16 @@ def build_desired_album(
 
     tracks = [
         TrackEntry(
-            index=t.number, filename=fn, start=t.start, end=t.end, title=t.title,
-            artist=t.artist, publisher=t.publisher, genre=list(t.genre),
-            artists=list(t.artists), artist_mbids=list(t.artist_mbids),
+            index=t.number,
+            filename=fn,
+            start=t.start,
+            end=t.end,
+            title=t.title,
+            artist=t.artist,
+            publisher=t.publisher,
+            genre=list(t.genre),
+            artists=list(t.artists),
+            artist_mbids=list(t.artist_mbids),
         )
         for t, fn in zip(album.tracks, track_filenames, strict=True)
     ]

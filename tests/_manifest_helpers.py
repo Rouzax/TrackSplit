@@ -44,7 +44,7 @@ def make_ffprobe(audio_fp: dict | None = None) -> dict:
 
 
 def default_tags() -> dict:
-    """Default stored-tag dict matching the new TAG_KEYS allowlist."""
+    """Default stored-tag dict for album-level manifest tags."""
     return {
         "artist": "A",
         "festival": "",

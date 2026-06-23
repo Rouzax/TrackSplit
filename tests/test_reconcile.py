@@ -229,7 +229,7 @@ def test_migrated_manifest_with_renamed_folder_is_move_plus_retag():
     assert p.move and p.retag and p.level is RegenLevel.RETAG
 
 
-def test_index_finds_by_source_id_regardless_of_folder(tmp_path, monkeypatch):
+def test_index_finds_by_source_id_regardless_of_folder(tmp_path):
     # Two album dirs; one matches by source_id even though folder name differs.
     a = tmp_path / "ArtistA" / "OldName"
     a.mkdir(parents=True)
@@ -256,17 +256,36 @@ def test_index_finds_by_source_id_regardless_of_folder(tmp_path, monkeypatch):
 
 
 def test_build_desired_album_pulls_source_id_and_tracks():
-    album = AlbumMeta(artist="MORTEN", album="TML 2025", albumartists=["MORTEN"],
-                      tracks=[TrackMeta(2, "Culture", 172.0, 292.0, artist="A",
-                                        publisher="INSOMNIAC")])
-    ffprobe = {"streams": [{"codec_type": "audio", "codec_name": "opus",
-                            "sample_rate": "48000", "channels": 2, "time_base": "1/1000"}]}
+    album = AlbumMeta(
+        artist="MORTEN",
+        album="TML 2025",
+        albumartists=["MORTEN"],
+        tracks=[
+            TrackMeta(2, "Culture", 172.0, 292.0, artist="A", publisher="INSOMNIAC")
+        ],
+    )
+    ffprobe = {
+        "streams": [
+            {
+                "codec_type": "audio",
+                "codec_name": "opus",
+                "sample_rate": "48000",
+                "channels": 2,
+                "time_base": "1/1000",
+            }
+        ]
+    }
     d = build_desired_album(
-        album=album, ffprobe_data=ffprobe,
+        album=album,
+        ffprobe_data=ffprobe,
         tags={"CRATEDIGGER_1001TL_ID": "xfg8qrk", "artist": "MORTEN"},
-        artist_folder="MORTEN", album_folder="TML 2025",
-        output_format="opus", codec_mode="copy", source_path="E:/v/x.mkv",
-        cover_sha256="abc", track_filenames=["02 - A - Culture.opus"],
+        artist_folder="MORTEN",
+        album_folder="TML 2025",
+        output_format="opus",
+        codec_mode="copy",
+        source_path="E:/v/x.mkv",
+        cover_sha256="abc",
+        track_filenames=["02 - A - Culture.opus"],
     )
     assert d.source_id == "xfg8qrk"
     assert d.tracks[0].filename == "02 - A - Culture.opus"

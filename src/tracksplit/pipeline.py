@@ -84,20 +84,6 @@ def _safe_log_name(path: Path) -> str:
         return path.name.encode("utf-8", errors="replace").decode("utf-8")
 
 
-def _chapters_to_dicts(chapters: list[Chapter]) -> list[dict]:
-    """Serialize chapters to a list of plain dicts for JSON caching."""
-    return [
-        {
-            "index": ch.index,
-            "title": ch.title,
-            "start": ch.start,
-            "end": ch.end,
-            "tags": dict(ch.tags),
-        }
-        for ch in chapters
-    ]
-
-
 _AUDIO_EXTS = (".flac", ".opus")
 
 
@@ -401,7 +387,6 @@ def retag_album(
     source_path: Path,
     ffprobe_data: dict,
     tags: dict,
-    chapter_dicts: list[dict],
     artist_folder: str,
     album_folder: str,
     codec_mode: str,
@@ -620,7 +605,6 @@ def process_file(
     album_dir = output_dir / artist_folder / album_folder
 
     ext, codec_mode = decide_codec(ffprobe_data, output_format)
-    chapter_dicts = _chapters_to_dicts(chapters)
     expected_filenames = [build_track_filename(t, ext) for t in album.tracks]
 
     # -- Identity-based reconciliation ------------------------------------
@@ -684,7 +668,6 @@ def process_file(
                         source_path=input_path,
                         ffprobe_data=ffprobe_data,
                         tags=tags,
-                        chapter_dicts=chapter_dicts,
                         artist_folder=artist_folder,
                         album_folder=album_folder,
                         codec_mode=codec_mode,

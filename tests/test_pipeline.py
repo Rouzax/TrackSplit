@@ -184,9 +184,6 @@ class TestRetagAlbum:
             source_path=src,
             ffprobe_data=ffprobe,
             tags=new_tags,
-            chapter_dicts=[
-                {"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}
-            ],
             artist_folder="A",
             album_folder="B",
             codec_mode="copy",
@@ -236,9 +233,6 @@ class TestRetagAlbum:
                 source_path=src,
                 ffprobe_data=make_ffprobe(make_audio_fp()),
                 tags=default_tags(),
-                chapter_dicts=[
-                    {"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}
-                ],
                 artist_folder="A",
                 album_folder="B",
                 codec_mode="copy",
@@ -292,9 +286,6 @@ class TestRetagAlbum:
             source_path=src,
             ffprobe_data=make_ffprobe(make_audio_fp()),
             tags=default_tags(),
-            chapter_dicts=[
-                {"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}
-            ],
             artist_folder="A",
             album_folder="B",
             codec_mode="copy",
@@ -355,9 +346,6 @@ class TestRetagAlbum:
             source_path=src,
             ffprobe_data=make_ffprobe(make_audio_fp()),
             tags=default_tags(),
-            chapter_dicts=[
-                {"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}
-            ],
             artist_folder="A",
             album_folder="B",
             codec_mode="copy",
@@ -418,9 +406,6 @@ class TestRetagAlbum:
             source_path=src,
             ffprobe_data=make_ffprobe(make_audio_fp()),
             tags=default_tags(),
-            chapter_dicts=[
-                {"index": 1, "title": "T", "start": 0.0, "end": 60.0, "tags": {}}
-            ],
             artist_folder="A",
             album_folder="B",
             codec_mode="copy",
@@ -523,9 +508,6 @@ class TestRetagAlbum:
             source_path=src,
             ffprobe_data=make_ffprobe(make_audio_fp()),
             tags={**default_tags(), "artist": "DJ X", "date": "2025-06-15"},
-            chapter_dicts=[
-                {"index": 1, "title": "T", "start": 0.0, "end": 30.0, "tags": {}}
-            ],
             artist_folder="DJ X",
             album_folder="Fest 2025",
             codec_mode="copy",
