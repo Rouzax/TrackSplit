@@ -115,6 +115,15 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unreachable = true
 
+# numpy ships typed stubs, but recent releases use 3.12+ `type` statements in
+# them, which mypy rejects when checking against our 3.11 floor (the syntax
+# error surfaces only with whichever numpy CI happens to install). We use numpy
+# lightly in cover.py; skip following its stubs so the type gate stays stable
+# across numpy versions.
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
+
 [tool.check-manifest]
 # The sdist ships the importable package (src/tracksplit, including the bundled
 # fonts) plus README and LICENSE. Everything below is dev tooling, docs sources,
