@@ -658,6 +658,13 @@ def process_file(
             sweep_temp_renames(current_dir)
             if plan.move:
                 current_dir = move_album_dir(current_dir, album_dir)
+            # Resolve the folder names that reflect where the files actually are.
+            # When the move succeeded current_dir == album_dir, so these equal
+            # artist_folder/album_folder. When a conflict left the files in the
+            # old location, we use the old names so the manifest stays consistent
+            # with disk and plan.move remains True on the next run.
+            effective_artist_folder = current_dir.parent.name
+            effective_album_folder = current_dir.name
             if plan.renames:
                 rename_track_files(current_dir, plan.renames)
             if plan.retag:
@@ -668,8 +675,8 @@ def process_file(
                         source_path=input_path,
                         ffprobe_data=ffprobe_data,
                         tags=tags,
-                        artist_folder=artist_folder,
-                        album_folder=album_folder,
+                        artist_folder=effective_artist_folder,
+                        album_folder=effective_album_folder,
                         codec_mode=codec_mode,
                         on_progress=on_progress,
                         source_id=source_id,
@@ -710,8 +717,8 @@ def process_file(
                     album=album,
                     source_path=input_path,
                     ffprobe_data=ffprobe_data,
-                    artist_folder=artist_folder,
-                    album_folder=album_folder,
+                    artist_folder=effective_artist_folder,
+                    album_folder=effective_album_folder,
                     ext=ext,
                     codec_mode=codec_mode,
                     source_id=source_id,

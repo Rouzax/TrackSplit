@@ -1115,6 +1115,201 @@ class TestProcessFileManifest:
         assert m.source_path == str(new_src)
 
 
+class TestMoveConflictManifestConsistency:
+    """FIX 1: when a move conflicts (destination already exists), the written
+    manifest must record the OLD (actual) folder names so the next run still
+    sees a pending move and retries it."""
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_move_conflict_manifest_records_actual_folder(
+        self,
+        mock_probe,
+        mock_cover_mkv,
+        mock_compose,
+        mock_tag,
+        tmp_path,
+    ):
+        """When the desired album directory already exists (move conflict),
+        files must stay in the old dir and the manifest must record the
+        OLD folder names so the next run still attempts the move.
+
+        Setup: same track title in both old and new probes so no filename
+        rename is planned, isolating the move-conflict behavior.
+        """
+        from tracksplit.manifest import (
+            build_album_manifest,
+            load_album_manifest,
+            save_album_manifest,
+        )
+        from tracksplit.metadata import build_album_meta
+        from tracksplit.models import TrackMeta
+        from tracksplit.pipeline import process_file
+        from tracksplit.probe import detect_tier, parse_chapters, parse_tags
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"x" * 100)
+        out = tmp_path / "out"
+
+        old_artist = "DJ X"
+        old_album_name = "Old Album 2025"
+        new_album_name = "New Album 2025"
+        # Use the filename that both old and new probes will produce so no
+        # rename is planned. The track title "Track One" stays the same.
+        track_filename = "01 - Track One.flac"
+
+        old_album_dir = out / old_artist / old_album_name
+        old_album_dir.mkdir(parents=True)
+        track_bytes = b"real-audio-data"
+        (old_album_dir / track_filename).write_bytes(track_bytes)
+
+        # Build a stored manifest with source_id so reconciliation finds it.
+        # The festival (and hence album_folder) differs between old and new.
+        old_ffprobe = {
+            "streams": [
+                {
+                    "codec_type": "audio",
+                    "codec_name": "flac",
+                    "sample_rate": "44100",
+                    "channels": 2,
+                    "time_base": "1/44100",
+                }
+            ],
+            "format": {
+                "tags": {
+                    "ARTIST": "DJ X",
+                    "CRATEDIGGER_1001TL_ID": "conflict-test-id",
+                    "CRATEDIGGER_1001TL_FESTIVAL": "Old Album",
+                    "CRATEDIGGER_1001TL_DATE": "2025",
+                },
+                "duration": "600.0",
+            },
+            "chapters": [
+                {
+                    "start_time": "0.0",
+                    "end_time": "600.0",
+                    "tags": {"title": "Track One"},
+                }
+            ],
+        }
+        old_tags = parse_tags(old_ffprobe)
+        old_chapters = parse_chapters(old_ffprobe)
+        old_tier = detect_tier(old_tags)
+        old_album_obj = build_album_meta(old_tags, old_chapters, src.stem, old_tier)
+        old_album_obj.tracks = [
+            TrackMeta(number=1, title="Track One", start=0.0, end=600.0)
+        ]
+        save_album_manifest(
+            old_album_dir,
+            build_album_manifest(
+                source_path=src,
+                ffprobe_data=old_ffprobe,
+                album=old_album_obj,
+                track_filenames=[track_filename],
+                artist_folder=old_artist,
+                album_folder=old_album_name,
+                output_format="flac",
+                codec_mode="copy",
+                source_id="conflict-test-id",
+                cover_bytes=b"",
+            ),
+        )
+
+        # The desired destination already exists (another unrelated album lives
+        # there), so the move will be blocked by move_album_dir.
+        conflict_dir = out / old_artist / new_album_name
+        conflict_dir.mkdir(parents=True)
+        (conflict_dir / "unrelated.flac").write_bytes(b"other-data")
+
+        # New probe: same audio fingerprint and same track boundary, but the
+        # festival tag changed -> desired album_folder is new_album_name.
+        new_ffprobe = {
+            "streams": [
+                {
+                    "codec_type": "audio",
+                    "codec_name": "flac",
+                    "sample_rate": "44100",
+                    "channels": 2,
+                    "time_base": "1/44100",
+                }
+            ],
+            "format": {
+                "tags": {
+                    "ARTIST": "DJ X",
+                    "CRATEDIGGER_1001TL_ID": "conflict-test-id",
+                    "CRATEDIGGER_1001TL_FESTIVAL": "New Album",
+                    "CRATEDIGGER_1001TL_DATE": "2025",
+                },
+                "duration": "600.0",
+            },
+            "chapters": [
+                {
+                    "start_time": "0.0",
+                    "end_time": "600.0",
+                    "tags": {"title": "Track One"},
+                }
+            ],
+        }
+        mock_probe.return_value = new_ffprobe
+        mock_cover_mkv.return_value = None
+        mock_compose.return_value = b"COVER"
+
+        process_file(src, out)
+
+        # Files must still be in the OLD directory (move was blocked).
+        assert old_album_dir.exists(), "old album dir must still exist after conflict"
+        assert (old_album_dir / track_filename).exists(), (
+            "track file must remain in old dir"
+        )
+        # Track bytes must be intact (no data loss).
+        assert (old_album_dir / track_filename).read_bytes() == track_bytes
+
+        # The manifest written into the old dir must record the OLD folder names,
+        # not the desired (new) names.
+        m = load_album_manifest(old_album_dir)
+        assert m is not None, "manifest must exist in old dir after conflict"
+        assert m.resolved_artist_folder == old_artist
+        assert m.resolved_album_folder == old_album_name, (
+            f"manifest must record old album folder '{old_album_name}', "
+            f"got '{m.resolved_album_folder}'"
+        )
+
+        # A second run must still plan a move because the manifest folder names
+        # still differ from the desired folder names. This proves the conflict was
+        # not silently accepted as "done".
+        from tracksplit.extract import decide_codec
+        from tracksplit.reconcile import build_desired_album, plan_reconciliation
+        from tracksplit.split import build_track_filename
+
+        new_tags = parse_tags(new_ffprobe)
+        new_chapters = parse_chapters(new_ffprobe)
+        new_tier = detect_tier(new_tags)
+        new_album_obj = build_album_meta(new_tags, new_chapters, src.stem, new_tier)
+        new_album_obj.tracks = [
+            TrackMeta(number=1, title="Track One", start=0.0, end=600.0)
+        ]
+        ext, codec_mode = decide_codec(new_ffprobe, "auto")
+        expected_fns = [build_track_filename(t, ext) for t in new_album_obj.tracks]
+        desired = build_desired_album(
+            album=new_album_obj,
+            ffprobe_data=new_ffprobe,
+            tags=new_tags,
+            artist_folder=old_artist,
+            album_folder=new_album_name,
+            output_format=ext.lstrip("."),
+            codec_mode=codec_mode,
+            source_path=str(src),
+            cover_sha256=m.cover_sha256,
+            track_filenames=expected_fns,
+        )
+        plan = plan_reconciliation(m, desired)
+        assert plan.move, (
+            "second run must still plan a move (conflict not silently accepted)"
+        )
+
+
 class TestProcessFileRetag:
     @patch("tracksplit.pipeline.retag_album")
     @patch("tracksplit.pipeline.run_ffprobe")
@@ -2186,9 +2381,10 @@ class TestSchema3Migration:
                 "venue": "",
                 "genres": [],
                 "comment": "",
+                "country": "",
                 "albumartist_display": "DJ A",
-                "albumartists": [],
-                "albumartist_mbids": [],
+                "albumartists": ["DJ A"],
+                "albumartist_mbids": [""],
             },
             "track_filenames": ["01 - Track 1.flac"],
             "cover_sha256": "",
