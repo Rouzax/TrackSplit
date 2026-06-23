@@ -293,7 +293,7 @@ def atomic_write_text(path: Path, data: str) -> None:
 
 def save_album_manifest(album_dir: Path, manifest: AlbumManifest) -> None:
     path = album_dir / ALBUM_MANIFEST_FILENAME
-    atomic_write_text(path, json.dumps(manifest.to_dict(), indent=2))
+    atomic_write_text(path, json.dumps(manifest.to_dict(), indent=2, ensure_ascii=False))
 
 
 def load_album_manifest(album_dir: Path) -> AlbumManifest | None:

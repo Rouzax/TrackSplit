@@ -491,3 +491,12 @@ def test_source_identity_roundtrip():
         audio=AudioFingerprint("opus", 48000, 2, "1/1000"),
     )
     assert SourceIdentity.from_dict(si.to_dict()) == si
+
+
+def test_manifest_written_with_literal_unicode(tmp_path):
+    m = _sample_manifest()
+    m.album_tags = {"artist": "Beyoncé"}
+    save_album_manifest(tmp_path, m)
+    text = (tmp_path / ALBUM_MANIFEST_FILENAME).read_text(encoding="utf-8")
+    assert "Beyoncé" in text
+    assert "Beyonc\\u00e9" not in text
