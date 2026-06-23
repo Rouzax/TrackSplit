@@ -102,7 +102,12 @@ ignore = ["E501"]
 "tests/integration/**" = ["A", "SIM117", "RUF001"]
 
 [tool.mypy]
-python_version = "3.11"
+# Target 3.12 for the type checker (the runtime floor is still 3.11, enforced
+# by the 3.11 test-matrix job). numpy's bundled stubs use PEP 695 `type`
+# statements, which mypy refuses to parse under a <3.12 target; following them
+# cannot be skipped, so we type-check against 3.12. Our own code uses no
+# 3.12-only syntax (ruff's UP rules are disabled and pinned to the 3.11 floor).
+python_version = "3.12"
 files = ["src"]
 # Resolve the src/ layout without requiring an (editable) install, so `mypy`
 # behaves identically locally and in CI.
@@ -112,17 +117,12 @@ explicit_package_bases = true
 # Third-party packages without stubs (mutagen, ftfy, ...) are not flagged.
 ignore_missing_imports = true
 warn_redundant_casts = true
-warn_unused_ignores = true
+# warn_unused_ignores is intentionally NOT enabled: CI installs unpinned latest
+# third-party deps, and their typing stubs (Pillow, numpy, ...) shift which
+# `# type: ignore` comments are needed between versions. With it on, a routine
+# upstream stub update flips a previously-required ignore to "unused" and breaks
+# the lint gate for reasons unrelated to our code.
 warn_unreachable = true
-
-# numpy ships typed stubs, but recent releases use 3.12+ `type` statements in
-# them, which mypy rejects when checking against our 3.11 floor (the syntax
-# error surfaces only with whichever numpy CI happens to install). We use numpy
-# lightly in cover.py; skip following its stubs so the type gate stays stable
-# across numpy versions.
-[[tool.mypy.overrides]]
-module = ["numpy", "numpy.*"]
-follow_imports = "skip"
 
 [tool.check-manifest]
 # The sdist ships the importable package (src/tracksplit, including the bundled
