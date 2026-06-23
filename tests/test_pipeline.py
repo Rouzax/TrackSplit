@@ -2952,6 +2952,8 @@ class TestRebuildCoverPassesAlbumartists:
             compose=compose,
         )
 
+        assert compose.call_args.kwargs["albumartists"] == ["Above & Beyond"]
+
 
 # ---------------------------------------------------------------------------
 # rename_track_files / move_album_dir / sweep_temp_renames
