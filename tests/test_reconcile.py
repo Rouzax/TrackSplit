@@ -290,3 +290,44 @@ def test_build_desired_album_pulls_source_id_and_tracks():
     assert d.source_id == "xfg8qrk"
     assert d.tracks[0].filename == "02 - A - Culture.opus"
     assert d.album_tags["artist"] == "MORTEN"
+
+
+# ---------------------------------------------------------------------------
+# FIX 2: migrated manifests must still compare album-level tags
+# ---------------------------------------------------------------------------
+
+
+def test_migrated_manifest_changed_album_tag_is_retag():
+    # A migrated (schema-3) manifest with empty per-track tags but a changed
+    # album_tag must reconcile to RETAG, not SKIP.
+    stored = _stored(
+        migrated_from=3,
+        album_tags={"artist": "MORTEN", "festival": "OLD FEST"},
+        tracks=[
+            TrackEntry(
+                2, "02 - A - Culture.opus", 172.0, 292.0, "Culture"
+            )  # no embedded per-track tags
+        ],
+    )
+    desired = _desired(album_tags={"artist": "MORTEN", "festival": "NEW FEST"})
+    p = plan_reconciliation(stored, desired)
+    assert p.level is RegenLevel.RETAG and p.retag, (
+        "changed album_tag on migrated manifest must trigger RETAG"
+    )
+
+
+def test_migrated_manifest_unchanged_album_tag_is_skip():
+    # An unchanged migrated album must still reconcile to SKIP: the album_tag
+    # comparison finds no drift, so trust_source_per_track keeps it quiet.
+    stored = _stored(
+        migrated_from=3,
+        tracks=[
+            TrackEntry(
+                2, "02 - A - Culture.opus", 172.0, 292.0, "Culture"
+            )  # no embedded per-track tags; album_tags match _desired() default
+        ],
+    )
+    p = plan_reconciliation(stored, _desired())
+    assert p.level is RegenLevel.SKIP and not p.retag, (
+        "unchanged migrated manifest must still reconcile to SKIP"
+    )

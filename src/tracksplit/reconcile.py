@@ -143,21 +143,23 @@ def plan_reconciliation(stored: AlbumManifest, desired: DesiredAlbum) -> Reconci
             renames.append((s.filename, d.filename))
 
     # A migrated (schema-3) manifest has no real stored per-track tag values,
-    # so we trust the source: the on-disk files were written from the same
-    # source, so their embedded tags already match desired. Skipping the tag
-    # comparison here makes an unchanged migrated album reconcile to SKIP,
-    # not a blanket first-run retag.
-    trust_source = stored.migrated_from is not None
+    # so we trust the source for per-track embedded tags: the on-disk files
+    # were written from the same source, so their embedded tags already match
+    # desired. Skipping only the per-track comparison makes an unchanged
+    # migrated album reconcile to SKIP, not a blanket first-run retag.
+    # Album-level tags are compared even for migrated manifests because the
+    # v3 manifest carried real album_tags, and drift there must still trigger
+    # a RETAG.
+    trust_source_per_track = stored.migrated_from is not None
 
     retag = False
-    if not trust_source:
-        if nfc_tags(stored.album_tags) != nfc_tags(desired.album_tags):
-            retag = True
-        if not retag:
-            for s, d in zip(stored.tracks, desired.tracks, strict=True):
-                if _track_tag_fields(s) != _track_tag_fields(d):
-                    retag = True
-                    break
+    if nfc_tags(stored.album_tags) != nfc_tags(desired.album_tags):
+        retag = True
+    if not retag and not trust_source_per_track:
+        for s, d in zip(stored.tracks, desired.tracks, strict=True):
+            if _track_tag_fields(s) != _track_tag_fields(d):
+                retag = True
+                break
     if stored.tag_schema_version < desired.tag_schema_version:
         retag = True
     if stored.cover_sha256 != desired.cover_sha256:
