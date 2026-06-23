@@ -2142,6 +2142,137 @@ class TestSkipBranchCoverRebuild:
         assert mock_retag.call_count == 0
 
 
+class TestSchema3Migration:
+    """End-to-end: a schema-3 album on disk migrates through process_file
+    without resplitting or retagging when the source is unchanged."""
+
+    def _probe(self):
+        return {
+            "streams": [
+                {
+                    "codec_type": "audio",
+                    "codec_name": "flac",
+                    "sample_rate": "44100",
+                    "channels": 2,
+                    "time_base": "1/44100",
+                }
+            ],
+            "format": {
+                "tags": {
+                    "ARTIST": "DJ A",
+                    "CRATEDIGGER_1001TL_FESTIVAL": "Fest",
+                    "CRATEDIGGER_1001TL_DATE": "2025",
+                },
+                "duration": "600.0",
+            },
+            "chapters": [
+                {
+                    "start_time": "0.0",
+                    "end_time": "600.0",
+                    "tags": {"title": "Track 1"},
+                },
+            ],
+        }
+
+    def _make_v3_manifest(self, src: "Path") -> dict:
+        from tracksplit.cover import COVER_SCHEMA_VERSION
+        from tracksplit.tagger import TAG_SCHEMA_VERSION
+
+        return {
+            "schema": 3,
+            "source": {
+                "path": str(src),
+                "audio": {
+                    "codec_name": "flac",
+                    "sample_rate": 44100,
+                    "channels": 2,
+                    "duration_ts": 0,
+                    "time_base": "1/44100",
+                    "bit_rate": 0,
+                },
+            },
+            "resolved_artist_folder": "DJ A",
+            "resolved_album_folder": "Fest 2025",
+            "output_format": "flac",
+            "codec_mode": "copy",
+            "chapters": [{"index": 1, "title": "Track 1", "start": 0.0, "end": 600.0}],
+            "tags": {
+                "artist": "DJ A",
+                "festival": "Fest",
+                "date": "2025",
+                "stage": "",
+                "venue": "",
+                "genres": [],
+                "comment": "",
+                "albumartist_display": "DJ A",
+                "albumartists": [],
+                "albumartist_mbids": [],
+            },
+            "track_filenames": ["01 - Track 1.flac"],
+            "cover_sha256": "",
+            "intro_min_seconds": 5,
+            "cover_schema_version": COVER_SCHEMA_VERSION,
+            "tag_schema_version": TAG_SCHEMA_VERSION,
+        }
+
+    @patch("tracksplit.pipeline.refresh_artist_cover")
+    @patch("tracksplit.pipeline.retag_album")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_schema3_album_migrates_without_resplit_or_retag(
+        self,
+        mock_probe,
+        mock_prepare,
+        mock_split,
+        mock_retag,
+        mock_refresh_artist,
+        tmp_path,
+    ):
+        """A schema-3 manifest on disk migrates to schema 4 in-memory via
+        load_album_manifest, reconciles to SKIP (trust_source=True skips tag
+        comparison), and process_file rewrites the manifest to schema 4 on
+        disk without calling split_tracks or retag_album."""
+        import json
+
+        from tracksplit.manifest import ALBUM_MANIFEST_FILENAME, load_album_manifest
+        from tracksplit.pipeline import process_file
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+        out = tmp_path / "out"
+        album_dir = out / "DJ A" / "Fest 2025"
+        album_dir.mkdir(parents=True)
+
+        # Place the track file so the reconciliation path does not fail on
+        # missing files (retag reads tracks from disk).
+        (album_dir / "01 - Track 1.flac").write_bytes(b"audio")
+
+        # Write a schema-3 manifest.
+        v3 = self._make_v3_manifest(src)
+        (album_dir / ALBUM_MANIFEST_FILENAME).write_text(json.dumps(v3))
+
+        mock_probe.return_value = self._probe()
+
+        result = process_file(src, out)
+
+        # The album is unchanged: no resplit and no retag.
+        mock_split.assert_not_called()
+        mock_prepare.assert_not_called()
+        mock_retag.assert_not_called()
+
+        # process_file returns False (SKIP path) for an unchanged album.
+        assert result is False
+
+        # The manifest on disk must now be schema 4.
+        reloaded = load_album_manifest(album_dir)
+        assert reloaded is not None
+        assert reloaded.schema == 4
+        assert reloaded.source_path == str(src)
+        assert len(reloaded.tracks) == 1
+        assert reloaded.tracks[0].filename == "01 - Track 1.flac"
+
+
 class TestRebuildCoverPassesAlbumartists:
     def test_genuine_list_is_passed_to_compose(self, tmp_path):
         import hashlib
@@ -2526,8 +2657,14 @@ class TestIdentityIndexRunBehavior:
         mock_artist_cover.return_value = b"JPEG2"
         mock_prepare.return_value = (src1, ".flac", "copy")
         mock_split.side_effect = [
-            [album_dir1 / "01 - DJ X - Track 1.flac", album_dir1 / "02 - DJ X - Track 2.flac"],
-            [album_dir2 / "01 - DJ X - Track 1.flac", album_dir2 / "02 - DJ X - Track 2.flac"],
+            [
+                album_dir1 / "01 - DJ X - Track 1.flac",
+                album_dir1 / "02 - DJ X - Track 2.flac",
+            ],
+            [
+                album_dir2 / "01 - DJ X - Track 1.flac",
+                album_dir2 / "02 - DJ X - Track 2.flac",
+            ],
         ]
 
         _process_directory(
