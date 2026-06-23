@@ -52,22 +52,16 @@ def _sha256(data: bytes) -> str:
 class AudioFingerprint:
     """Fingerprint of the source file's audio stream.
 
-    Pulled from the ffprobe dict that the pipeline already builds. Stable
-    across container rewrites (mkvpropedit tag edits) but moves on any
-    real audio change: re-encode, re-mux to a different codec, trim,
-    channel-layout change.
-
-    ``duration_ts`` and ``time_base`` together describe the stream's
-    duration in the codec's native integer timebase. Float ``duration``
-    is deliberately not used: it varies subtly across mux operations.
+    Stable across container rewrites (mkvpropedit tag edits) but moves on a
+    real audio change: re-encode, re-mux to a different codec, channel-layout
+    change. Duration is deliberately not stored: Matroska reports it as N/A on
+    the stream, and a length change already surfaces as a moved track boundary.
     """
 
     codec_name: str
     sample_rate: int
     channels: int
-    duration_ts: int
     time_base: str
-    bit_rate: int
 
     @classmethod
     def from_ffprobe(cls, ffprobe_data: dict) -> AudioFingerprint:
@@ -77,9 +71,7 @@ class AudioFingerprint:
                     codec_name=stream.get("codec_name", ""),
                     sample_rate=int(stream.get("sample_rate", 0) or 0),
                     channels=int(stream.get("channels", 0) or 0),
-                    duration_ts=int(stream.get("duration_ts", 0) or 0),
                     time_base=stream.get("time_base", ""),
-                    bit_rate=int(stream.get("bit_rate", 0) or 0),
                 )
         raise ValueError("ffprobe data has no audio stream")
 
@@ -89,9 +81,7 @@ class AudioFingerprint:
             codec_name=d.get("codec_name", ""),
             sample_rate=int(d.get("sample_rate", 0) or 0),
             channels=int(d.get("channels", 0) or 0),
-            duration_ts=int(d.get("duration_ts", 0) or 0),
             time_base=d.get("time_base", ""),
-            bit_rate=int(d.get("bit_rate", 0) or 0),
         )
 
 

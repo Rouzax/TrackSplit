@@ -298,6 +298,30 @@ def test_album_manifest_round_trip_preserves_cover_schema_version(tmp_path):
     assert roundtrip.cover_schema_version == COVER_SCHEMA_VERSION
 
 
+def test_audio_fingerprint_omits_duration_and_bitrate():
+    from tracksplit.manifest import AudioFingerprint
+
+    data = {
+        "streams": [
+            {
+                "codec_type": "audio",
+                "codec_name": "opus",
+                "sample_rate": "48000",
+                "channels": 2,
+                "time_base": "1/1000",
+                "duration_ts": "N/A",
+                "bit_rate": "N/A",
+            }
+        ]
+    }
+    fp = AudioFingerprint.from_ffprobe(data)
+    assert fp == AudioFingerprint(
+        codec_name="opus", sample_rate=48000, channels=2, time_base="1/1000"
+    )
+    assert not hasattr(fp, "duration_ts")
+    assert not hasattr(fp, "bit_rate")
+
+
 def test_audio_fingerprint_from_ffprobe_picks_first_audio_stream():
     from tracksplit.manifest import AudioFingerprint
 
