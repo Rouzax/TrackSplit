@@ -638,6 +638,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#why-doesnt-reorganizing-my-cratedigger-library-re-split-everything-anymore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why doesn't reorganizing my CrateDigger library re-split everything anymore?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-does-tracksplit-re-split-vs-just-re-tag-or-rename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When does TrackSplit re-split vs. just re-tag or rename?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#can-i-delete-tracksplit_manifestjson" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -815,6 +837,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#why-doesnt-reorganizing-my-cratedigger-library-re-split-everything-anymore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why doesn't reorganizing my CrateDigger library re-split everything anymore?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-does-tracksplit-re-split-vs-just-re-tag-or-rename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When does TrackSplit re-split vs. just re-tag or rename?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#can-i-delete-tracksplit_manifestjson" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -946,10 +990,24 @@
 <h2 id="a-file-was-skipped-even-though-i-expected-it-to-be-processed-why">A file was skipped even though I expected it to be processed. Why?</h2>
 <p>Two common reasons:</p>
 <ol>
-<li><strong>The output is already up to date.</strong> TrackSplit keeps a record of the last run in each album folder. If nothing changed (same chapters, same metadata, same format), it skips the album. Pass <code>--force</code> to rebuild it anyway.</li>
+<li><strong>The output is already up to date.</strong> TrackSplit keeps a record of the last run in each album folder (the manifest). If the identity, audio, chapters, metadata, and format are all unchanged, the album is skipped. Pass <code>--force</code> to rebuild it anyway.</li>
 <li><strong>No audio stream or zero duration.</strong> TrackSplit warns and moves on.</li>
 </ol>
 <p>Re-run with <code>--verbose</code> to see which reason triggered.</p>
+<h2 id="why-doesnt-reorganizing-my-cratedigger-library-re-split-everything-anymore">Why doesn't reorganizing my CrateDigger library re-split everything anymore?</h2>
+<p>TrackSplit now identifies each album by the stable CrateDigger 1001Tracklists ID (<code>CRATEDIGGER_1001TL_ID</code>) embedded in the source MKV, not by the source file path. When you reorganize your library (move files to a new folder, rename the library root, or restructure year/artist subdirectories), the identity stays the same. TrackSplit finds the album by its ID, notes that the path changed, updates the stored path in the manifest, and moves on without re-splitting or re-tagging anything.</p>
+<p>For sources that do not carry the CrateDigger ID tag, TrackSplit falls back to a best-effort fingerprint of the audio stream (codec, sample rate, channels, and Matroska time base (the audio stream tick rate, which changes if the file is re-muxed)) and chapter boundaries. This is less precise: if the audio or chapters differ from the stored fingerprint, a re-split follows as before. Re-enriching the source with a current CrateDigger version embeds the stable ID and removes this ambiguity.</p>
+<h2 id="when-does-tracksplit-re-split-vs-just-re-tag-or-rename">When does TrackSplit re-split vs. just re-tag or rename?</h2>
+<p>TrackSplit always chooses the cheapest operation that brings the album up to date:</p>
+<ul>
+<li><strong>Skip:</strong> nothing changed. The album folder and all track files stay exactly as they are.</li>
+<li><strong>Path refresh only:</strong> the source MKV moved or was renamed, but the recording is the same (same CrateDigger ID or audio fingerprint). The manifest is updated to record the new path. No audio files or tags change.</li>
+<li><strong>Retag:</strong> per-track or album-level metadata changed (label, genre, MBIDs, artist spelling, etc.). The existing audio files are opened and their tag blocks are rewritten. Audio data is not touched and no new audio file is written.</li>
+<li><strong>Rename + retag:</strong> a track title or performer changed. The track file is renamed to match the new title and its tags are rewritten. Audio is not re-extracted.</li>
+<li><strong>Move + retag:</strong> the album folder name changed (because the artist, festival, venue, or stage name changed). The album folder is moved to its new location and tags are rewritten inside it. Audio is not re-extracted.</li>
+<li><strong>Full re-split:</strong> the audio itself must change. This happens when: the audio stream changed (re-encode, different codec, different sample rate, channels, or time base), the output format or codec mode changed, the number of tracks changed, or a chapter boundary (start or end time) moved.</li>
+</ul>
+<p>A full re-split is always the most expensive path. TrackSplit only takes it when the audio output would genuinely differ from what is already on disk.</p>
 <h2 id="can-i-delete-tracksplit_manifestjson">Can I delete <code>.tracksplit_manifest.json</code>?</h2>
 <p>Yes. It is only used by TrackSplit to decide whether to skip an album on the next run. Delete it to force a full rebuild of that album. You do not need to back it up, and your music server ignores it entirely.</p>
 <h2 id="does-tracksplit-modify-my-source-videos">Does TrackSplit modify my source videos?</h2>

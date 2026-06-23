@@ -725,10 +725,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#re-run-manifest-details" class="md-nav__link">
+  <a href="#re-run-manifest-details-schema-4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Re-run manifest details
+        Re-run manifest details (schema 4)
       
     </span>
   </a>
@@ -1023,10 +1023,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#re-run-manifest-details" class="md-nav__link">
+  <a href="#re-run-manifest-details-schema-4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Re-run manifest details
+        Re-run manifest details (schema 4)
       
     </span>
   </a>
@@ -1144,8 +1144,8 @@
 <p>When either condition is not met, TrackSplit falls back to re-encoding with libopus, which also produces gapless output but takes longer.</p>
 <p>Players that do not support gapless playback, such as the Jellyfin mobile app, will introduce a 1-2s gap between tracks regardless of file content. This is a player-side limitation that cannot be fixed at the file level.</p>
 <h3 id="tracksplit_manifestjson"><code>.tracksplit_manifest.json</code></h3>
-<p>A small record file TrackSplit uses internally. It stores a fingerprint covering the audio stream metadata (codec, sample rate, channels, duration) and the set of tags embedded into the output tracks, along with the settings used, so TrackSplit can detect on the next run whether anything meaningful changed and skip the album if not.</p>
-<p><strong>This file is only for TrackSplit, not for your music server.</strong> Your server will ignore it. You can delete it at any time to force TrackSplit to rebuild that album. You do not need to back it up.</p>
+<p>A small record file TrackSplit uses internally (one per album folder). It stores the identity of the source recording, the audio fingerprint, and the complete set of tags and filenames from the last run, so TrackSplit can detect on the next run what changed and apply only what is necessary.</p>
+<p><strong>This file is only for TrackSplit, not for your music server.</strong> Your server will ignore it. You can delete it at any time to force TrackSplit to rebuild that album from scratch. You do not need to back it up.</p>
 <h2 id="what-your-music-server-uses">What your music server uses</h2>
 <table>
 <thead>
@@ -1179,7 +1179,7 @@
 <tr>
 <td><code>.tracksplit_manifest.json</code></td>
 <td>No</td>
-<td>Yes, skip detection only</td>
+<td>Yes, rerun reconciliation only</td>
 </tr>
 </tbody>
 </table>
@@ -1382,19 +1382,59 @@
 </tr>
 </tbody>
 </table>
-<h3 id="re-run-manifest-details">Re-run manifest details</h3>
-<p><code>.tracksplit_manifest.json</code> records:</p>
+<h3 id="re-run-manifest-details-schema-4">Re-run manifest details (schema 4)</h3>
+<p><code>.tracksplit_manifest.json</code> is the album's internal cache (schema version 4). It contains:</p>
 <ul>
-<li>The source file path.</li>
-<li>An audio-stream fingerprint from ffprobe: codec, sample rate, channels, duration, and bit rate.</li>
-<li>The chapter list (timestamps and titles).</li>
-<li>The set of tags embedded into the per-track output files: artist, festival, date, stage, venue, genres, comment, album artist display name, individual album artists, and their MusicBrainz IDs.</li>
-<li>The output format and codec mode used.</li>
-<li>The list of track filenames written.</li>
+<li><strong>Source identity:</strong> the CrateDigger 1001Tracklists ID (<code>CRATEDIGGER_1001TL_ID</code>) embedded in the MKV, which is the primary stable identifier for CrateDigger-tagged sources. For sources without that tag, a best-effort fingerprint of the audio stream (codec, sample rate, channels, and Matroska time base (the audio stream tick rate, which changes if the file is re-muxed)) plus chapter boundaries is used as a fallback.</li>
+<li><strong>Source path:</strong> the file path where the source MKV was last found. Stored for reference only; a path change does not by itself mean the album has to be rebuilt.</li>
+<li><strong>Album tags:</strong> the album-level metadata used for the last run (artist, festival, venue, date, stage, format, and similar).</li>
+<li><strong>Track list:</strong> one entry per output track (including the intro at position 0 when present), each recording its filename, start and end times, and the tags embedded into that file.</li>
 </ul>
-<p>On a subsequent run, TrackSplit loads the manifest and compares it against these fields. If nothing in that list changed, the album is skipped. Re-extraction is triggered by changes to the audio stream, chapters, or any of the embedded tags listed above. Container-level edits that do not touch the audio stream or embedded tags (such as a sibling tool rewriting MKV metadata) no longer cause spurious re-extracts. Deleting the manifest forces a full rebuild for that one album. Passing <code>--force</code> on the command line rebuilds everything regardless of manifests.</p>
+<p>The manifest JSON is written with literal Unicode: accented characters appear as-is, not as escape sequences.</p>
+<p><strong>What a rerun does (cheapest applicable operation):</strong></p>
+<table>
+<thead>
+<tr>
+<th>What changed</th>
+<th>What TrackSplit does</th>
+<th>Audio re-encoded?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source file moved or renamed (path changed, same recording)</td>
+<td>Refreshes the stored path in the manifest</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Album or artist folder name changed (e.g. artist spelling fix)</td>
+<td>Renames/moves the album folder and rewrites tags in place</td>
+<td>No</td>
+</tr>
+<tr>
+<td>A track title or performer changed</td>
+<td>Renames the affected track file and rewrites its tags</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Per-track or album-level tags changed (label, genre, MBIDs, etc.)</td>
+<td>Rewrites tags in place across affected tracks</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Audio stream changed (re-encode, codec, sample rate, channels), output format changed, number of tracks changed, or a chapter boundary moved</td>
+<td>Full re-split: audio is re-extracted from the source (and re-encoded, unless the Opus copy path applies)</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>"Tags rewritten" means TrackSplit opens the existing audio file and updates its Vorbis comment block. The audio data is untouched. "Folder renamed/moved" means the album folder is moved to its new location on disk; track files inside stay intact.</p>
+<p>A re-split is only triggered when the audio itself must change. Reorganizing your CrateDigger library (moving source files to a different folder, renaming the library root) or editing artist/festival metadata that affects folder names will not cause a re-split.</p>
+<p><strong>Migration from older manifests:</strong> the first run after upgrading from a version that wrote schema 3 manifests reads the old file and, if nothing meaningful changed, rewrites it to schema 4 without re-splitting or re-tagging. If the old album predates the current tag schema or cover renderer version, that first run also rewrites tags or recomposes covers to bring the album current; audio is still not re-extracted.</p>
+<p><strong>Compatibility:</strong> an older TrackSplit version reading a schema 4 manifest will not recognize the schema and will fall back to a full re-split, leaving your audio safe. Schema 4 manifests are not forward-compatible, but they are safe for older readers.</p>
+<p>Deleting the manifest forces a full rebuild of that album. Passing <code>--force</code> on the command line rebuilds every album regardless of manifests.</p>
 <h3 id="folder-cleanup-on-re-run">Folder cleanup on re-run</h3>
-<p>When regeneration is triggered, TrackSplit tidies up leftover files from the previous run automatically. It identifies old output by reading manifests, not by matching folder names.</p>
+<p>When a re-split or move is triggered, TrackSplit tidies up leftover files from the previous run automatically. It identifies old output by album identity (the stable source ID or fingerprint recorded in the manifest), not by matching folder names or source paths.</p>
 <ul>
 <li><strong>Album folder moved:</strong> if the album folder path changed (because the artist name, festival name, venue name, or stage changed), the old folder is deleted and a new one is created at the correct location.</li>
 <li><strong>Track files renamed or removed:</strong> if track names changed within an album but the folder stayed the same, orphan audio files from the previous run are removed from the album directory.</li>

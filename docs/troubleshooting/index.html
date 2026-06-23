@@ -646,6 +646,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#after-reorganizing-my-cratedigger-library-tracksplit-re-split-everything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After reorganizing my CrateDigger library, TrackSplit re-split everything
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracksplit-re-split-an-album-even-though-only-a-tag-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TrackSplit re-split an album even though only a tag changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#after-re-running-cratedigger-tracksplit-ran-again-unexpectedly" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -905,6 +927,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#after-reorganizing-my-cratedigger-library-tracksplit-re-split-everything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After reorganizing my CrateDigger library, TrackSplit re-split everything
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracksplit-re-split-an-album-even-though-only-a-tag-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TrackSplit re-split an album even though only a tag changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#after-re-running-cratedigger-tracksplit-ran-again-unexpectedly" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1122,7 +1166,7 @@
 <h2 id="files-are-rebuilt-every-run-even-though-nothing-changed">Files are rebuilt every run even though nothing changed</h2>
 <p><strong>What you see:</strong> TrackSplit processes the same files repeatedly instead of skipping them.</p>
 <p><strong>What is happening:</strong> TrackSplit uses a <code>.tracksplit_manifest.json</code> file in each album folder to detect whether a rebuild is needed. If that file is missing, unreadable, or was written by an older version with a different format, TrackSplit rebuilds the album.</p>
-<p>Note: mtime-only changes (files restored from backup, files reorganized on disk but not re-encoded) no longer cause this. The manifest keys off audio-stream metadata, not the file's modification time, so touching or moving a file without changing its audio does not trigger a rebuild.</p>
+<p>Note: mtime-only changes (files restored from backup, files reorganized on disk but not re-encoded) no longer cause this. The manifest keys off the source recording's identity and audio-stream properties, not the file's modification time or path. Moving or renaming a source file without changing its audio does not trigger a rebuild.</p>
 <p><strong>Fix:</strong></p>
 <ul>
 <li>Check that the album folder contains a <code>.tracksplit_manifest.json</code> file after a run. If it does not appear, TrackSplit may be writing to a different output directory than you expect.</li>
@@ -1130,11 +1174,34 @@
 <li>If you changed <code>--format</code> or <code>--output</code> since the last run, a rebuild is expected and correct.</li>
 </ul>
 <hr />
+<h2 id="after-reorganizing-my-cratedigger-library-tracksplit-re-split-everything">After reorganizing my CrateDigger library, TrackSplit re-split everything</h2>
+<p><strong>What you see:</strong> After moving source MKV files to a different folder (for example, you restructured your CrateDigger library's folder layout), TrackSplit treated every album as changed and re-split them all.</p>
+<p><strong>What is happening (old behavior):</strong> Before schema 4, TrackSplit used the source file path as the primary key to recognize an album. Moving a file looked identical to replacing it, so a full re-split followed.</p>
+<p><strong>What happens now:</strong> The manifest records the CrateDigger 1001Tracklists ID (<code>CRATEDIGGER_1001TL_ID</code>) embedded in each MKV as the stable album identity. For sources without that tag, a best-effort fingerprint of the audio and chapter boundaries is used. On rerun, TrackSplit matches by identity first, then checks what actually changed:</p>
+<ul>
+<li>Source file moved or renamed (same recording, different path): the stored path is updated in the manifest. Nothing else happens. No re-split, no retag.</li>
+<li>Metadata changed (artist spelling, festival name, etc.): tags are rewritten in the existing files and the album folder is moved if the folder name changed. Still no re-split.</li>
+<li>Audio or chapter boundaries changed: full re-split.</li>
+</ul>
+<p>If you are still seeing unexpected re-splits after upgrading, check that your source files carry the <code>CRATEDIGGER_1001TL_ID</code> tag (requires a recent CrateDigger enrich pass). Without that tag, identity falls back to the audio fingerprint, which is less reliable across codec changes.</p>
+<hr />
+<h2 id="tracksplit-re-split-an-album-even-though-only-a-tag-changed">TrackSplit re-split an album even though only a tag changed</h2>
+<p><strong>What you see:</strong> An album was fully re-split when you expected only a retag.</p>
+<p><strong>What is happening:</strong> A full re-split is only needed when the audio itself must change: different audio stream, different output format or codec mode, different number of tracks, or a chapter boundary that moved. Everything else (tag change, folder rename, track rename) is handled without touching the audio.</p>
+<p>If you see a re-split you did not expect:</p>
+<ol>
+<li>Re-run with <code>--verbose</code> and look for the <code>reconcile:</code> log lines. They will name the exact field that triggered the decision.</li>
+<li>Check whether the number of chapters changed, or whether a chapter start or end time shifted. Even a small boundary change forces a re-split because the audio cut must move.</li>
+<li>Check whether you changed <code>--format</code> (FLAC vs Opus). A format change always triggers a re-split.</li>
+</ol>
+<p>If none of the above applies, open an issue and include the <code>--verbose</code> output and the log file from the run.</p>
+<hr />
 <h2 id="after-re-running-cratedigger-tracksplit-ran-again-unexpectedly">After re-running CrateDigger, TrackSplit ran again unexpectedly</h2>
-<p><strong>What you see:</strong> TrackSplit re-extracted an album after CrateDigger updated the source file, even though you did not change the audio.</p>
-<p><strong>What is happening:</strong> TrackSplit compares the tags it would embed (genre, album artists, MusicBrainz IDs, comment, and others) against what the manifest recorded. If CrateDigger's enrichment changed any of those tags, TrackSplit correctly treats the album as outdated and re-extracts it.</p>
-<p>Enrichments that touch only bookkeeping fields (the DJ artwork URL, the CrateDigger enrichment timestamp) do not trigger a re-extract, because those fields are not embedded into the output tracks.</p>
-<p>If you see a re-extract you were not expecting, check the debug log for the exact field that changed:</p>
+<p><strong>What you see:</strong> TrackSplit retagged or re-split an album after CrateDigger updated the source file, even though you did not change the audio.</p>
+<p><strong>What is happening:</strong> TrackSplit compares the tags it would embed (genre, album artists, MusicBrainz IDs, comment, and others) against what the manifest recorded. If CrateDigger's enrichment changed any of those tags, TrackSplit correctly treats the album as outdated and retags it in place. Only the tag blocks are rewritten; the audio data is not touched and no re-split occurs.</p>
+<p>A full re-split is only triggered when the audio itself must change: chapter boundaries moved, number of tracks changed, the audio stream changed (different codec, sample rate, channels, or time base), or the output format changed. A tag-only update from CrateDigger does not cause a re-split.</p>
+<p>Enrichments that touch only bookkeeping fields (the DJ artwork URL, the CrateDigger enrichment timestamp) do not trigger a retag or re-split, because those fields are not embedded into the output tracks.</p>
+<p>If you see a retag or re-split you were not expecting, check the debug log for the exact field that changed:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>grep<span class="w"> </span>-i<span class="w"> </span>manifest<span class="w"> </span>~/.local/state/TrackSplit/log/split-*.log
 </code></pre></div>
 <p>The exact log path is shown at the end of each run. On macOS use <code>~/Library/Logs/TrackSplit/</code>; on Windows use <code>$env:LOCALAPPDATA\TrackSplit\Logs\</code>.</p>
