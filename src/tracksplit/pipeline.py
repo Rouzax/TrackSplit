@@ -653,6 +653,20 @@ def process_file(
         )
         plan = plan_reconciliation(stored, desired)
 
+        if dry_run and plan.level is not _RegenLevel.FULL:
+            # Report the planned cheap operation without mutating anything.
+            logger.info(
+                "pipeline.dry_run: file=%s plan=%s move=%s renames=%d retag=%s",
+                _safe_log_name(input_path),
+                plan.level.name.lower(),
+                plan.move,
+                len(plan.renames),
+                plan.retag,
+            )
+            if on_complete:
+                on_complete(existing_dir, len(album.tracks))
+            return plan.level is _RegenLevel.RETAG
+
         if plan.level is not _RegenLevel.FULL:
             current_dir = existing_dir
             sweep_temp_renames(current_dir)

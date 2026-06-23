@@ -2857,3 +2857,118 @@ class TestIdentityIndexRunBehavior:
         assert call_count["n"] == 1, (
             f"Expected build_identity_index called once for a 2-file batch, got {call_count['n']}"
         )
+
+
+class TestDryRunNoMutation:
+    """--dry-run must never mutate the output: a reconcilable change
+    (e.g. a renamed festival that would move+retag) must NOT move the
+    directory, rename files, or rewrite tags when dry_run is set."""
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_dry_run_does_not_move_rename_or_retag(
+        self,
+        mock_probe,
+        mock_cover_mkv,
+        mock_dj,
+        mock_artist_cover,
+        mock_compose,
+        mock_prepare,
+        mock_split,
+        mock_tag,
+        tmp_path,
+    ):
+        from tracksplit.manifest import (
+            build_album_manifest,
+            save_album_manifest,
+        )
+        from tracksplit.metadata import build_album_meta
+        from tracksplit.models import TrackMeta
+        from tracksplit.pipeline import process_file
+        from tracksplit.probe import detect_tier, parse_chapters, parse_tags
+
+        def _probe_for(festival):
+            return {
+                "streams": [
+                    {
+                        "codec_type": "audio",
+                        "codec_name": "flac",
+                        "sample_rate": "44100",
+                        "channels": 2,
+                        "time_base": "1/44100",
+                    }
+                ],
+                "format": {
+                    "tags": {
+                        "ARTIST": "DJ X",
+                        "CRATEDIGGER_1001TL_ID": "dry-run-id",
+                        "CRATEDIGGER_1001TL_FESTIVAL": festival,
+                        "CRATEDIGGER_1001TL_DATE": "2025",
+                    },
+                    "duration": "600.0",
+                },
+                "chapters": [
+                    {
+                        "start_time": "0.0",
+                        "end_time": "600.0",
+                        "tags": {"title": "Track 1"},
+                    },
+                ],
+            }
+
+        out = tmp_path / "out"
+        old_album = out / "DJ X" / "Old Name 2025"
+        old_album.mkdir(parents=True)
+        track_bytes = b"ORIGINAL-AUDIO-BYTES"
+        old_track = old_album / "01 - Track 1.flac"
+        old_track.write_bytes(track_bytes)
+
+        old_src = tmp_path / "src.mkv"
+        old_src.write_bytes(b"x" * 100)
+        old_probe = _probe_for("Old Name")
+        ptags = parse_tags(old_probe)
+        pchapters = parse_chapters(old_probe)
+        album_obj = build_album_meta(ptags, pchapters, old_src.stem, detect_tier(ptags))
+        album_obj.tracks = [TrackMeta(number=1, title="Track 1", start=0.0, end=600.0)]
+        save_album_manifest(
+            old_album,
+            build_album_manifest(
+                source_path=old_src,
+                ffprobe_data=old_probe,
+                album=album_obj,
+                track_filenames=["01 - Track 1.flac"],
+                artist_folder="DJ X",
+                album_folder="Old Name 2025",
+                output_format="flac",
+                codec_mode="copy",
+                source_id="dry-run-id",
+                cover_bytes=b"",
+            ),
+        )
+        manifest_before = (old_album / ".tracksplit_manifest.json").read_bytes()
+
+        # Reconcilable change (festival rename -> would move + retag), dry-run.
+        mock_probe.return_value = _probe_for("New Name")
+        mock_cover_mkv.return_value = None
+        mock_dj.return_value = None
+        mock_compose.return_value = b"JPEG"
+        mock_artist_cover.return_value = b"JPEG2"
+
+        process_file(old_src, out, dry_run=True)
+
+        # No re-encode and, crucially, NO mutation of any kind.
+        mock_split.assert_not_called()
+        mock_prepare.assert_not_called()
+        mock_tag.assert_not_called()  # retag must not run under dry-run
+        # Directory not moved, files not renamed.
+        assert old_album.exists()
+        assert not (out / "DJ X" / "New Name 2025").exists()
+        assert old_track.read_bytes() == track_bytes
+        # Manifest not rewritten.
+        assert (old_album / ".tracksplit_manifest.json").read_bytes() == manifest_before
