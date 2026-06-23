@@ -124,13 +124,45 @@ TrackSplit creates the `Artist/Album/` folder structure itself. You do not need 
 
 **What is happening:** TrackSplit uses a `.tracksplit_manifest.json` file in each album folder to detect whether a rebuild is needed. If that file is missing, unreadable, or was written by an older version with a different format, TrackSplit rebuilds the album.
 
-Note: mtime-only changes (files restored from backup, files reorganized on disk but not re-encoded) no longer cause this. The manifest keys off audio-stream metadata, not the file's modification time, so touching or moving a file without changing its audio does not trigger a rebuild.
+Note: mtime-only changes (files restored from backup, files reorganized on disk but not re-encoded) no longer cause this. The manifest keys off the source recording's identity and audio-stream properties, not the file's modification time or path. Moving or renaming a source file without changing its audio does not trigger a rebuild.
 
 **Fix:**
 
 - Check that the album folder contains a `.tracksplit_manifest.json` file after a run. If it does not appear, TrackSplit may be writing to a different output directory than you expect.
 - If the manifest exists but rebuilds keep happening, re-run with `--verbose` to see what changed.
 - If you changed `--format` or `--output` since the last run, a rebuild is expected and correct.
+
+---
+
+## After reorganizing my CrateDigger library, TrackSplit re-split everything
+
+**What you see:** After moving source MKV files to a different folder (for example, you restructured your CrateDigger library's folder layout), TrackSplit treated every album as changed and re-split them all.
+
+**What is happening (old behavior):** Before schema 4, TrackSplit used the source file path as the primary key to recognize an album. Moving a file looked identical to replacing it, so a full re-split followed.
+
+**What happens now:** The manifest records the CrateDigger 1001Tracklists ID (`CRATEDIGGER_1001TL_ID`) embedded in each MKV as the stable album identity. For sources without that tag, a best-effort fingerprint of the audio and chapter boundaries is used. On rerun, TrackSplit matches by identity first, then checks what actually changed:
+
+- Source file moved or renamed (same recording, different path): the stored path is updated in the manifest. Nothing else happens. No re-split, no retag.
+- Metadata changed (artist spelling, festival name, etc.): tags are rewritten in the existing files and the album folder is moved if the folder name changed. Still no re-split.
+- Audio or chapter boundaries changed: full re-split.
+
+If you are still seeing unexpected re-splits after upgrading, check that your source files carry the `CRATEDIGGER_1001TL_ID` tag (requires a recent CrateDigger enrich pass). Without that tag, identity falls back to the audio fingerprint, which is less reliable across codec changes.
+
+---
+
+## TrackSplit re-split an album even though only a tag changed
+
+**What you see:** An album was fully re-split when you expected only a retag.
+
+**What is happening:** A full re-split is only needed when the audio itself must change: different audio stream, different output format or codec mode, different number of tracks, or a chapter boundary that moved. Everything else (tag change, folder rename, track rename) is handled without touching the audio.
+
+If you see a re-split you did not expect:
+
+1. Re-run with `--verbose` and look for the `reconcile:` log lines. They will name the exact field that triggered the decision.
+2. Check whether the number of chapters changed, or whether a chapter start or end time shifted. Even a small boundary change forces a re-split because the audio cut must move.
+3. Check whether you changed `--format` (FLAC vs Opus). A format change always triggers a re-split.
+
+If none of the above applies, open an issue and include the `--verbose` output and the log file from the run.
 
 ---
 

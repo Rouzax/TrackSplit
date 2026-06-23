@@ -114,9 +114,9 @@ Players that do not support gapless playback, such as the Jellyfin mobile app, w
 
 ### `.tracksplit_manifest.json`
 
-A small record file TrackSplit uses internally. It stores a fingerprint covering the audio stream metadata (codec, sample rate, channels, duration) and the set of tags embedded into the output tracks, along with the settings used, so TrackSplit can detect on the next run whether anything meaningful changed and skip the album if not.
+A small record file TrackSplit uses internally (one per album folder). It stores the identity of the source recording, the audio fingerprint, and the complete set of tags and filenames from the last run, so TrackSplit can detect on the next run what changed and apply only what is necessary.
 
-**This file is only for TrackSplit, not for your music server.** Your server will ignore it. You can delete it at any time to force TrackSplit to rebuild that album. You do not need to back it up.
+**This file is only for TrackSplit, not for your music server.** Your server will ignore it. You can delete it at any time to force TrackSplit to rebuild that album from scratch. You do not need to back it up.
 
 ## What your music server uses
 
@@ -126,7 +126,7 @@ A small record file TrackSplit uses internally. It stores a fingerprint covering
 | `cover.jpg` | Yes, album artwork | No |
 | `folder.jpg` | Yes, artist artwork | No |
 | `artist.jpg` | Yes, artist artwork (Kodi) | No |
-| `.tracksplit_manifest.json` | No | Yes, skip detection only |
+| `.tracksplit_manifest.json` | No | Yes, rerun reconciliation only |
 
 ## Tags written to every track
 
@@ -219,22 +219,40 @@ If none of the locations has the file, TrackSplit continues without it (raw tag 
 | `artists/{slug}/dj-artwork.jpg` | DJ portrait used to compose the artist cover (`folder.jpg` / `artist.jpg`). Looked up by the CrateDigger canonical slug (from the `CRATEDIGGER_ALBUMARTIST_SLUGS` tag, index 0). For files without that tag, the slug is derived from the artist name using the same `slugify` logic CrateDigger uses. This means artwork is found correctly even when the displayed artist name was truncated, cased differently, or stored with Unicode differences. |
 | `artists/{slug}/fanart.jpg` | Fallback portrait used when `dj-artwork.jpg` is not present. Resolved by the same slug. |
 
-### Re-run manifest details
+### Re-run manifest details (schema 4)
 
-`.tracksplit_manifest.json` records:
+`.tracksplit_manifest.json` is the album's internal cache (schema version 4). It contains:
 
-- The source file path.
-- An audio-stream fingerprint from ffprobe: codec, sample rate, channels, duration, and bit rate.
-- The chapter list (timestamps and titles).
-- The set of tags embedded into the per-track output files: artist, festival, date, stage, venue, genres, comment, album artist display name, individual album artists, and their MusicBrainz IDs.
-- The output format and codec mode used.
-- The list of track filenames written.
+- **Source identity:** the CrateDigger 1001Tracklists ID (`CRATEDIGGER_1001TL_ID`) embedded in the MKV, which is the primary stable identifier for CrateDigger-tagged sources. For sources without that tag, a best-effort fingerprint of the audio stream (codec, sample rate, channels) plus chapter boundaries is used as a fallback.
+- **Source path:** the file path where the source MKV was last found. Stored for reference only; a path change does not by itself mean the album has to be rebuilt.
+- **Album tags:** the album-level metadata used for the last run (artist, festival, venue, date, stage, format, and similar).
+- **Track list:** one entry per output track (including the intro at position 0 when present), each recording its filename, start and end times, and the tags embedded into that file.
 
-On a subsequent run, TrackSplit loads the manifest and compares it against these fields. If nothing in that list changed, the album is skipped. Re-extraction is triggered by changes to the audio stream, chapters, or any of the embedded tags listed above. Container-level edits that do not touch the audio stream or embedded tags (such as a sibling tool rewriting MKV metadata) no longer cause spurious re-extracts. Deleting the manifest forces a full rebuild for that one album. Passing `--force` on the command line rebuilds everything regardless of manifests.
+The manifest JSON is written with literal Unicode: accented characters appear as-is, not as escape sequences.
+
+**What a rerun does (cheapest applicable operation):**
+
+| What changed | What TrackSplit does | Audio re-encoded? |
+|---|---|---|
+| Source file moved or renamed (path changed, same recording) | Refreshes the stored path in the manifest | No |
+| Album or artist folder name changed (e.g. artist spelling fix) | Renames/moves the album folder and rewrites tags in place | No |
+| A track title or performer changed | Renames the affected track file and rewrites its tags | No |
+| Per-track or album-level tags changed (label, genre, MBIDs, etc.) | Rewrites tags in place across affected tracks | No |
+| Audio stream changed (re-encode, codec, sample rate, channels), output format changed, number of tracks changed, or a chapter boundary moved | Full re-split: audio is re-extracted and re-encoded | Yes |
+
+"Tags rewritten" means TrackSplit opens the existing audio file and updates its Vorbis comment block. The audio data is untouched. "Folder renamed/moved" means the album folder is moved to its new location on disk; track files inside stay intact.
+
+A re-split is only triggered when the audio itself must change. Reorganizing your CrateDigger library (moving source files to a different folder, renaming the library root) or editing artist/festival metadata that affects folder names will not cause a re-split.
+
+**Migration from older manifests:** the first run after upgrading from a version that wrote schema 3 manifests reads the old file and, if nothing meaningful changed, rewrites it to schema 4 without re-splitting or re-tagging. If the old album predates the current tag schema or cover renderer version, that first run also rewrites tags or recomposes covers to bring the album current; audio is still not re-extracted.
+
+**Compatibility:** an older TrackSplit version reading a schema 4 manifest will not recognize the schema and will fall back to a full re-split, leaving your audio safe. Schema 4 manifests are not forward-compatible, but they are safe for older readers.
+
+Deleting the manifest forces a full rebuild of that album. Passing `--force` on the command line rebuilds every album regardless of manifests.
 
 ### Folder cleanup on re-run
 
-When regeneration is triggered, TrackSplit tidies up leftover files from the previous run automatically. It identifies old output by reading manifests, not by matching folder names.
+When a re-split or move is triggered, TrackSplit tidies up leftover files from the previous run automatically. It identifies old output by album identity (the stable source ID or fingerprint recorded in the manifest), not by matching folder names or source paths.
 
 - **Album folder moved:** if the album folder path changed (because the artist name, festival name, venue name, or stage changed), the old folder is deleted and a new one is created at the correct location.
 - **Track files renamed or removed:** if track names changed within an album but the folder stayed the same, orphan audio files from the previous run are removed from the album directory.
