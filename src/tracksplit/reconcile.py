@@ -1,0 +1,129 @@
+"""Pure reconciliation planner: diff a stored manifest against the desired
+state and return the cheapest set of operations. No filesystem access."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from enum import Enum
+
+from tracksplit.manifest import AlbumManifest, AudioFingerprint, TrackEntry, nfc_tags
+from tracksplit.paths import fold, nfc
+
+
+class RegenLevel(Enum):
+    SKIP = "skip"
+    RETAG = "retag"
+    FULL = "full"
+
+
+@dataclass
+class DesiredAlbum:
+    source_id: str | None
+    audio: AudioFingerprint
+    source_path: str
+    artist_folder: str
+    album_folder: str
+    output_format: str
+    codec_mode: str
+    album_tags: dict
+    tracks: list[TrackEntry]
+    cover_sha256: str
+    cover_schema_version: int
+    tag_schema_version: int
+
+
+@dataclass
+class ReconcilePlan:
+    level: RegenLevel
+    move: bool = False
+    renames: list[tuple[str, str]] = field(default_factory=list)
+    retag: bool = False
+    path_refresh: bool = False
+    full_reason: str | None = None
+
+
+def _track_tag_fields(t: TrackEntry) -> tuple:
+    # The embedded per-track values (NFC). Filename and boundaries excluded.
+    return (
+        nfc(t.title),
+        nfc(t.artist),
+        nfc(t.publisher),
+        tuple(nfc(g) for g in t.genre),
+        tuple(nfc(a) for a in t.artists),
+        tuple(t.artist_mbids),
+    )
+
+
+def plan_reconciliation(stored: AlbumManifest, desired: DesiredAlbum) -> ReconcilePlan:
+    # --- FULL triggers (audio cuts must change) -------------------------
+    if stored.identity.audio != desired.audio:
+        return ReconcilePlan(RegenLevel.FULL, full_reason="audio")
+    if stored.output_format != desired.output_format:
+        return ReconcilePlan(RegenLevel.FULL, full_reason="output_format")
+    if stored.codec_mode != desired.codec_mode:
+        return ReconcilePlan(RegenLevel.FULL, full_reason="codec_mode")
+    if len(stored.tracks) != len(desired.tracks):
+        return ReconcilePlan(RegenLevel.FULL, full_reason="track_count")
+    for s, d in zip(stored.tracks, desired.tracks, strict=True):
+        if s.start != d.start or s.end != d.end:
+            return ReconcilePlan(RegenLevel.FULL, full_reason="boundary")
+
+    # --- cheap ops ------------------------------------------------------
+    path_refresh = stored.source_path != desired.source_path
+
+    move = fold(stored.resolved_artist_folder) != fold(desired.artist_folder) or fold(
+        stored.resolved_album_folder
+    ) != fold(desired.album_folder)
+    # Also catch case/normalization-only folder drift (corrective move).
+    if not move:
+        move = stored.resolved_artist_folder != nfc(
+            desired.artist_folder
+        ) or stored.resolved_album_folder != nfc(desired.album_folder)
+
+    renames: list[tuple[str, str]] = []
+    for s, d in zip(stored.tracks, desired.tracks, strict=True):
+        if nfc(s.filename) != nfc(d.filename):
+            renames.append((s.filename, d.filename))
+
+    # A migrated (schema-3) manifest has no real stored per-track tag values,
+    # so we trust the source: the on-disk files were written from the same
+    # source, so their embedded tags already match desired. Skipping the tag
+    # comparison here makes an unchanged migrated album reconcile to SKIP,
+    # not a blanket first-run retag.
+    trust_source = stored.migrated_from is not None
+
+    retag = False
+    if not trust_source:
+        if nfc_tags(stored.album_tags) != nfc_tags(desired.album_tags):
+            retag = True
+        if not retag:
+            for s, d in zip(stored.tracks, desired.tracks, strict=True):
+                if _track_tag_fields(s) != _track_tag_fields(d):
+                    retag = True
+                    break
+    if stored.tag_schema_version < desired.tag_schema_version:
+        retag = True
+    if stored.cover_sha256 != desired.cover_sha256:
+        retag = True
+    if stored.cover_schema_version < desired.cover_schema_version:
+        retag = True
+    # A folder move implies an album-tag change in practice; pair with retag.
+    if move:
+        retag = True
+    # A title-driven rename always coincides with a title-tag change; ensure
+    # the embedded title is rewritten too.
+    if renames:
+        retag = retag or any(
+            nfc(s.title) != nfc(d.title)
+            for s, d in zip(stored.tracks, desired.tracks, strict=True)
+        )
+
+    level = RegenLevel.RETAG if retag else RegenLevel.SKIP
+    return ReconcilePlan(
+        level=level,
+        move=move,
+        renames=renames,
+        retag=retag,
+        path_refresh=path_refresh,
+        full_reason=None,
+    )
