@@ -2316,3 +2316,229 @@ class TestSweepTempRenames:
         (d / "track.opus").write_bytes(b"a")
         sweep_temp_renames(d)
         assert (d / "track.opus").exists()
+
+
+# ---------------------------------------------------------------------------
+# Identity index: once-per-run and passed-in index behavior
+# ---------------------------------------------------------------------------
+
+
+class TestIdentityIndexRunBehavior:
+    """Verify that process_file respects the index parameter.
+
+    The batch entry point (_process_directory in cli.py) builds the index
+    once and passes it in, so individual process_file calls should not
+    rebuild it.  These tests confirm:
+    - process_file with index=None builds the index lazily (1 call).
+    - process_file with index=<value> does NOT call build_identity_index.
+    """
+
+    def _probe(self):
+        return {
+            "streams": [{"codec_type": "audio", "codec_name": "flac"}],
+            "format": {
+                "tags": {
+                    "ARTIST": "DJ X",
+                    "CRATEDIGGER_1001TL_FESTIVAL": "Show",
+                    "CRATEDIGGER_1001TL_DATE": "2025",
+                },
+                "duration": "600.0",
+            },
+            "chapters": [
+                {
+                    "start_time": "0.0",
+                    "end_time": "300.0",
+                    "tags": {"title": "Track 1"},
+                },
+                {
+                    "start_time": "300.0",
+                    "end_time": "600.0",
+                    "tags": {"title": "Track 2"},
+                },
+            ],
+        }
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_process_file_without_index_calls_build_identity_index(
+        self,
+        mock_probe,
+        mock_cover_mkv,
+        mock_dj,
+        mock_artist_cover,
+        mock_compose,
+        mock_prepare,
+        mock_split,
+        mock_tag,
+        tmp_path,
+        monkeypatch,
+    ):
+        """When index is not provided, process_file should build one lazily."""
+        import tracksplit.pipeline as P
+        from tracksplit.pipeline import process_file
+
+        call_count = {"n": 0}
+        real_build = P.build_identity_index
+
+        def spy(*a, **k):
+            call_count["n"] += 1
+            return real_build(*a, **k)
+
+        monkeypatch.setattr(P, "build_identity_index", spy)
+
+        out = tmp_path / "out"
+        album_dir = out / "DJ X" / "Show 2025"
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+
+        mock_probe.return_value = self._probe()
+        mock_cover_mkv.return_value = None
+        mock_dj.return_value = None
+        mock_compose.return_value = b"JPEG"
+        mock_artist_cover.return_value = b"JPEG2"
+        mock_prepare.return_value = (src, ".flac", "copy")
+        mock_split.return_value = [
+            album_dir / "01 - DJ X - Track 1.flac",
+            album_dir / "02 - DJ X - Track 2.flac",
+        ]
+
+        process_file(src, out)
+
+        assert call_count["n"] == 1, "Expected build_identity_index called once"
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_process_file_with_index_skips_build_identity_index(
+        self,
+        mock_probe,
+        mock_cover_mkv,
+        mock_dj,
+        mock_artist_cover,
+        mock_compose,
+        mock_prepare,
+        mock_split,
+        mock_tag,
+        tmp_path,
+        monkeypatch,
+    ):
+        """When a pre-built index is passed in, build_identity_index is not called."""
+        import tracksplit.pipeline as P
+        from tracksplit.pipeline import process_file
+        from tracksplit.reconcile import IdentityIndex
+
+        call_count = {"n": 0}
+
+        def spy(*a, **k):
+            call_count["n"] += 1
+            return IdentityIndex({}, {})
+
+        monkeypatch.setattr(P, "build_identity_index", spy)
+
+        out = tmp_path / "out"
+        album_dir = out / "DJ X" / "Show 2025"
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+
+        mock_probe.return_value = self._probe()
+        mock_cover_mkv.return_value = None
+        mock_dj.return_value = None
+        mock_compose.return_value = b"JPEG"
+        mock_artist_cover.return_value = b"JPEG2"
+        mock_prepare.return_value = (src, ".flac", "copy")
+        mock_split.return_value = [
+            album_dir / "01 - DJ X - Track 1.flac",
+            album_dir / "02 - DJ X - Track 2.flac",
+        ]
+
+        # Pass a pre-built (empty) index: build_identity_index must not be called.
+        pre_built_index = IdentityIndex({}, {})
+        process_file(src, out, index=pre_built_index)
+
+        assert call_count["n"] == 0, (
+            "build_identity_index should not be called when index is provided"
+        )
+
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_identity_index_built_once_per_run(
+        self,
+        mock_probe,
+        mock_cover_mkv,
+        mock_dj,
+        mock_artist_cover,
+        mock_compose,
+        mock_prepare,
+        mock_split,
+        mock_tag,
+        tmp_path,
+        monkeypatch,
+    ):
+        """A two-source batch via _process_directory builds the index once."""
+        import tracksplit.pipeline as P
+        from tracksplit.cli import _process_directory  # type: ignore[attr-defined]
+
+        call_count = {"n": 0}
+        real_build = P.build_identity_index
+
+        def spy(*a, **k):
+            call_count["n"] += 1
+            return real_build(*a, **k)
+
+        # Patch on the pipeline module so _process_directory's _pipeline reference
+        # picks up the spy (it accesses build_identity_index via the module object).
+        monkeypatch.setattr(P, "build_identity_index", spy)
+
+        out = tmp_path / "out"
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+
+        # Two fake video files (content irrelevant; probe is mocked).
+        src1 = input_dir / "file1.mkv"
+        src2 = input_dir / "file2.mkv"
+        src1.write_bytes(b"x")
+        src2.write_bytes(b"x")
+
+        album_dir1 = out / "DJ X" / "Show 2025"
+        album_dir2 = out / "DJ X" / "Show 2026"
+
+        mock_probe.return_value = self._probe()
+        mock_cover_mkv.return_value = None
+        mock_dj.return_value = None
+        mock_compose.return_value = b"JPEG"
+        mock_artist_cover.return_value = b"JPEG2"
+        mock_prepare.return_value = (src1, ".flac", "copy")
+        mock_split.side_effect = [
+            [album_dir1 / "01 - DJ X - Track 1.flac", album_dir1 / "02 - DJ X - Track 2.flac"],
+            [album_dir2 / "01 - DJ X - Track 1.flac", album_dir2 / "02 - DJ X - Track 2.flac"],
+        ]
+
+        _process_directory(
+            input_dir=input_dir,
+            output_dir=out,
+            force=False,
+            dry_run=False,
+            output_format="auto",
+            workers=1,
+        )
+
+        assert call_count["n"] == 1, (
+            f"Expected build_identity_index called once for a 2-file batch, got {call_count['n']}"
+        )

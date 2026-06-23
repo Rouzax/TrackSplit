@@ -14,6 +14,7 @@ from pathlib import Path
 
 import typer
 
+import tracksplit.pipeline as _pipeline
 from tracksplit import paths
 from tracksplit.console import (
     BatchProgress,
@@ -168,6 +169,12 @@ def _process_directory(
     failed = 0
     cancelled = 0
 
+    # Build the identity index once for the whole run so each file does not
+    # re-scan the output directory.  New albums created during this run will
+    # not appear in the index, but in a normal batch each source maps to a
+    # distinct album so that is acceptable (see task-13 report for details).
+    run_index = _pipeline.build_identity_index(output_dir)
+
     if workers <= 1:
         # Sequential mode with simple spinner
         with FileProgress(console, enabled=use_live) as progress:
@@ -186,6 +193,7 @@ def _process_directory(
                         output_format=output_format,
                         on_progress=progress.update,
                         cancel_event=_cancel_event,
+                        index=run_index,
                     ):
                         processed += 1
                         progress.print(status_text("done", video_file.name))
@@ -234,6 +242,7 @@ def _process_directory(
                         output_format=output_format,
                         on_progress=cb,
                         cancel_event=_cancel_event,
+                        index=run_index,
                     )
                     futures[future] = (video_file, key)
 

@@ -53,6 +53,15 @@ from tracksplit.probe import (
     parse_tags,
     run_ffprobe,
 )
+from tracksplit.reconcile import (
+    IdentityIndex,
+    build_desired_album,
+    build_identity_index,
+    plan_reconciliation,
+)
+from tracksplit.reconcile import (
+    RegenLevel as _RegenLevel,
+)
 from tracksplit.split import build_track_filename, split_tracks
 from tracksplit.tagger import replace_cover_only, tag_all
 
@@ -549,6 +558,7 @@ def process_file(
     on_progress: Callable[[str, int, int], None] | None = None,
     cancel_event: threading.Event | None = None,
     on_complete: Callable[[Path, int], None] | None = None,
+    index: IdentityIndex | None = None,
 ) -> bool:
     """Process a single video file through the full pipeline.
 
@@ -614,21 +624,14 @@ def process_file(
     expected_filenames = [build_track_filename(t, ext) for t in album.tracks]
 
     # -- Identity-based reconciliation ------------------------------------
-    from tracksplit.reconcile import (  # local: avoids circular at module level
-        RegenLevel as _RegenLevel,
-    )
-    from tracksplit.reconcile import (
-        build_desired_album,
-        build_identity_index,
-        plan_reconciliation,
-    )
-
     source_id: str | None = tags.get("CRATEDIGGER_1001TL_ID") or None
 
     # Locate existing album by identity (fingerprint or CrateDigger ID).
-    index = build_identity_index(output_dir)
+    # When index is provided by the caller (batch run), reuse it; otherwise
+    # build one lazily so standalone / test calls remain self-contained.
+    _index = index if index is not None else build_identity_index(output_dir)
     boundaries = [(t.start, t.end) for t in album.tracks]
-    existing_dir = index.lookup(
+    existing_dir = _index.lookup(
         source_id, AudioFingerprint.from_ffprobe(ffprobe_data), boundaries
     )
     if existing_dir is None and album_dir.exists():
