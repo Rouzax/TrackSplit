@@ -333,7 +333,12 @@ def _migrate_v3(data: dict) -> AlbumManifest:
     filenames = list(data.get("track_filenames", []))
     chapters = list(data.get("chapters", []))
     tracks: list[TrackEntry] = []
-    has_intro = bool(filenames) and "intro" in Path(filenames[0]).stem.lower()
+    # An intro track is the one extra output file beyond the chapters, so detect
+    # it by the count relationship, not by the first filename's text. A substring
+    # check ("intro" in the name) false-positives on tracks whose title contains
+    # the word (e.g. "... (Roman Messer Intro Mix)"), which would shift every
+    # track by one and force a spurious full re-split on the upgrade run.
+    has_intro = len(filenames) == len(chapters) + 1
     fn_iter = iter(filenames)
     if has_intro:
         intro_fn = next(fn_iter)
@@ -353,6 +358,14 @@ def _migrate_v3(data: dict) -> AlbumManifest:
                 title=ch.get("title", ""),
             )
         )
+    # The first output track always begins at 0.0: the pipeline either prepends
+    # an intro track (already 0.0 above) or slides the first track's start to 0.0
+    # when the pre-chapter gap is below the intro threshold. Schema-3 manifests
+    # stored the raw chapter start instead, so normalize it here; otherwise the
+    # migrated boundary differs from the freshly derived one and forces a
+    # needless full re-split on the first run after upgrading.
+    if tracks:
+        tracks[0].start = 0.0
     return AlbumManifest(
         schema=MANIFEST_SCHEMA,
         identity=SourceIdentity(None, AudioFingerprint.from_dict(src.get("audio", {}))),

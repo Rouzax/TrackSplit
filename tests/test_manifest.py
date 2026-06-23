@@ -411,3 +411,102 @@ def test_load_migrates_schema_3_without_discarding(tmp_path):
         "02 - MORTEN & ARTBAT - Culture.opus",
     ]
     assert m.album_tags["artist"] == "MORTEN"
+
+
+def test_migrate_v3_normalizes_first_track_start_to_zero(tmp_path):
+    """A schema-3 manifest with no intro track stored the RAW first-chapter
+    start (e.g. 1.0s). The actual split slides the first track to 0.0, so the
+    migrated first track's start must be normalized to 0.0; otherwise the
+    boundary mismatch forces a needless full re-split on the upgrade run.
+    Regression for the 0.15.0 first-run resplit bug."""
+    v3 = {
+        "schema": 3,
+        "source": {
+            "path": "E:/v/x.mkv",
+            "audio": {
+                "codec_name": "opus",
+                "sample_rate": 48000,
+                "channels": 2,
+                "duration_ts": 0,
+                "time_base": "1/1000",
+                "bit_rate": 0,
+            },
+        },
+        "resolved_artist_folder": "Tiesto",
+        "resolved_album_folder": "Set 2026",
+        "output_format": "opus",
+        "codec_mode": "copy",
+        "chapters": [
+            {"index": 1, "title": "A", "start": 1.0, "end": 76.0, "tags": {}},
+            {"index": 2, "title": "B", "start": 76.0, "end": 150.0, "tags": {}},
+        ],
+        "tags": {"artist": "Tiesto"},
+        "track_filenames": ["01 - X - A.opus", "02 - X - B.opus"],
+        "cover_sha256": "abc",
+        "intro_min_seconds": 5.0,
+        "cover_schema_version": 3,
+        "tag_schema_version": 2,
+    }
+    (tmp_path / ".tracksplit_manifest.json").write_text(json.dumps(v3))
+    m = load_album_manifest(tmp_path)
+    assert m is not None
+    # First track normalized to 0.0 (was raw 1.0); others untouched.
+    assert m.tracks[0].start == 0.0
+    assert m.tracks[0].end == 76.0
+    assert m.tracks[1].start == 76.0
+    assert len(m.tracks) == 2
+
+
+def test_migrate_v3_intro_in_track_title_is_not_an_intro_track(tmp_path):
+    """The first track's TITLE contains the word "Intro" (e.g. an "Intro Mix")
+    but there is NO separate intro file: filename count equals chapter count.
+    Intro detection must use the count relationship, not a filename substring;
+    otherwise the first track is mistaken for an intro and every track shifts by
+    one, forcing a spurious full re-split. Regression for the 0.15.0 prod resplit
+    on sets like "... (Roman Messer Intro Mix)"."""
+    v3 = {
+        "schema": 3,
+        "source": {
+            "path": "E:/v/x.mkv",
+            "audio": {
+                "codec_name": "opus",
+                "sample_rate": 48000,
+                "channels": 2,
+                "duration_ts": 0,
+                "time_base": "1/1000",
+                "bit_rate": 0,
+            },
+        },
+        "resolved_artist_folder": "Roman Messer",
+        "resolved_album_folder": "Set 2025",
+        "output_format": "opus",
+        "codec_mode": "copy",
+        "chapters": [
+            {
+                "index": 1,
+                "title": "Judgment Day (Intro Mix)",
+                "start": 0.0,
+                "end": 164.0,
+                "tags": {},
+            },
+            {"index": 2, "title": "Closer", "start": 164.0, "end": 327.0, "tags": {}},
+        ],
+        "tags": {"artist": "Roman Messer"},
+        "track_filenames": [
+            "01 - Adip Kiyoi - Judgment Day (Intro Mix).opus",
+            "02 - Roman Messer - Closer.opus",
+        ],
+        "cover_sha256": "abc",
+        "intro_min_seconds": 5.0,
+        "cover_schema_version": 3,
+        "tag_schema_version": 2,
+    }
+    (tmp_path / ".tracksplit_manifest.json").write_text(json.dumps(v3))
+    m = load_album_manifest(tmp_path)
+    assert m is not None
+    # Two chapters, two filenames -> no intro, no shift.
+    assert len(m.tracks) == 2
+    assert m.tracks[0].filename == "01 - Adip Kiyoi - Judgment Day (Intro Mix).opus"
+    assert m.tracks[0].start == 0.0 and m.tracks[0].end == 164.0
+    assert m.tracks[1].filename == "02 - Roman Messer - Closer.opus"
+    assert m.tracks[1].start == 164.0 and m.tracks[1].end == 327.0

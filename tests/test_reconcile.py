@@ -229,6 +229,36 @@ def test_migrated_manifest_with_renamed_folder_is_move_plus_retag():
     assert p.move and p.retag and p.level is RegenLevel.RETAG
 
 
+def test_migrated_manifest_intro_duration_change_still_full():
+    # Even for a migrated manifest (which trusts the source for tags), a genuine
+    # intro DURATION change must still force a FULL re-split. The migration
+    # normalizes only the first track's START to 0.0 (an invariant); the intro's
+    # END still carries its duration and is compared, so a real change is caught.
+    stored = _stored(
+        migrated_from=3,
+        tracks=[
+            TrackEntry(0, "00 - Intro.opus", 0.0, 12.0, "Intro"),
+            TrackEntry(1, "01 - A - T.opus", 12.0, 200.0, "T"),
+        ],
+    )
+    unchanged = _desired(
+        tracks=[
+            TrackEntry(0, "00 - Intro.opus", 0.0, 12.0, "Intro"),
+            TrackEntry(1, "01 - A - T.opus", 12.0, 200.0, "T"),
+        ]
+    )
+    assert plan_reconciliation(stored, unchanged).level is RegenLevel.SKIP
+    # Intro end moves 12.0 -> 15.0 (the intro got longer): boundary change.
+    changed = _desired(
+        tracks=[
+            TrackEntry(0, "00 - Intro.opus", 0.0, 15.0, "Intro"),
+            TrackEntry(1, "01 - A - T.opus", 15.0, 200.0, "T"),
+        ]
+    )
+    p = plan_reconciliation(stored, changed)
+    assert p.level is RegenLevel.FULL and p.full_reason == "boundary"
+
+
 def test_index_finds_by_source_id_regardless_of_folder(tmp_path):
     # Two album dirs; one matches by source_id even though folder name differs.
     a = tmp_path / "ArtistA" / "OldName"
