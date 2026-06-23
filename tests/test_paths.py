@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import unicodedata
 from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -9,6 +10,7 @@ from unittest.mock import patch
 import pytest
 
 from tracksplit import paths
+from tracksplit.paths import fold, nfc
 
 
 class TestDataDir:
@@ -540,3 +542,14 @@ class TestDetectLibraryInterior:
 
     def test_nonexistent_directory_is_not_flagged(self, tmp_path: Path):
         assert paths.detect_library_interior(tmp_path / "nope") is None
+
+
+def test_nfc_normalizes_decomposed_to_composed():
+    decomposed = unicodedata.normalize("NFD", "Beyoncé")
+    composed = unicodedata.normalize("NFC", "Beyoncé")
+    assert decomposed != composed  # different byte sequences
+    assert nfc(decomposed) == composed
+
+
+def test_fold_is_case_and_normalization_insensitive():
+    assert fold(unicodedata.normalize("NFD", "BEYONCÉ")) == fold("beyoncé")

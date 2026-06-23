@@ -117,6 +117,20 @@ def strip_diacritics(text: str) -> str:
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
 
+def nfc(text: str) -> str:
+    """Normalize to NFC. Use for every stored manifest string and before
+    comparing tag content, so NFD-vs-NFC byte differences never read as a
+    change."""
+    return unicodedata.normalize("NFC", text)
+
+
+def fold(text: str) -> str:
+    """NFC + casefold, for comparing names on a case-insensitive filesystem
+    (CIFS/Windows output share). Use for folder/filename *lookup*, not for
+    tag content (capitalization is meaningful metadata)."""
+    return unicodedata.normalize("NFC", text).casefold()
+
+
 def slugify(name: str) -> str:
     """1001TL-style slug from a display name: ASCII-fold, lowercase,
     '&' -> 'and', then keep only [a-z0-9].
