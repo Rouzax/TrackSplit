@@ -5,8 +5,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 
-from tracksplit.manifest import AlbumManifest, AudioFingerprint, TrackEntry, nfc_tags
+from tracksplit.manifest import (
+    AlbumManifest,
+    AudioFingerprint,
+    TrackEntry,
+    load_album_manifest,
+    nfc_tags,
+)
 from tracksplit.paths import fold, nfc
 
 
@@ -127,3 +134,43 @@ def plan_reconciliation(stored: AlbumManifest, desired: DesiredAlbum) -> Reconci
         path_refresh=path_refresh,
         full_reason=None,
     )
+
+
+@dataclass
+class IdentityIndex:
+    by_id: dict[str, Path]
+    by_fp: dict[tuple, list[Path]]  # (audio, boundaries) -> dirs (ambiguity guard)
+
+    def lookup(
+        self,
+        source_id: str | None,
+        audio: AudioFingerprint,
+        boundaries: list[tuple[float, float]],
+    ) -> Path | None:
+        if source_id:
+            return self.by_id.get(source_id)
+        key = (audio, tuple(boundaries))
+        hits = self.by_fp.get(key, [])
+        return hits[0] if len(hits) == 1 else None
+
+
+def build_identity_index(output_root: Path, load=load_album_manifest) -> IdentityIndex:
+    by_id: dict[str, Path] = {}
+    by_fp: dict[tuple, list[Path]] = {}
+    if not output_root.exists():
+        return IdentityIndex(by_id, by_fp)
+    for album_dir in sorted(output_root.glob("*/*")):
+        if not album_dir.is_dir() or album_dir.is_symlink():
+            continue
+        m = load(album_dir)
+        if m is None:
+            continue
+        sid = m.identity.source_id
+        if sid:
+            # Keep the dir already at its canonical-looking location on conflict:
+            # first writer wins deterministically by sorted scan order.
+            by_id.setdefault(sid, album_dir)
+        else:
+            bounds = tuple((t.start, t.end) for t in m.tracks)
+            by_fp.setdefault((m.identity.audio, bounds), []).append(album_dir)
+    return IdentityIndex(by_id, by_fp)

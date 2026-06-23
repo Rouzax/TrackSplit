@@ -1,4 +1,6 @@
 # tests/test_reconcile.py
+from pathlib import Path
+
 from tracksplit.manifest import (
     MANIFEST_SCHEMA,
     AlbumManifest,
@@ -9,6 +11,7 @@ from tracksplit.manifest import (
 from tracksplit.reconcile import (
     DesiredAlbum,
     RegenLevel,
+    build_identity_index,
     plan_reconciliation,
 )
 
@@ -222,3 +225,29 @@ def test_migrated_manifest_with_renamed_folder_is_move_plus_retag():
     )
     p = plan_reconciliation(stored, _desired(album_folder="TML 2025 (Mainstage)"))
     assert p.move and p.retag and p.level is RegenLevel.RETAG
+
+
+def test_index_finds_by_source_id_regardless_of_folder(tmp_path, monkeypatch):
+    # Two album dirs; one matches by source_id even though folder name differs.
+    a = tmp_path / "ArtistA" / "OldName"
+    a.mkdir(parents=True)
+
+    def fake_load(d: Path):
+        if d == a:
+            return AlbumManifest(
+                schema=4,
+                identity=SourceIdentity("xfg8qrk", AUDIO),
+                source_path="x",
+                resolved_artist_folder="ArtistA",
+                resolved_album_folder="OldName",
+                output_format="opus",
+                codec_mode="copy",
+                album_tags={},
+                tracks=[],
+                cover_sha256="",
+            )
+        return None
+
+    idx = build_identity_index(tmp_path, load=fake_load)
+    assert idx.lookup("xfg8qrk", AUDIO, []) == a
+    assert idx.lookup("nope", AUDIO, []) is None
