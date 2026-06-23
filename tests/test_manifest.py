@@ -333,9 +333,7 @@ def test_audio_fingerprint_from_ffprobe_picks_first_audio_stream():
                 "codec_name": "opus",
                 "sample_rate": "48000",
                 "channels": 2,
-                "duration_ts": 14400000,
                 "time_base": "1/48000",
-                "bit_rate": "192000",
             },
             {"codec_type": "audio", "codec_name": "aac"},  # ignored
         ],
@@ -344,9 +342,7 @@ def test_audio_fingerprint_from_ffprobe_picks_first_audio_stream():
     assert fp.codec_name == "opus"
     assert fp.sample_rate == 48000
     assert fp.channels == 2
-    assert fp.duration_ts == 14400000
     assert fp.time_base == "1/48000"
-    assert fp.bit_rate == 192000
 
 
 def test_audio_fingerprint_handles_missing_optional_fields():
@@ -359,7 +355,7 @@ def test_audio_fingerprint_handles_missing_optional_fields():
                 "codec_name": "flac",
                 "sample_rate": "44100",
                 "channels": 2,
-                # no duration_ts, time_base, bit_rate
+                # no time_base
             },
         ],
     }
@@ -367,9 +363,7 @@ def test_audio_fingerprint_handles_missing_optional_fields():
     assert fp.codec_name == "flac"
     assert fp.sample_rate == 44100
     assert fp.channels == 2
-    assert fp.duration_ts == 0
     assert fp.time_base == ""
-    assert fp.bit_rate == 0
 
 
 def test_audio_fingerprint_raises_when_no_audio_stream():
@@ -383,9 +377,9 @@ def test_audio_fingerprint_raises_when_no_audio_stream():
 def test_audio_fingerprint_equality():
     from tracksplit.manifest import AudioFingerprint
 
-    a = AudioFingerprint("opus", 48000, 2, 100, "1/48000", 192000)
-    b = AudioFingerprint("opus", 48000, 2, 100, "1/48000", 192000)
-    c = AudioFingerprint("opus", 48000, 2, 100, "1/48000", 256000)
+    a = AudioFingerprint("opus", 48000, 2, "1/48000")
+    b = AudioFingerprint("opus", 48000, 2, "1/48000")
+    c = AudioFingerprint("opus", 48000, 2, "1/96000")
     assert a == b
     assert a != c
 
