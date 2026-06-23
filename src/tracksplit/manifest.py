@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 ALBUM_MANIFEST_FILENAME = ".tracksplit_manifest.json"
 ARTIST_MANIFEST_FILENAME = ".tracksplit_artist.json"
 LEGACY_CHAPTER_CACHE_FILENAME = ".tracksplit_chapters.json"
-MANIFEST_SCHEMA = 3
+MANIFEST_SCHEMA = 4
 
 
 TAG_KEYS = (
@@ -163,48 +163,60 @@ class TrackEntry:
 
 @dataclass
 class AlbumManifest:
-    """Sidecar manifest for a generated album.
+    """Sidecar manifest for a generated album (schema 4).
 
-    `output_format` holds the RESOLVED extension (``"flac"`` or ``"opus"``) that
-    was actually written to disk, not the CLI argument (which may have been
-    ``"auto"``). Compare against ``ext.lstrip('.')`` when deciding reruns.
+    `output_format` holds the RESOLVED extension ("flac"/"opus") written to
+    disk, not the CLI argument. `tracks` is the ordered list of output tracks
+    (the intro is index 0); each entry carries its filename, boundaries, and
+    the embedded per-track tag values.
     """
 
     schema: int
-    source: SourceFingerprint
+    identity: SourceIdentity
+    source_path: str
     resolved_artist_folder: str
     resolved_album_folder: str
     output_format: str
     codec_mode: str
-    chapters: list[dict]
-    tags: dict
-    track_filenames: list[str]
+    album_tags: dict
+    tracks: list[TrackEntry]
     cover_sha256: str
-    intro_min_seconds: float | None = None
     cover_schema_version: int = 0
     tag_schema_version: int = 0
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        from tracksplit.paths import nfc  # local: paths imports manifest (cycle)
+
+        return {
+            "schema": self.schema,
+            "identity": self.identity.to_dict(),
+            "source_path": self.source_path,
+            "resolved_artist_folder": nfc(self.resolved_artist_folder),
+            "resolved_album_folder": nfc(self.resolved_album_folder),
+            "output_format": self.output_format,
+            "codec_mode": self.codec_mode,
+            "album_tags": nfc_tags(self.album_tags),
+            "tracks": [t.to_dict() for t in self.tracks],
+            "cover_sha256": self.cover_sha256,
+            "cover_schema_version": self.cover_schema_version,
+            "tag_schema_version": self.tag_schema_version,
+        }
 
     @classmethod
     def from_dict(cls, d: dict) -> AlbumManifest:
-        src = d["source"]
+        from tracksplit.paths import nfc  # local: paths imports manifest (cycle)
+
         return cls(
             schema=d["schema"],
-            source=SourceFingerprint(
-                path=src["path"],
-                audio=AudioFingerprint.from_dict(src["audio"]),
-            ),
-            resolved_artist_folder=d["resolved_artist_folder"],
-            resolved_album_folder=d["resolved_album_folder"],
+            identity=SourceIdentity.from_dict(d["identity"]),
+            source_path=d.get("source_path", ""),
+            resolved_artist_folder=nfc(d["resolved_artist_folder"]),
+            resolved_album_folder=nfc(d["resolved_album_folder"]),
             output_format=d["output_format"],
             codec_mode=d["codec_mode"],
-            chapters=d["chapters"],
-            tags=d["tags"],
-            track_filenames=d["track_filenames"],
-            cover_sha256=d["cover_sha256"],
-            intro_min_seconds=d.get("intro_min_seconds"),
+            album_tags=d.get("album_tags", {}),
+            tracks=[TrackEntry.from_dict(t) for t in d.get("tracks", [])],
+            cover_sha256=d.get("cover_sha256", ""),
             cover_schema_version=d.get("cover_schema_version", 0),
             tag_schema_version=d.get("tag_schema_version", 0),
         )
@@ -212,6 +224,20 @@ class AlbumManifest:
 
 def _filter_tags(tags: dict) -> dict:
     return {k: tags.get(k, tag_default(k)) for k in TAG_KEYS}
+
+
+def nfc_tags(tags: dict) -> dict:
+    from tracksplit.paths import nfc  # local: paths imports manifest (cycle)
+
+    out: dict = {}
+    for k, v in tags.items():
+        if isinstance(v, str):
+            out[k] = nfc(v)
+        elif isinstance(v, list):
+            out[k] = [nfc(x) if isinstance(x, str) else x for x in v]
+        else:
+            out[k] = v
+    return out
 
 
 def build_album_manifest(

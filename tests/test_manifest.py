@@ -17,6 +17,37 @@ from tracksplit.manifest import (
 )
 
 
+def _sample_manifest() -> AlbumManifest:
+    return AlbumManifest(
+        schema=MANIFEST_SCHEMA,
+        identity=SourceIdentity(
+            "xfg8qrk", AudioFingerprint("opus", 48000, 2, "1/1000")
+        ),
+        source_path="E:\\\\v\\\\x.mkv",
+        resolved_artist_folder="MORTEN",
+        resolved_album_folder="Tomorrowland 2025 (Mainstage)",
+        output_format="opus",
+        codec_mode="copy",
+        album_tags={"artist": "MORTEN", "genres": ["Trance"]},
+        tracks=[TrackEntry(0, "00 - Intro.opus", 0.0, 12.0, "Intro")],
+        cover_sha256="abc",
+        cover_schema_version=3,
+        tag_schema_version=2,
+    )
+
+
+def test_album_manifest_schema_is_4():
+    assert MANIFEST_SCHEMA == 4
+
+
+def test_album_manifest_roundtrip():
+    m = _sample_manifest()
+    again = AlbumManifest.from_dict(m.to_dict())
+    assert again.to_dict() == m.to_dict()
+    assert again.identity.source_id == "xfg8qrk"
+    assert again.tracks[0].filename == "00 - Intro.opus"
+
+
 def _src(tmp_path: Path) -> Path:
     p = tmp_path / "source.mkv"
     p.write_bytes(b"x" * 100)
