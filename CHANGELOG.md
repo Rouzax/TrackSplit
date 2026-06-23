@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-06-23
+
 ### Changed
 
 - Album manifest upgraded to schema 4. The manifest now stores a stable source identity (the CrateDigger 1001Tracklists ID embedded in the MKV, with a best-effort audio-fingerprint fallback for non-CrateDigger sources), a single ordered `tracks` list (one entry per output track, each with its filename, timing, and embedded tag values; the intro is track 0), and album-level tags. The source file path is stored for reference only. The JSON is written with literal Unicode (accented characters appear as-is, not as escape sequences).
@@ -17,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Reorganizing the source library (moving or renaming source MKV files) no longer forces a full re-split of the affected albums. TrackSplit now matches albums by the stable `CRATEDIGGER_1001TL_ID` tag rather than by path, so a path change is treated as a cheap path-refresh and the album is left intact.
 - `CRATEDIGGER_1001TL_ID` was not being read from source MKV tags during manifest construction; it is now the primary identity key for CrateDigger-tagged sources.
+- `--dry-run` is now side-effect-free for reconcilable changes. Previously, running `--dry-run` after a tag, title, or folder-name change would still move, rename, or retag the existing album (every operation short of a full re-split). Dry-run now reports the planned operation and changes nothing on disk.
 
 ## [0.14.2] - 2026-06-15
 
