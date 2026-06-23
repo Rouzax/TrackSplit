@@ -348,10 +348,9 @@ def load_album_manifest(album_dir: Path) -> AlbumManifest | None:
         if schema == 3:
             return _migrate_v3(data)
         logger.debug(
-            "manifest.schema_mismatch: file=%s found=%s expected=%d",
+            "manifest.schema_unsupported: file=%s found=%s",
             path.name,
             schema,
-            MANIFEST_SCHEMA,
         )
         return None
     except (KeyError, TypeError, ValueError) as exc:
