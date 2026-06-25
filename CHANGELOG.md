@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-06-25
+
+### Changed
+
+- The 1001tracklists URL is no longer written to the `COMMENT` tag. Music players displayed it as a raw, unhelpful link, and the album, artist, date, venue, and genres are already shown separately. The `COMMENT` tag is now left empty (omitted). Existing libraries lose the stale `COMMENT` value via a one-time tag-only refresh on the next run (no re-split, no folder move).
+
 ## [0.15.2] - 2026-06-25
 
 ### Fixed

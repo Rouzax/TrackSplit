@@ -170,7 +170,7 @@ If none of the above applies, open an issue and include the `--verbose` output a
 
 **What you see:** TrackSplit retagged or re-split an album after CrateDigger updated the source file, even though you did not change the audio.
 
-**What is happening:** TrackSplit compares the tags it would embed (genre, album artists, MusicBrainz IDs, comment, and others) against what the manifest recorded. If CrateDigger's enrichment changed any of those tags, TrackSplit correctly treats the album as outdated and retags it in place. Only the tag blocks are rewritten; the audio data is not touched and no re-split occurs.
+**What is happening:** TrackSplit compares the tags it would embed (genre, album artists, MusicBrainz IDs, and others) against what the manifest recorded. If CrateDigger's enrichment changed any of those tags, TrackSplit correctly treats the album as outdated and retags it in place. Only the tag blocks are rewritten; the audio data is not touched and no re-split occurs.
 
 A full re-split is only triggered when the audio itself must change: chapter boundaries moved, number of tracks changed, the audio stream changed (different codec, sample rate, channels, or time base), or the output format changed. A tag-only update from CrateDigger does not cause a re-split.
 

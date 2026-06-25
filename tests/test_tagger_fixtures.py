@@ -50,7 +50,6 @@ def _tags_from_extra(extra: dict) -> dict:
         "stage": extra.get("CRATEDIGGER_1001TL_STAGE", ""),
         "venue": extra.get("CRATEDIGGER_1001TL_VENUE", ""),
         "genres": [g for g in genres_raw.split("|") if g],
-        "comment": extra.get("CRATEDIGGER_1001TL_URL", ""),
     }
 
 

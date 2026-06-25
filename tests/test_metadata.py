@@ -283,7 +283,7 @@ def test_build_album_meta_propagates_fields():
         "genres": ["Trance"],
         "stage": "Mainstage",
         "venue": "Boom",
-        "comment": "https://1001tl.com/abc",
+        "comment": "Full set recording",
         "country": "Belgium",
     }
     chapters = _make_chapters(["Track A"])
@@ -291,7 +291,7 @@ def test_build_album_meta_propagates_fields():
     assert meta.festival == "Tomorrowland"
     assert meta.stage == "Mainstage"
     assert meta.venue == "Boom"
-    assert meta.comment == "https://1001tl.com/abc"
+    assert meta.comment == "Full set recording"
     assert meta.country == "Belgium"
 
 
@@ -402,7 +402,6 @@ def test_probe_to_metadata_to_tagger_contract():
                 "CRATEDIGGER_1001TL_GENRES": "House|Techno",
                 "CRATEDIGGER_1001TL_STAGE": "Mainstage",
                 "CRATEDIGGER_1001TL_VENUE": "Boom",
-                "CRATEDIGGER_1001TL_URL": "https://1001tl.com/abc",
                 "CRATEDIGGER_1001TL_ARTISTS": "Martin Garrix",
                 "CRATEDIGGER_ALBUMARTIST_MBIDS": "uuid-456",
             }
@@ -419,7 +418,8 @@ def test_probe_to_metadata_to_tagger_contract():
     assert tag_dict["FESTIVAL"] == ["Tomorrowland"]
     assert tag_dict["STAGE"] == ["Mainstage"]
     assert tag_dict["VENUE"] == ["Boom"]
-    assert tag_dict["COMMENT"] == ["https://1001tl.com/abc"]
+    # The 1001tracklists URL is no longer written to COMMENT.
+    assert "COMMENT" not in tag_dict
     assert tag_dict["ALBUMARTISTS"] == ["Martin Garrix"]
     assert tag_dict["MUSICBRAINZ_ALBUMARTISTID"] == ["uuid-456"]
     assert tag_dict["PUBLISHER"] == ["Spinnin"]

@@ -154,7 +154,6 @@ Additional tags are written when the information is available:
 | `TRACKTOTAL` | When the total track count is known |
 | `GENRE` | Per-track genre from CrateDigger (multi-value when the source carries several genres), or the album genre as a fallback |
 | `PUBLISHER` | When present in the source; written as separate repeated values when the source carries multiple labels |
-| `COMMENT` | When present in the source |
 | `ARTISTS` | Multi-value list of individual artists (enables per-artist linking in Jellyfin and Lyrion) |
 | `ALBUMARTISTS` | Multi-value list of individual album artists (for B2B sets) |
 | `MUSICBRAINZ_ARTISTID` | Per-artist MusicBrainz IDs, aligned with `ARTISTS` |

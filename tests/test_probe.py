@@ -200,7 +200,6 @@ class TestParseTags:
             tags={
                 "ARTIST": "Tiesto",
                 "CRATEDIGGER_1001TL_GENRES": "Trance|Progressive House",
-                "CRATEDIGGER_1001TL_URL": "https://www.1001tracklists.com/tracklist/abc",
                 "CRATEDIGGER_1001TL_FESTIVAL": "Tomorrowland",
                 "CRATEDIGGER_1001TL_STAGE": "Main Stage",
                 "CRATEDIGGER_1001TL_VENUE": "Boom, Belgium",
@@ -217,7 +216,8 @@ class TestParseTags:
         assert tags["genres"] == ["Trance", "Progressive House"]
         assert tags["stage"] == "Main Stage"
         assert tags["venue"] == "Boom, Belgium"
-        assert tags["comment"] == "https://www.1001tracklists.com/tracklist/abc"
+        # The 1001tracklists URL is no longer surfaced as a comment.
+        assert "comment" not in tags
         assert tags["dj_artwork"] == "/path/to/art.jpg"
         assert tags["country"] == "Belgium"
         assert tags["albumartist_slugs"] == ["tiesto"]
@@ -248,7 +248,7 @@ class TestParseTags:
         assert tags["stage"] == ""
         assert tags["venue"] == ""
         assert tags["location"] == ""
-        assert tags["comment"] == ""
+        assert "comment" not in tags
         assert tags["dj_artwork"] == ""
         assert tags["country"] == ""
         assert tags["albumartist_slugs"] == []
