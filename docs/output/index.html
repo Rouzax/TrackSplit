@@ -1251,11 +1251,11 @@
 </tr>
 <tr>
 <td><code>GENRE</code></td>
-<td>Per-track genre from CrateDigger, or the album genre as a fallback</td>
+<td>Per-track genre from CrateDigger (multi-value when the source carries several genres), or the album genre as a fallback</td>
 </tr>
 <tr>
 <td><code>PUBLISHER</code></td>
-<td>When present in the source</td>
+<td>When present in the source; written as separate repeated values when the source carries multiple labels</td>
 </tr>
 <tr>
 <td><code>COMMENT</code></td>
@@ -1308,7 +1308,7 @@
 <li><strong><code>ALBUMARTISTS</code></strong> is a multi-value list of individual headliners: <code>"Armin van Buuren"</code>, <code>"KI/KI"</code>. Written for both solo and B2B sets.</li>
 <li><strong><code>MUSICBRAINZ_ALBUMARTISTID</code></strong> is positionally aligned with <code>ALBUMARTISTS</code>. Omitted entirely if every slot is empty.</li>
 <li>Per-track artists whose name matches the album artist (case-insensitively) are normalized to the album artist's exact casing. This prevents Lyrion from listing two rows for the same artist and stops Jellyfin from showing stray uppercase variants.</li>
-<li><strong><code>GENRE</code></strong> is per-track when CrateDigger supplies a chapter-level genre tag. It falls back to the album's genre list otherwise.</li>
+<li><strong><code>GENRE</code></strong> is per-track when CrateDigger supplies a chapter-level genre tag. It falls back to the album's genre list otherwise. When the source carries multiple genres joined by <code>|</code> (for example <code>House|Techno</code>), each is written as a separate repeated Vorbis comment, the same way <code>ARTISTS</code> is handled. <strong><code>PUBLISHER</code></strong> follows the same rule: multiple pipe-separated labels become separate repeated values.</li>
 </ul>
 <h3 id="metadata-tiers">Metadata tiers</h3>
 <ul>
