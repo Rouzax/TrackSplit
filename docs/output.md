@@ -152,8 +152,8 @@ Additional tags are written when the information is available:
 | `ORIGINALDATE` | Same value as `DATE`; Navidrome and other servers use this for the "original date" field |
 | `RELEASEDATE` | Same value as `DATE`; Navidrome and other servers use this for the "release date" field |
 | `TRACKTOTAL` | When the total track count is known |
-| `GENRE` | Per-track genre from CrateDigger, or the album genre as a fallback |
-| `PUBLISHER` | When present in the source |
+| `GENRE` | Per-track genre from CrateDigger (multi-value when the source carries several genres), or the album genre as a fallback |
+| `PUBLISHER` | When present in the source; written as separate repeated values when the source carries multiple labels |
 | `COMMENT` | When present in the source |
 | `ARTISTS` | Multi-value list of individual artists (enables per-artist linking in Jellyfin and Lyrion) |
 | `ALBUMARTISTS` | Multi-value list of individual album artists (for B2B sets) |
@@ -181,7 +181,7 @@ TrackSplit only reads your source video files. It never modifies, moves, or dele
 - **`ALBUMARTISTS`** is a multi-value list of individual headliners: `"Armin van Buuren"`, `"KI/KI"`. Written for both solo and B2B sets.
 - **`MUSICBRAINZ_ALBUMARTISTID`** is positionally aligned with `ALBUMARTISTS`. Omitted entirely if every slot is empty.
 - Per-track artists whose name matches the album artist (case-insensitively) are normalized to the album artist's exact casing. This prevents Lyrion from listing two rows for the same artist and stops Jellyfin from showing stray uppercase variants.
-- **`GENRE`** is per-track when CrateDigger supplies a chapter-level genre tag. It falls back to the album's genre list otherwise.
+- **`GENRE`** is per-track when CrateDigger supplies a chapter-level genre tag. It falls back to the album's genre list otherwise. When the source carries multiple genres joined by `|` (for example `House|Techno`), each is written as a separate repeated Vorbis comment, the same way `ARTISTS` is handled. **`PUBLISHER`** follows the same rule: multiple pipe-separated labels become separate repeated values.
 
 ### Metadata tiers
 

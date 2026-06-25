@@ -213,7 +213,7 @@ def build_album_meta(
     track_artists: list[str] = []
     track_artists_lists: list[list[str]] = []
     track_artist_mbids: list[list[str]] = []
-    publishers: list[str] = []
+    publishers: list[list[str]] = []
     track_genres: list[list[str]] = []
 
     for ch in chapters:
@@ -248,9 +248,14 @@ def build_album_meta(
             names = [n for n in names_raw.split("|") if n] if names_raw else []
             mbids_raw = ctags.get("MUSICBRAINZ_ARTISTIDS", "")
             mbids = _split_pipe_preserving_empty(mbids_raw)
-            label = _ctag(ctags, "CRATEDIGGER_TRACK_LABEL", "LABEL")
+            label_raw = _ctag(ctags, "CRATEDIGGER_TRACK_LABEL", "LABEL")
+            labels = [x for x in label_raw.split("|") if x]
             genre_raw = _ctag(ctags, "CRATEDIGGER_TRACK_GENRE", "GENRE")
-            genres = [genre_raw] if genre_raw else list(album_genres)
+            genres = (
+                [g for g in genre_raw.split("|") if g]
+                if genre_raw
+                else list(album_genres)
+            )
 
             names = [canon_names.get(n.casefold(), n) for n in names]
             display = canon_names.get(display.casefold(), display)
@@ -263,6 +268,7 @@ def build_album_meta(
                 mbids = mbids[: len(names)]
         else:
             title_full, label = strip_label(ch.title)
+            labels = [label] if label else []
             track_artist, title = split_track_artist(title_full)
             if track_artist and artist and track_artist.casefold() == artist.casefold():
                 if track_artist != artist:
@@ -283,7 +289,7 @@ def build_album_meta(
         track_artists.append(display)
         track_artists_lists.append(names)
         track_artist_mbids.append(mbids)
-        publishers.append(label)
+        publishers.append(labels)
         track_genres.append(genres)
 
     pre_dedup = list(clean_titles)
@@ -303,7 +309,7 @@ def build_album_meta(
                 start=ch.start,
                 end=ch.end,
                 artist=track_artists[i],
-                publisher=publishers[i],
+                publisher=list(publishers[i]),
                 genre=list(track_genres[i]),
                 artists=list(track_artists_lists[i]),
                 artist_mbids=list(track_artist_mbids[i]),

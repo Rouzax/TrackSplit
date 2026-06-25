@@ -18,7 +18,7 @@ def _full_album():
             title="Intro",
             start=0.0,
             end=60.0,
-            publisher="Armada Music",
+            publisher=["Armada Music"],
             genre=["Trance"],
         ),
         TrackMeta(

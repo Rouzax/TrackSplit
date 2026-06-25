@@ -80,6 +80,29 @@ class SourceIdentity:
         )
 
 
+def _split_pipe_field(value: object) -> list[str]:
+    """Normalize a stored publisher/genre value into a clean list of values.
+
+    Tolerates a legacy single string (publisher was a bare `str` before it
+    became a list) and legacy pipe-joined elements (a multi-genre track stored
+    its genre as `["House|Techno"]` before the split landed). Splitting on load
+    means an upgraded re-run of an already-correct album reconciles to SKIP
+    rather than a spurious retag, and avoids a manifest schema bump.
+    """
+    from tracksplit.paths import nfc
+
+    if isinstance(value, str):
+        raw: list[object] = [value]
+    elif isinstance(value, list):
+        raw = value
+    else:
+        raw = []
+    out: list[str] = []
+    for item in raw:
+        out.extend(nfc(part) for part in str(item).split("|") if part)
+    return out
+
+
 @dataclass
 class TrackEntry:
     index: int
@@ -88,7 +111,7 @@ class TrackEntry:
     end: float
     title: str = ""
     artist: str = ""
-    publisher: str = ""
+    publisher: list[str] = field(default_factory=list)
     genre: list[str] = field(default_factory=list)
     artists: list[str] = field(default_factory=list)
     artist_mbids: list[str] = field(default_factory=list)
@@ -103,7 +126,7 @@ class TrackEntry:
             "end": self.end,
             "title": nfc(self.title),
             "artist": nfc(self.artist),
-            "publisher": nfc(self.publisher),
+            "publisher": [nfc(p) for p in self.publisher],
             "genre": [nfc(g) for g in self.genre],
             "artists": [nfc(a) for a in self.artists],
             "artist_mbids": list(self.artist_mbids),
@@ -120,8 +143,8 @@ class TrackEntry:
             end=float(d.get("end", 0.0)),
             title=nfc(d.get("title", "")),
             artist=nfc(d.get("artist", "")),
-            publisher=nfc(d.get("publisher", "")),
-            genre=[nfc(g) for g in d.get("genre", [])],
+            publisher=_split_pipe_field(d.get("publisher")),
+            genre=_split_pipe_field(d.get("genre")),
             artists=[nfc(a) for a in d.get("artists", [])],
             artist_mbids=list(d.get("artist_mbids", [])),
         )
@@ -244,7 +267,7 @@ def build_album_manifest(
             end=t.end,
             title=t.title,
             artist=t.artist,
-            publisher=t.publisher,
+            publisher=list(t.publisher),
             genre=list(t.genre),
             artists=list(t.artists),
             artist_mbids=list(t.artist_mbids),

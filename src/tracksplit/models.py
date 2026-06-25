@@ -27,7 +27,7 @@ class TrackMeta:
     start: float
     end: float
     artist: str = ""  # per-track artist parsed from chapter title
-    publisher: str = ""
+    publisher: list[str] = field(default_factory=list)
     genre: list[str] = field(default_factory=list)
     artists: list[str] = field(default_factory=list)
     artist_mbids: list[str] = field(default_factory=list)

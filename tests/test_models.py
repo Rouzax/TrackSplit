@@ -13,7 +13,7 @@ def test_chapter_zero_duration():
 
 def test_track_meta_defaults():
     t = TrackMeta(number=1, title="Song", start=0.0, end=60.0)
-    assert t.publisher == ""
+    assert t.publisher == []
     assert t.genre == []
 
 

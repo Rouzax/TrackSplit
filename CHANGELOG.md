@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.15.2] - 2026-06-25
+
+### Fixed
+
+- `PUBLISHER` and `GENRE` tags that contain multiple pipe-separated values (for example `STMPD|ASYLUM` or `House|Techno`, as produced by CrateDigger 0.30.0 and later) are now written as separate repeated Vorbis comments instead of a single value containing a literal pipe character. Existing manifests that stored a pipe-joined value are split on read, so upgrading does not trigger spurious re-tagging of already-correct albums.
+
 ## [0.15.1] - 2026-06-23
 
 ### Fixed

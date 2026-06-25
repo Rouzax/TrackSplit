@@ -38,7 +38,7 @@ def _stored(**over) -> AlbumManifest:
                 292.0,
                 "Culture",
                 artist="A",
-                publisher="INSOMNIAC",
+                publisher=["INSOMNIAC"],
             )
         ],
         "cover_sha256": "abc",
@@ -67,7 +67,7 @@ def _desired(**over) -> DesiredAlbum:
                 292.0,
                 "Culture",
                 artist="A",
-                publisher="INSOMNIAC",
+                publisher=["INSOMNIAC"],
             )
         ],
         "cover_sha256": "abc",
@@ -103,7 +103,7 @@ def test_title_change_is_rename_plus_retag_not_full():
                 292.0,
                 "Culture (Edit)",
                 artist="A",
-                publisher="INSOMNIAC",
+                publisher=["INSOMNIAC"],
             )
         ]
     )
@@ -123,7 +123,7 @@ def test_label_change_is_retag_only():
                 292.0,
                 "Culture",
                 artist="A",
-                publisher="SPINNIN",
+                publisher=["SPINNIN"],
             )
         ]
     )
@@ -141,7 +141,7 @@ def test_boundary_change_is_full():
                 300.0,
                 "Culture",
                 artist="A",
-                publisher="INSOMNIAC",
+                publisher=["INSOMNIAC"],
             )
         ]
     )
@@ -191,7 +191,7 @@ def test_case_only_filename_diff_is_corrective_rename():
                 292.0,
                 "Culture",
                 artist="A",
-                publisher="INSOMNIAC",
+                publisher=["INSOMNIAC"],
             )
         ]
     )
@@ -291,7 +291,7 @@ def test_build_desired_album_pulls_source_id_and_tracks():
         album="TML 2025",
         albumartists=["MORTEN"],
         tracks=[
-            TrackMeta(2, "Culture", 172.0, 292.0, artist="A", publisher="INSOMNIAC")
+            TrackMeta(2, "Culture", 172.0, 292.0, artist="A", publisher=["INSOMNIAC"])
         ],
     )
     ffprobe = {

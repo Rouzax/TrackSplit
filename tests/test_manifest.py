@@ -49,6 +49,37 @@ def test_album_manifest_roundtrip():
     assert again.tracks[0].filename == "00 - Intro.opus"
 
 
+def test_track_entry_from_dict_splits_legacy_pipe_values():
+    """A pre-0.30.0 manifest stores publisher as a string and may carry a
+    pipe-joined genre element; from_dict normalizes both to clean lists so an
+    upgraded re-run reconciles to SKIP rather than a spurious retag."""
+    d = {
+        "index": 1,
+        "filename": "01 - A - B.flac",
+        "start": 0.0,
+        "end": 1.0,
+        "publisher": "STMPD|ASYLUM",
+        "genre": ["House|Techno"],
+    }
+    t = TrackEntry.from_dict(d)
+    assert t.publisher == ["STMPD", "ASYLUM"]
+    assert t.genre == ["House", "Techno"]
+
+
+def test_track_entry_from_dict_accepts_list_publisher():
+    d = {
+        "index": 1,
+        "filename": "x.flac",
+        "start": 0.0,
+        "end": 1.0,
+        "publisher": ["STMPD", "ASYLUM"],
+        "genre": ["House", "Techno"],
+    }
+    t = TrackEntry.from_dict(d)
+    assert t.publisher == ["STMPD", "ASYLUM"]
+    assert t.genre == ["House", "Techno"]
+
+
 def _src(tmp_path: Path) -> Path:
     p = tmp_path / "source.mkv"
     p.write_bytes(b"x" * 100)
@@ -69,7 +100,7 @@ def test_build_album_manifest_v4_maps_tracks_and_identity():
                 start=172.0,
                 end=292.0,
                 artist="MORTEN & ARTBAT",
-                publisher="INSOMNIAC",
+                publisher=["INSOMNIAC"],
                 genre=["Melodic House/Techno"],
                 artists=["MORTEN", "ARTBAT"],
                 artist_mbids=["m1", "m2"],
@@ -106,7 +137,7 @@ def test_build_album_manifest_v4_maps_tracks_and_identity():
         "02 - MORTEN & ARTBAT - Culture.opus",
     ]
     assert m.tracks[1].artists == ["MORTEN", "ARTBAT"]
-    assert m.tracks[1].publisher == "INSOMNIAC"
+    assert m.tracks[1].publisher == ["INSOMNIAC"]
     assert m.album_tags["artist"] == "MORTEN"
 
 
@@ -338,7 +369,7 @@ def test_track_entry_roundtrip_and_nfc():
         end=2.0,
         title=unicodedata.normalize("NFD", "Café"),
         artist="A",
-        publisher="LABEL",
+        publisher=["LABEL"],
         genre=["Trance"],
         artists=["A", "B"],
         artist_mbids=["m1", "m2"],

@@ -44,7 +44,7 @@ def build_desired_album(
             end=t.end,
             title=t.title,
             artist=t.artist,
-            publisher=t.publisher,
+            publisher=list(t.publisher),
             genre=list(t.genre),
             artists=list(t.artists),
             artist_mbids=list(t.artist_mbids),
@@ -104,7 +104,7 @@ def _track_tag_fields(t: TrackEntry) -> tuple:
     return (
         nfc(t.title),
         nfc(t.artist),
-        nfc(t.publisher),
+        tuple(nfc(p) for p in t.publisher),
         tuple(nfc(g) for g in t.genre),
         tuple(nfc(a) for a in t.artists),
         tuple(t.artist_mbids),

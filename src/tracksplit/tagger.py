@@ -81,7 +81,7 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
         tags["GENRE"] = list(genre)
 
     if track.publisher:
-        tags["PUBLISHER"] = [track.publisher]
+        tags["PUBLISHER"] = list(track.publisher)
 
     if album.comment:
         tags["COMMENT"] = [album.comment]

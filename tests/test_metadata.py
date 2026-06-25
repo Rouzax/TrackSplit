@@ -197,8 +197,8 @@ def test_build_album_meta_tier2_with_stage():
     assert meta.genre == ["Trance", "EDM"]
     assert len(meta.tracks) == 2
     assert meta.tracks[0].title == "Track A"
-    assert meta.tracks[0].publisher == "Armada"
-    assert meta.tracks[1].publisher == ""
+    assert meta.tracks[0].publisher == ["Armada"]
+    assert meta.tracks[1].publisher == []
     # Genre applied to all tracks
     assert meta.tracks[0].genre == ["Trance", "EDM"]
     assert meta.tracks[1].genre == ["Trance", "EDM"]
@@ -226,7 +226,7 @@ def test_build_album_meta_tier1():
     assert meta.album == "2024 - Armin van Buuren - Tomorrowland"
     assert meta.date == "2024"
     assert len(meta.tracks) == 2
-    assert meta.tracks[0].publisher == "Label"
+    assert meta.tracks[0].publisher == ["Label"]
 
 
 def test_build_album_meta_tier1_no_year():
@@ -267,7 +267,7 @@ def test_build_album_meta_splits_track_artists():
     meta = build_album_meta(tags, chapters, "", tier=2)
     assert meta.tracks[0].artist == "Fred again.. & Jamie T"
     assert meta.tracks[0].title == "Lights Burn Dimmer"
-    assert meta.tracks[0].publisher == "Atlantic"
+    assert meta.tracks[0].publisher == ["Atlantic"]
     assert meta.tracks[1].artist == "Tiësto"
     assert meta.tracks[1].title == "Adagio For Strings"
     assert meta.tracks[2].artist == ""
@@ -537,7 +537,7 @@ def test_structured_chapter_tags_drive_track_fields():
     assert t.artist == "Armin van Buuren & Alle Farben ft. ROSY"
     assert t.artists == ["Armin van Buuren", "Alle Farben"]
     assert t.artist_mbids == ["mbid-arm", "mbid-af"]
-    assert t.publisher == "ARMADA"
+    assert t.publisher == ["ARMADA"]
     assert t.genre == ["Trance"]
 
 
@@ -590,7 +590,7 @@ def test_falls_back_to_string_parse_when_no_structured_tags():
     t = album.tracks[0]
     assert t.artist == "Afrojack"
     assert t.title == "ID"
-    assert t.publisher == "Wall"
+    assert t.publisher == ["Wall"]
     assert t.artists == []
     assert t.artist_mbids == []
 
@@ -667,8 +667,99 @@ def test_structured_chapter_tags_drive_track_fields_new_names():
     assert t.artist == "Armin van Buuren & Alle Farben ft. ROSY"
     assert t.artists == ["Armin van Buuren", "Alle Farben"]
     assert t.artist_mbids == ["mbid-arm", "mbid-af"]
-    assert t.publisher == "ARMADA"
+    assert t.publisher == ["ARMADA"]
     assert t.genre == ["Trance"]
+
+
+def test_structured_label_and_genre_split_on_pipe():
+    """CrateDigger 0.30.0 multi-value LABEL/GENRE split into repeated values."""
+    tags = {"artist": "X", "genres": ["Trance"]}
+    chapters = [
+        _structured_chapter(
+            0.0,
+            60.0,
+            "A - B",
+            {
+                "CRATEDIGGER_TRACK_TITLE": "B",
+                "CRATEDIGGER_TRACK_PERFORMER": "A",
+                "CRATEDIGGER_TRACK_PERFORMER_NAMES": "A",
+                "CRATEDIGGER_TRACK_LABEL": "STMPD|ASYLUM",
+                "CRATEDIGGER_TRACK_GENRE": "House|Techno",
+            },
+        ),
+    ]
+    t = build_album_meta(tags, chapters, "stem", tier=2).tracks[0]
+    assert t.publisher == ["STMPD", "ASYLUM"]
+    assert t.genre == ["House", "Techno"]
+
+
+def test_structured_label_single_value_is_single_element_list():
+    """A single-value label/genre yields a one-element list, not a bare string."""
+    tags = {"artist": "X", "genres": ["Trance"]}
+    chapters = [
+        _structured_chapter(
+            0.0,
+            60.0,
+            "A - B",
+            {
+                "CRATEDIGGER_TRACK_TITLE": "B",
+                "CRATEDIGGER_TRACK_PERFORMER": "A",
+                "CRATEDIGGER_TRACK_PERFORMER_NAMES": "A",
+                "CRATEDIGGER_TRACK_LABEL": "STMPD",
+                "CRATEDIGGER_TRACK_GENRE": "House",
+            },
+        ),
+    ]
+    t = build_album_meta(tags, chapters, "stem", tier=2).tracks[0]
+    assert t.publisher == ["STMPD"]
+    assert t.genre == ["House"]
+
+
+def test_structured_label_genre_drop_empty_pipe_segments():
+    """Empty segments from leading/trailing/doubled pipes are dropped."""
+    tags = {"artist": "X", "genres": ["Trance"]}
+    chapters = [
+        _structured_chapter(
+            0.0,
+            60.0,
+            "A - B",
+            {
+                "CRATEDIGGER_TRACK_TITLE": "B",
+                "CRATEDIGGER_TRACK_PERFORMER": "A",
+                "CRATEDIGGER_TRACK_PERFORMER_NAMES": "A",
+                "CRATEDIGGER_TRACK_LABEL": "STMPD||ASYLUM|",
+                "CRATEDIGGER_TRACK_GENRE": "|House|",
+            },
+        ),
+    ]
+    t = build_album_meta(tags, chapters, "stem", tier=2).tracks[0]
+    assert t.publisher == ["STMPD", "ASYLUM"]
+    assert t.genre == ["House"]
+
+
+def test_tagger_emits_repeated_publisher_and_genre():
+    """Multi-value label/genre become repeated Vorbis comments, no literal pipe."""
+    from tracksplit.tagger import build_tag_dict
+
+    tags = {"artist": "X", "genres": ["Trance"]}
+    chapters = [
+        _structured_chapter(
+            0.0,
+            60.0,
+            "A - B",
+            {
+                "CRATEDIGGER_TRACK_TITLE": "B",
+                "CRATEDIGGER_TRACK_PERFORMER": "A",
+                "CRATEDIGGER_TRACK_PERFORMER_NAMES": "A",
+                "CRATEDIGGER_TRACK_LABEL": "STMPD|ASYLUM",
+                "CRATEDIGGER_TRACK_GENRE": "House|Techno",
+            },
+        ),
+    ]
+    meta = build_album_meta(tags, chapters, "stem", tier=2)
+    td = build_tag_dict(meta, meta.tracks[0])
+    assert td["PUBLISHER"] == ["STMPD", "ASYLUM"]
+    assert td["GENRE"] == ["House", "Techno"]
 
 
 # --- B2B album-artist display synthesis (Red Rocks venue collision fix) ---
