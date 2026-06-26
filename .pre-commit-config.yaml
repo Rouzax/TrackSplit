@@ -30,6 +30,13 @@ repos:
         types: [python]
         # Honour [tool.pyright] (include = ["src"]) instead of changed files.
         pass_filenames: false
+      - id: vulture
+        name: vulture
+        entry: vulture
+        language: system
+        types: [python]
+        # Honour [tool.vulture] (paths = ["src/tracksplit"]) over changed files.
+        pass_filenames: false
 
   - repo: https://github.com/mgedmin/check-manifest
     rev: "0.51"

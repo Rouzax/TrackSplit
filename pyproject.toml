@@ -58,6 +58,8 @@ dev = [
     "ruff==0.15.5",
     "mypy==2.1.0",
     "basedpyright==1.39.8",
+    "vulture==2.16",
+    "pytest-cov==7.1.0",
     "check-manifest==0.51",
     "pre-commit==4.6.0",
 ]
@@ -75,6 +77,24 @@ tracksplit = "tracksplit.cli:run"
 pythonpath = ["src"]
 markers = [
     "integration: opt-in tests that run the real pipeline against local MKVs",
+]
+# Coverage is measured on the unit suite (integration tests are opt-in and
+# excluded in CI). --cov-fail-under is a ratchet: it is set to the current
+# floor and only ever raised, so it guards against regressions without
+# forcing a big-bang test-writing effort. Raise it as new tests land.
+addopts = "--cov=tracksplit --cov-report=term-missing --cov-fail-under=85"
+
+[tool.coverage.run]
+source = ["tracksplit"]
+# The opt-in integration module is not part of the measured unit suite.
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+# Don't count purely defensive/uninteresting lines against the floor.
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "def __repr__",
 ]
 
 [tool.ruff]
@@ -142,6 +162,21 @@ warn_unreachable = true
 include = ["src"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
+
+[tool.vulture]
+# Dead-code detection. min_confidence is set to 80 so the gate is clean and
+# low-noise: it catches high-confidence dead code (unused variables, imports,
+# unreachable branches). Unused *functions/methods* are reported at 60%
+# confidence and are intentionally not gated yet; lowering the threshold to
+# sweep those is a deliberate follow-up that needs a whitelist for the known
+# false positives (the _ExistingTags Protocol, mutagen Picture attribute sets,
+# the `main` console entry point, the test-only _clear_* cache helpers).
+paths = ["src/tracksplit"]
+min_confidence = 80
+# `package_name` is an intentionally-unused keyword-only parameter on
+# update_check.format_freshness_line, kept for signature symmetry with the
+# CrateDigger twin module (documented at the call site). Not dead code.
+ignore_names = ["package_name"]
 
 [tool.check-manifest]
 # The sdist ships the importable package (src/tracksplit, including the bundled

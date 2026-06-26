@@ -19,15 +19,18 @@ tracksplit --check
 pytest --ignore=tests/test_integration.py
 ```
 
-`pip install -e ".[dev]"` also installs ruff, mypy, basedpyright, check-manifest, and pre-commit. Run the checks locally before pushing:
+`pip install -e ".[dev]"` also installs ruff, mypy, basedpyright, vulture, pytest-cov, check-manifest, and pre-commit. Run the checks locally before pushing:
 
 ```bash
 ruff check .          # lint
 ruff format .         # format (use --check to verify without changing files)
 mypy                  # type-check src/
 basedpyright          # second type-check gate (pyright) on src/
+vulture               # dead-code scan on src/ (high-confidence findings)
 check-manifest        # verify sdist completeness
 ```
+
+`pytest` measures coverage automatically (via `addopts` in `pyproject.toml`) and fails below the floor set by `--cov-fail-under`. The floor is a ratchet: it only ever goes up. When you add tests that raise overall coverage, bump the floor in `[tool.pytest.ini_options]` to lock the gain in.
 
 Enable the git hooks once so they run automatically on every commit and push:
 
@@ -44,7 +47,7 @@ TRACKSPLIT_TEST_VIDEO=/path/to/some.mkv pytest tests/test_integration.py -v
 ## Pull requests
 
 - Keep changes focused. One logical change per PR is easier to review and revert.
-- Add or update tests for any behavior change. The unit suite must pass on 3.11, 3.12, and 3.13, and CI also runs a `lint` job that enforces `ruff check .`, `ruff format --check .`, `mypy`, `basedpyright`, and `check-manifest`.
+- Add or update tests for any behavior change. The unit suite must pass on 3.11, 3.12, and 3.13 (and hold coverage at or above the `--cov-fail-under` floor), and CI also runs a `lint` job that enforces `ruff check .`, `ruff format --check .`, `mypy`, `basedpyright`, `vulture`, and `check-manifest`.
 - Keep the scope of commits clean: `feat(...)`, `fix(...)`, `docs(...)`, `refactor(...)`, `test(...)`, `ci(...)`, `chore(...)` prefixes are appreciated but not required.
 - No em dashes in user-facing text or commit messages.
 - Do not add `Co-Authored-By` lines to commit messages.

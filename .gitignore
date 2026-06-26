@@ -7,6 +7,10 @@ build/
 site_build/
 .eggs/
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 *.flac
 .tracksplit_chapters.json
 

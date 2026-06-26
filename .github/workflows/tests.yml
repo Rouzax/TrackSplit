@@ -27,6 +27,8 @@ jobs:
         run: mypy
       - name: Type check (basedpyright)
         run: basedpyright
+      - name: Dead-code scan (vulture)
+        run: vulture
       - name: Packaging manifest (check-manifest)
         run: check-manifest
 
