@@ -55,7 +55,7 @@ Issues = "https://github.com/Rouzax/TrackSplit/issues"
 dev = [
     "pytest>=7.0",
     "pytest-mock>=3.10",
-    "ruff==0.15.5",
+    "ruff==0.15.18",
     "mypy==2.1.0",
     "basedpyright==1.39.8",
     "vulture==2.16",
