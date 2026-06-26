@@ -44,6 +44,19 @@ To run the integration tests you need a real video fixture:
 TRACKSPLIT_TEST_VIDEO=/path/to/some.mkv pytest tests/test_integration.py -v
 ```
 
+## Quality bar and ratchet
+
+The tool gates above are the standard and should not be removed. Quality levels
+are ratcheted up gradually rather than in one big sweep, and never regress:
+
+- **Coverage** , the `--cov-fail-under` floor only ever goes up (current 85, target 90). When you add tests that raise overall coverage, bump the floor in `[tool.pytest.ini_options]` to lock the gain in. Don't lower it.
+- **Type checking** , mypy and basedpyright both stay. Strictness grows per-file: when you create or substantially edit a module under `src/`, add `# pyright: strict` at its top and resolve the findings. Strict is not enabled globally.
+- **Dead code** , `vulture` gates high-confidence findings; dead functions are caught by per-file pyright strict and by the touched-files cleanup rule below, plus occasional manual sweeps.
+- **New files** should land at the current bar: tests that hold the floor, and `# pyright: strict`.
+
+This dovetails with the touched-files rule: tightening a file you're already
+changing is expected; a repo-wide tightening pass is its own separate change.
+
 ## Pull requests
 
 - Keep changes focused. One logical change per PR is easier to review and revert.
