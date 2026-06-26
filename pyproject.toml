@@ -57,6 +57,7 @@ dev = [
     "pytest-mock>=3.10",
     "ruff==0.15.5",
     "mypy==2.1.0",
+    "basedpyright==1.39.8",
     "check-manifest==0.51",
     "pre-commit==4.6.0",
 ]
@@ -123,6 +124,24 @@ warn_redundant_casts = true
 # upstream stub update flips a previously-required ignore to "unused" and breaks
 # the lint gate for reasons unrelated to our code.
 warn_unreachable = true
+
+[tool.pyright]
+# Pyright (run via basedpyright) is a second type-check gate alongside mypy.
+# The two are complementary: mypy is the drift-resistant baseline (it treats
+# stub-less deps as Any), while pyright reads library source
+# (useLibraryCodeForTypes, on by default) and so catches precision issues mypy
+# cannot, e.g. mutagen tag-object types.
+#
+# typeCheckingMode is pinned to "standard" rather than basedpyright's stricter
+# default: "standard" matches plain pyright and is already clean on src/.
+# Strict mode is overwhelmingly third-party "Unknown" noise on this codebase
+# (untyped audio libs), so we grow strictness per-file via `# pyright: strict`
+# on touched files instead of flipping it on globally.
+#
+# pythonVersion matches [tool.mypy] (3.12) for the same numpy-stub reason.
+include = ["src"]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
 
 [tool.check-manifest]
 # The sdist ships the importable package (src/tracksplit, including the bundled

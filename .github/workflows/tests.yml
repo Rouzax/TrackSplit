@@ -25,6 +25,8 @@ jobs:
         run: ruff format --check .
       - name: Type check (mypy)
         run: mypy
+      - name: Type check (basedpyright)
+        run: basedpyright
       - name: Packaging manifest (check-manifest)
         run: check-manifest
 

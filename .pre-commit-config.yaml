@@ -9,10 +9,11 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  # mypy runs from the project environment (pyproject dev deps) rather than an
-  # isolated env: it needs the runtime deps (rich, Pillow, ...) importable, or
-  # dep-dependent `# type: ignore` comments are wrongly flagged as unused.
-  # Requires `pip install .[dev]` (or .[dev] in your active venv) first.
+  # mypy and basedpyright both run from the project environment (pyproject dev
+  # deps) rather than an isolated env: they need the runtime deps (rich,
+  # Pillow, mutagen, ...) importable. For mypy, dep-dependent `# type: ignore`
+  # comments are otherwise wrongly flagged as unused; for pyright, missing deps
+  # would surface as import errors. Requires `pip install .[dev]` first.
   - repo: local
     hooks:
       - id: mypy
@@ -21,6 +22,13 @@ repos:
         language: system
         types: [python]
         # Honour [tool.mypy] (files = ["src"]) instead of the changed-file list.
+        pass_filenames: false
+      - id: basedpyright
+        name: basedpyright
+        entry: basedpyright
+        language: system
+        types: [python]
+        # Honour [tool.pyright] (include = ["src"]) instead of changed files.
         pass_filenames: false
 
   - repo: https://github.com/mgedmin/check-manifest
