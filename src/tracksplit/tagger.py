@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import base64
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
+from typing import Protocol, cast
 
 from mutagen.flac import FLAC, Picture
 from mutagen.oggopus import OggOpus
@@ -17,8 +18,21 @@ logger = logging.getLogger(__name__)
 TAG_SCHEMA_VERSION = 2
 
 
+class _ExistingTags(Protocol):
+    """Minimal read interface of a mutagen tag mapping.
+
+    Mutagen's on-disk tag objects (``VCFLACDict``, ``VCommentDict``) are
+    ``list`` subclasses that gain dict-like ``keys()``/``__getitem__`` from
+    ``DictMixin`` rather than subclassing ``dict``. ``_count_tag_deltas``
+    only reads them, so it accepts anything structurally matching this.
+    """
+
+    def keys(self) -> Iterable[str]: ...
+    def __getitem__(self, key: str, /) -> Iterable[str]: ...
+
+
 def _count_tag_deltas(
-    existing: dict | None,
+    existing: _ExistingTags | None,
     new_tags: dict[str, list[str]],
 ) -> tuple[int, int, int]:
     """Return (added, removed, changed) between existing tags (a Mutagen
@@ -132,7 +146,10 @@ def tag_flac(
     """
     audio = FLAC(path)
     tag_dict = build_tag_dict(album, track)
-    added, removed, changed = _count_tag_deltas(audio.tags, tag_dict)
+    # FLAC.tags is a VCFLACDict at runtime; mutagen types it as a loose union
+    # (incl. MetadataBlock), so narrow it to the mapping interface we read.
+    existing = cast("_ExistingTags | None", audio.tags)
+    added, removed, changed = _count_tag_deltas(existing, tag_dict)
     if added or removed or changed:
         logger.debug(
             "tagger.write: file=%s added=%d removed=%d changed=%d",
