@@ -1278,7 +1278,7 @@
 <p><strong>What is happening:</strong> TrackSplit looks up the artist image by the CrateDigger canonical slug, read from the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag embedded in the source file. It then looks for <code>cache/artists/&lt;slug&gt;/dj-artwork.jpg</code> (or <code>fanart.jpg</code>) in the CrateDigger data directory. The image is missing if:</p>
 <ul>
 <li>CrateDigger has no cached artwork for that artist yet. Run CrateDigger on the source file to fetch it, then re-run TrackSplit.</li>
-<li>The source file predates the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag. TrackSplit falls back to deriving the slug from the artist name, which works for most artists but may miss one if the cache folder name differs from what <code>slugify</code> produces. Re-enriching the file with a current version of CrateDigger embeds the slug tag and removes the ambiguity.</li>
+<li>The source file lacks the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag. Cache folders are named with hyphenated slugs (for example <code>martin-garrix</code>), but TrackSplit's fallback derives the slug from the artist name with <code>slugify</code>, which produces a concatenated key (for example <code>martingarrix</code>) instead. A concatenated key does not match a hyphenated folder, so the artwork lookup fails. Re-enriching the file with a current version of CrateDigger embeds the slug tag and removes the ambiguity.</li>
 <li>The CrateDigger data directory is not found. Check that <code>CRATEDIGGER_DATA_DIR</code> is set correctly, or that CrateDigger is installed in its default location.</li>
 </ul>
 <p><strong>Fix:</strong> Re-run CrateDigger on the source video to refresh its artwork cache and embed the slug tag, then re-run TrackSplit.</p>

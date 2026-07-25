@@ -1370,7 +1370,7 @@
 </tr>
 <tr>
 <td><code>artists/{slug}/dj-artwork.jpg</code></td>
-<td>DJ portrait used to compose the artist cover (<code>folder.jpg</code> / <code>artist.jpg</code>). Looked up by the CrateDigger canonical slug (from the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag, index 0). For files without that tag, the slug is derived from the artist name using the same <code>slugify</code> logic CrateDigger uses. This means artwork is found correctly even when the displayed artist name was truncated, cased differently, or stored with Unicode differences.</td>
+<td>DJ portrait used to compose the artist cover (<code>folder.jpg</code> / <code>artist.jpg</code>). Slugs are hyphenated (for example <code>martin-garrix</code>). Looked up by the CrateDigger canonical slug (from the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag, index 0), used verbatim, hyphens and any <code>&amp;</code> included. For files without that tag, the slug is derived from the artist name with <code>slugify</code>, which strips everything outside <code>a-z0-9</code> and produces a concatenated key (for example <code>martingarrix</code>); that key only matches cache folders created under the older concatenated naming, so files without the tag should be re-enriched with CrateDigger to get artwork matched under the current hyphenated folders.</td>
 </tr>
 <tr>
 <td><code>artists/{slug}/fanart.jpg</code></td>
