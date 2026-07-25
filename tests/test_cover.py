@@ -293,6 +293,30 @@ class TestFindDjArtwork:
         result = find_dj_artwork(tmp_path / "file.mkv", slug="fredagain..")
         assert result == b"fred-artwork"
 
+    def test_finds_artwork_via_hyphenated_slug(self, tmp_path, monkeypatch):
+        """2026 1001TL redesign: embedded slugs are hyphenated (martin-garrix).
+
+        folder_slug must pass hyphens (and '&') through unchanged so the
+        CrateDigger cache folder resolves. Pins the cross-repo contract.
+        """
+        cache_dir = tmp_path / "cd_cache"
+        artist_dir = cache_dir / "artists" / "matisse-&-sadko"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"ms-artwork")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(
+            tmp_path / "file.mkv",
+            slug="matisse-&-sadko",
+            artist="Matisse & Sadko",
+        )
+        assert result == b"ms-artwork"
+
     def test_prefers_dj_artwork_over_fanart(self, tmp_path, monkeypatch):
         cache_dir = tmp_path / "cd_cache"
         artist_dir = cache_dir / "artists" / "tiesto"

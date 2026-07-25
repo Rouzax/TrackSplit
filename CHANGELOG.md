@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- CrateDigger artwork-cache slugs are hyphenated following the 2026 1001Tracklists redesign (for example `martin-garrix`). TrackSplit's tag-based artwork lookup needs no code change, but the `slugify` name fallback only matches pre-redesign concatenated cache folders, so files lacking the `CRATEDIGGER_ALBUMARTIST_SLUGS` tag should be re-enriched with CrateDigger.
+
 ## [0.16.0] - 2026-06-25
 
 ### Changed
