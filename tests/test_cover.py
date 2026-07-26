@@ -784,6 +784,53 @@ class TestFestivalFallback:
         )
         assert L["fest_text"] == "MAINSTAGE"
 
+    def test_long_free_text_location_comma_splits(self):
+        """A no-registered-source set routes its whole location tail into the
+        accent slot ("Portal do Amanhã, Parque Villa-Lobos São Paulo").
+        The head keeps the accent slot; the tail drops to a detail line."""
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="ALOK",
+            festival="",
+            date="2026-05-01",
+            stage="",
+            venue="Portal do Amanhã, Parque Villa-Lobos São Paulo",
+            size=1000,
+        )
+        assert L["fest_text"] == "PORTAL DO AMANHÃ"
+        assert L["stage_parts"] == ["Parque Villa-Lobos São Paulo"]
+
+    def test_comma_split_detail_precedes_stage_subline(self):
+        from tracksplit.cover import _layout_album_cover
+
+        L = _layout_album_cover(
+            artist="A",
+            festival="Event Name, Some Venue City",
+            date="",
+            stage="Mainstage",
+            venue="",
+            size=1000,
+        )
+        assert L["fest_text"] == "EVENT NAME"
+        assert L["stage_parts"] == ["Some Venue City", "Mainstage"]
+
+    def test_comma_split_accent_fits_canvas(self):
+        """The clipping bug: pre-split, the full string overflowed the canvas
+        even at the minimum accent font. Post-split the head must measure
+        within the text width."""
+        from tracksplit.cover import _layout_album_cover, _measure_w
+
+        L = _layout_album_cover(
+            artist="ALOK",
+            festival="",
+            date="2026-05-01",
+            stage="",
+            venue="Portal do Amanhã, Parque Villa-Lobos São Paulo",
+            size=1000,
+        )
+        assert _measure_w(L["fest_font"], L["fest_text"]) <= int(1000 * 0.85)
+
     def test_stage_subline_suppressed_when_stage_fills_slot(self):
         from tracksplit.cover import _layout_album_cover
 

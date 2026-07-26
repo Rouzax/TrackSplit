@@ -97,6 +97,8 @@ If an act you consider a single group is being split across lines, that means Cr
 
 **Festival accent fallback.** The line directly below the accent rail shows the festival name when one is present. If there is no festival, TrackSplit falls back to the venue, then to the location (from the 1001Tracklists page heading), then to the first comma-separated segment of the stage, then leaves the slot empty. When stage is what fills the accent line, the separate stage subline below is suppressed so the same text does not appear twice. Whitespace-only festival, venue, location, or stage values are treated as empty and fall through the chain.
 
+If the text that fills the accent slot contains a comma, it is split at the first comma: the part before the comma stays in the accent slot, and the remainder renders as an additional white detail line below the date, above any stage line. This matters most for sets with no registered 1001Tracklists source, where the location is a single free-text string combining venue and city (for example "Portal do Amanhã, Parque Villa-Lobos São Paulo"). Official festival and venue names contain no comma, so they are unaffected.
+
 ### Gapless playback
 
 FLAC output is inherently gapless: any player that handles FLAC correctly will move from one track to the next without a gap or click.

@@ -577,6 +577,17 @@ def _layout_album_cover(
     # stage subline below can be suppressed if stage is what we drew up top.
     fest_raw = festival or venue or first_stage or ""
     fest_source_is_stage = (not festival) and (not venue) and bool(first_stage)
+    # Sets without a registered 1001TL source route their whole free-text
+    # location into this slot ("Portal do Amanhã, Parque Villa-Lobos São
+    # Paulo"), which overflows the canvas even at the minimum accent font.
+    # Split at the first comma: the head keeps the accent slot, the tail
+    # renders as a detail line below the date. Official festival and venue
+    # names carry no comma, so they are unaffected.
+    fest_detail = ""
+    if "," in fest_raw:
+        head, _, tail = fest_raw.partition(",")
+        fest_raw = head.strip()
+        fest_detail = tail.strip()
     fest_text = fest_raw.upper() if fest_raw else ""
     fest_font = None
     fest_h = 0
@@ -597,10 +608,13 @@ def _layout_album_cover(
 
     # Stage collapses to at most one line: first comma-separated part only.
     # Suppress entirely if stage already rendered in the festival slot above.
+    # A comma-split accent tail renders first, above any stage line.
     if fest_source_is_stage:
         stage_parts: list[str] = []
     else:
         stage_parts = [first_stage] if first_stage else []
+    if fest_detail:
+        stage_parts = [fest_detail, *stage_parts]
     stage_fonts: list = []
     stage_heights: list[int] = []
     for part in stage_parts:

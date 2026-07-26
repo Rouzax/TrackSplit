@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.16.2] - 2026-07-26
+
+### Fixed
+
+- Long free-text locations no longer overflow and clip on generated album covers. The accent line now splits at the first comma, keeping the event name in the accent slot and moving the venue/city remainder to a detail line below the date. Affected covers regenerate automatically on the next run (cover content hash changes); unaffected covers are untouched.
+
 ## [0.16.1] - 2026-07-25
 
 ### Changed
