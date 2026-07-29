@@ -678,3 +678,23 @@ class TestGetOpusPacketDurationMs:
             assert get_opus_packet_duration_ms(Path("/tmp/x.mkv")) is None
         joined = "\n".join(r.message for r in caplog.records)
         assert "no_packets" in joined.lower()
+
+
+def test_parse_tags_extracts_tracklist_title():
+    """The stored 1001TL title is the weekend-designator fallback for files
+    identified before CrateDigger 0.33.0 wrote LOCATION."""
+    from tracksplit.probe import parse_tags
+
+    data = {
+        "format": {
+            "tags": {
+                "CRATEDIGGER_1001TL_TITLE": (
+                    "Alesso @ Mainstage, Tomorrowland Weekend 1, Belgium 2026-07-19"
+                ),
+            },
+        },
+    }
+    tags = parse_tags(data)
+    assert tags["tracklist_title"] == (
+        "Alesso @ Mainstage, Tomorrowland Weekend 1, Belgium 2026-07-19"
+    )

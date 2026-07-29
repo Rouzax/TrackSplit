@@ -30,6 +30,25 @@ _LABEL_RE = re.compile(r"\s*\[([^\]]+)\]\s*$")
 _FILENAME_YEAR_RE = re.compile(r"^(\d{4})\s*-\s*(.+?)\s*-\s*.+$")
 _FILENAME_NO_YEAR_RE = re.compile(r"^(.+?)\s*-\s*.+$")
 
+# Sub-event weekend designator ("Weekend 1") used by multi-weekend festivals
+# (Tomorrowland, Coachella). Mirrors CrateDigger's SUB_EVENT_WEEKEND so both
+# projects derive the same WE<n> designator from the same tags.
+_WEEKEND_RE = re.compile(r"weekend\s+(\d+)", re.IGNORECASE)
+
+
+def weekend_designator(location: str, tracklist_title: str) -> str:
+    """Derive the WE<n> designator for a multi-weekend festival set.
+
+    Prefers the structured CRATEDIGGER_1001TL_LOCATION value ("Weekend 1",
+    written by CrateDigger 0.33.0+); falls back to scanning the stored 1001TL
+    title for files identified before that. Returns "" when neither carries
+    a weekend designator.
+    """
+    m = _WEEKEND_RE.fullmatch(location.strip())
+    if not m:
+        m = _WEEKEND_RE.search(tracklist_title)
+    return f"WE{int(m.group(1))}" if m else ""
+
 
 def strip_label(title: str) -> tuple[str, str]:
     """Remove [Label Name] from end of track title.
@@ -152,6 +171,9 @@ def build_album_meta(
     mbid_cache.json. When omitted, missing slots stay as empty strings.
     """
     # --- Album-level resolution --------------------------------------------
+    weekend = weekend_designator(
+        tags.get("location", ""), tags.get("tracklist_title", "")
+    )
     if tier == 2:
         explicit_display = tags.get("albumartist_display", "")
         raw_albumartists = tags.get("albumartists", [])
@@ -171,11 +193,14 @@ def build_album_meta(
 
         if festival:
             album = f"{festival} {year}".strip()
-            if stage:
-                album = f"{album} ({stage})"
+            qualifiers = [q for q in (stage, weekend) if q]
+            if qualifiers:
+                album = f"{album} ({', '.join(qualifiers)})"
         else:
             venue = tags.get("venue", "")
-            place = venue or tags.get("location", "") or stage
+            # A bare weekend designator is not a usable place name.
+            location = "" if weekend else tags.get("location", "")
+            place = venue or location or stage
             if place:
                 album = f"{place} {year}" if year and year not in place else place
             else:
@@ -324,7 +349,10 @@ def build_album_meta(
         festival=tags.get("festival", ""),
         stage=tags.get("stage", ""),
         venue=tags.get("venue", ""),
-        location=tags.get("location", ""),
+        # A weekend designator is consumed into the album name above; it is
+        # not a real location, so keep it out of the cover venue slot and
+        # embedded tags.
+        location="" if weekend else tags.get("location", ""),
         comment=tags.get("comment", ""),
         country=tags.get("country", ""),
         tracks=tracks,

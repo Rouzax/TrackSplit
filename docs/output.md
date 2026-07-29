@@ -65,7 +65,7 @@ Festival Year (Stage)/
 
 Each video gets its own album folder inside the artist folder. The folder name comes from the metadata:
 
-- **CrateDigger source with a festival tag:** `Festival Year (Stage)`, or `Festival Year` when no stage is set.
+- **CrateDigger source with a festival tag:** `Festival Year (Stage)`, or `Festival Year` when no stage is set. Sets at multi-weekend festivals (Tomorrowland, Coachella) additionally carry the weekend designator: `Tomorrowland 2026 (Mainstage, WE2)`, or `Coachella 2026 (WE1)` without a stage. The designator comes from the CrateDigger 1001Tracklists metadata (the location tag, or the stored tracklist title for files enriched before CrateDigger 0.33.0), so the two weekends of the same artist and stage produce distinct album folders instead of colliding. A location value that is only a weekend designator is not treated as a venue: it does not appear on cover art or in embedded tags, only in the album name.
 - **CrateDigger source without a festival tag (venue recording):** `Venue Year` using the venue name, or the location name (from the 1001Tracklists page heading) if no venue is set, or the stage name if neither is available. If that location string already contains the year (e.g. `"Bay Oval Park 2026-01-31"`), the year is not appended a second time.
 - **Plain chaptered video:** the source filename (without extension).
 

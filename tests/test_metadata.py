@@ -8,6 +8,7 @@ from tracksplit.metadata import (
     safe_filename,
     split_track_artist,
     strip_label,
+    weekend_designator,
 )
 from tracksplit.models import Chapter
 
@@ -818,3 +819,110 @@ def test_tier2_solo_uses_file_artist_when_no_display():
     chapters = _make_chapters(["Track 1"])
     meta = build_album_meta(tags, chapters, "2025 - Martin Garrix - Red Rocks", tier=2)
     assert meta.artist == "Martin Garrix"
+
+
+# --- weekend_designator ---
+
+
+def test_weekend_designator_from_location():
+    assert weekend_designator("Weekend 1", "") == "WE1"
+    assert weekend_designator("weekend 2", "") == "WE2"
+
+
+def test_weekend_designator_from_tracklist_title():
+    title = "Alesso @ Mainstage, Tomorrowland Weekend 1, Belgium 2026-07-19"
+    assert weekend_designator("", title) == "WE1"
+
+
+def test_weekend_designator_location_wins_over_title():
+    title = "Alesso @ Mainstage, Tomorrowland Weekend 1, Belgium 2026-07-19"
+    assert weekend_designator("Weekend 2", title) == "WE2"
+
+
+def test_weekend_designator_ignores_weekend_named_festival():
+    # "Weekend Festival" (Finland) has no ordinal; must not match.
+    assert weekend_designator("", "Alesso @ Weekend Festival, Finland 2026-08-07") == ""
+
+
+def test_weekend_designator_freeform_location_empty():
+    assert weekend_designator("Alexandra Palace London", "") == ""
+    assert weekend_designator("", "") == ""
+
+
+# --- build_album_meta: weekend designator in album names ---
+
+
+def test_build_album_meta_tier2_weekend_from_location():
+    tags = {
+        "artist": "Armin van Buuren",
+        "festival": "Tomorrowland",
+        "date": "2026-07-25",
+        "stage": "Mainstage",
+        "location": "Weekend 2",
+        "genres": ["Trance"],
+    }
+    chapters = _make_chapters(["Track A"])
+    meta = build_album_meta(tags, chapters, "ignored", tier=2)
+    assert meta.album == "Tomorrowland 2026 (Mainstage, WE2)"
+    # The designator is consumed into the album name; it is not a real
+    # location, so it must not leak into the location field (cover venue
+    # slot, FLAC tags).
+    assert meta.location == ""
+
+
+def test_build_album_meta_tier2_weekend_from_tracklist_title():
+    # Files identified before CrateDigger 0.33.0 carry the weekend only in
+    # the stored 1001TL title, not in LOCATION.
+    tags = {
+        "artist": "Alesso",
+        "festival": "Tomorrowland",
+        "date": "2026-07-19",
+        "stage": "Mainstage",
+        "tracklist_title": (
+            "Alesso @ Mainstage, Tomorrowland Weekend 1, Belgium 2026-07-19"
+        ),
+        "genres": [],
+    }
+    chapters = _make_chapters(["Track A"])
+    meta = build_album_meta(tags, chapters, "ignored", tier=2)
+    assert meta.album == "Tomorrowland 2026 (Mainstage, WE1)"
+
+
+def test_build_album_meta_tier2_weekend_without_stage():
+    tags = {
+        "artist": "Kaskade",
+        "festival": "Coachella",
+        "date": "2026-04-12",
+        "location": "Weekend 1",
+        "genres": [],
+    }
+    chapters = _make_chapters(["Track A"])
+    meta = build_album_meta(tags, chapters, "ignored", tier=2)
+    assert meta.album == "Coachella 2026 (WE1)"
+
+
+def test_build_album_meta_tier2_weekend_location_not_used_as_place():
+    # No festival: a bare weekend designator is not a usable place name and
+    # must not become the album title.
+    tags = {
+        "artist": "Someone",
+        "date": "2026-07-19",
+        "location": "Weekend 1",
+        "genres": [],
+    }
+    chapters = _make_chapters(["Track A"])
+    meta = build_album_meta(tags, chapters, "some_stem", tier=2)
+    assert meta.album == "some_stem"
+
+
+def test_build_album_meta_tier2_no_weekend_unchanged():
+    tags = {
+        "artist": "Hardwell",
+        "festival": "EDC Las Vegas",
+        "date": "2026-05-17",
+        "stage": "kineticFIELD",
+        "genres": [],
+    }
+    chapters = _make_chapters(["Track A"])
+    meta = build_album_meta(tags, chapters, "ignored", tier=2)
+    assert meta.album == "EDC Las Vegas 2026 (kineticFIELD)"

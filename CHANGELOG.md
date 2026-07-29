@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.17.0] - 2026-07-29
+
+### Added
+
+- Album names for sets at multi-weekend festivals (Tomorrowland, Coachella) now carry the weekend designator: `Tomorrowland 2026 (Mainstage, WE2)` instead of `Tomorrowland 2026 (Mainstage)`. The designator is derived from the CrateDigger 1001Tracklists metadata: the location tag (`Weekend 1`, written by CrateDigger 0.33.0 and later), with a fallback to the stored tracklist title for files enriched earlier, so existing libraries need no re-enrichment. This keeps the two weekends of the same artist and stage from colliding in one album folder. On the next run, existing weekend albums reconcile with a folder rename and retag; audio is not re-extracted. A location value that is only a weekend designator no longer feeds the cover-art venue slot or embedded tags; the weekend lives in the album name.
+
 ## [0.16.2] - 2026-07-26
 
 ### Fixed
