@@ -62,7 +62,7 @@ def _friendly_error(exc: BaseException) -> str:
         tail = text.splitlines()[-1] if text else f"exit {exc.returncode}"
         cmd = (
             exc.cmd[0]
-            if isinstance(exc.cmd, (list, tuple)) and exc.cmd
+            if isinstance(exc.cmd, list | tuple) and exc.cmd
             else "subprocess"
         )
         return f"{Path(str(cmd)).name} failed: {tail}"
@@ -457,9 +457,12 @@ def _print_version_with_freshness() -> None:
     out = make_console(file=sys.stdout)
     if _is_newer(installed=installed, candidate=latest):
         cmd = _upgrade_command()
+        # ASCII "->" on purpose: this line must survive cp1252 pipes
+        # (scheduled runs capture output), where a Unicode arrow raises
+        # UnicodeEncodeError.
         out.print(
             f"[yellow]![/yellow] A new tracksplit version is available: "
-            f"{installed} → {latest}"
+            f"{installed} -> {latest}"
         )
         out.print(f"  Upgrade: [cyan]{cmd}[/cyan]")
     else:
@@ -648,8 +651,28 @@ def main(
             signal.signal(signal.SIGINT, original_handler)
 
 
+def _make_stdio_encoding_safe() -> None:
+    """Degrade unencodable output to '?' instead of crashing.
+
+    When stdout/stderr is a pipe on Windows, Python encodes with the legacy
+    ANSI codepage (e.g. cp1252) rather than UTF-8, so any glyph outside it
+    (the update notice's old arrow, track titles with exotic characters)
+    raised UnicodeEncodeError from deep inside a print and killed the
+    command. Unattended scheduled runs always capture output through a
+    pipe, so replacement characters are strictly better than a crash.
+    """
+    import contextlib
+
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            with contextlib.suppress(OSError, ValueError):
+                reconfigure(errors="replace")
+
+
 def run() -> None:
     """Entry point referenced in pyproject.toml."""
+    _make_stdio_encoding_safe()
     try:
         app()
     finally:
