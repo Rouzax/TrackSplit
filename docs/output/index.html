@@ -1123,6 +1123,7 @@
 <h3 id="track-files">Track files</h3>
 <p>One audio file per chapter. Filenames follow the pattern <code>NN - Title.flac</code> (or <code>.opus</code>), where <code>NN</code> is a zero-padded number starting at <code>01</code>.</p>
 <p>If the video has audio before the first chapter marker (an unlabelled intro section) and that pre-chapter gap is at least 5 seconds, TrackSplit creates an extra track numbered <code>00 - Intro</code> for that segment. Gaps shorter than 5 seconds are folded into track 1 instead, so track 1 begins at the start of the file and absorbs the lead-in audio. This avoids tiny sliver files for negligible gaps. The threshold is fixed and not user-configurable.</p>
+<p>The intro has no tracklist entry of its own, so it is credited to the set's artists: it carries the same <code>ARTIST</code>, <code>ARTISTS</code> and <code>MUSICBRAINZ_ARTISTID</code> tags as the album. Its filename stays <code>00 - Intro</code> regardless of how many artists that is.</p>
 <h3 id="coverjpg"><code>cover.jpg</code></h3>
 <p>The album cover image, placed at the album level. It is also embedded inside every track file, so your music server sees it whether it reads the folder image or the file tags.</p>
 <p>This file is always created.</p>
@@ -1300,10 +1301,10 @@
 <ul>
 <li><strong><code>ARTIST</code></strong> is the display string for this specific track: for example <code>"AFROJACK ft. Eva Simons"</code>. When CrateDigger supplies a per-chapter <code>PERFORMER</code> tag, TrackSplit uses it verbatim so "Artist ft. Remixer" forms are preserved. When a chapter title has no artist separator, <code>ARTIST</code> falls back to <code>ALBUMARTIST</code>.</li>
 <li><strong><code>ARTISTS</code></strong> is a multi-value list of the individual artists on this track: <code>"AFROJACK"</code>, <code>"Eva Simons"</code>. Jellyfin and Lyrion use this to link each contributor to their own artist page.</li>
-<li><strong><code>MUSICBRAINZ_ARTISTID</code></strong> is positionally aligned with <code>ARTISTS</code>. Empty slots are preserved when an individual artist's MusicBrainz ID is unknown, so the position still matches. The whole tag is omitted if every slot is empty.</li>
+<li><strong><code>MUSICBRAINZ_ARTISTID</code></strong> is positionally aligned with <code>ARTISTS</code>, and is written only when <em>every</em> artist on the track resolves to a MusicBrainz ID. If even one is unknown the whole tag is omitted; <code>ARTISTS</code> still lists every artist by name. There is no way to mark a single missing ID in a positional list: an empty placeholder does not survive the round trip, because music servers that validate each value discard the empty one and then pair what is left by position, which silently gives each following artist the previous artist's identity. An absent tag costs an identifier that the artist almost always carries on other tracks; a shifted one asserts the wrong artist outright.</li>
 <li><strong><code>ALBUMARTIST</code></strong> is the headliner display string for the whole set. For B2B sets with CrateDigger metadata this is something like <code>"Armin van Buuren &amp; KI/KI"</code>.</li>
 <li><strong><code>ALBUMARTISTS</code></strong> is a multi-value list of individual headliners: <code>"Armin van Buuren"</code>, <code>"KI/KI"</code>. Written for both solo and B2B sets.</li>
-<li><strong><code>MUSICBRAINZ_ALBUMARTISTID</code></strong> is positionally aligned with <code>ALBUMARTISTS</code>. Omitted entirely if every slot is empty.</li>
+<li><strong><code>MUSICBRAINZ_ALBUMARTISTID</code></strong> is positionally aligned with <code>ALBUMARTISTS</code> and follows the same all-or-nothing rule: written only when every album artist resolves, omitted otherwise.</li>
 <li>Per-track artists whose name matches the album artist (case-insensitively) are normalized to the album artist's exact casing. This prevents Lyrion from listing two rows for the same artist and stops Jellyfin from showing stray uppercase variants.</li>
 <li><strong><code>GENRE</code></strong> is per-track when CrateDigger supplies a chapter-level genre tag. It falls back to the album's genre list otherwise. When the source carries multiple genres joined by <code>|</code> (for example <code>House|Techno</code>), each is written as a separate repeated Vorbis comment, the same way <code>ARTISTS</code> is handled. <strong><code>PUBLISHER</code></strong> follows the same rule: multiple pipe-separated labels become separate repeated values.</li>
 </ul>
@@ -1367,7 +1368,7 @@
 </tr>
 <tr>
 <td><code>mbid_cache.json</code></td>
-<td>Fills missing MusicBrainz artist IDs. For Tier-1 sources (no CrateDigger tags) the <code>ALBUMARTIST</code> is looked up here to populate <code>MUSICBRAINZ_ALBUMARTISTID</code>. For Tier-2 sources, any empty slot in the positional MBID list (per-track <code>MUSICBRAINZ_ARTISTID</code> and album-level <code>MUSICBRAINZ_ALBUMARTISTID</code>) is backfilled from this cache. Unknown names stay empty.</td>
+<td>Fills missing MusicBrainz artist IDs. For Tier-1 sources (no CrateDigger tags) the <code>ALBUMARTIST</code> is looked up here to populate <code>MUSICBRAINZ_ALBUMARTISTID</code>. For Tier-2 sources, any gap in the MBID list (per-track <code>MUSICBRAINZ_ARTISTID</code> and album-level <code>MUSICBRAINZ_ALBUMARTISTID</code>) is backfilled from this cache. A name that is still unresolved after the backfill leaves the list incomplete, and an incomplete list is not written at all, so adding entries here is what makes those tags appear.</td>
 </tr>
 <tr>
 <td><code>artists/{slug}/dj-artwork.jpg</code></td>
