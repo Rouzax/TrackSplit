@@ -15,7 +15,10 @@ from tracksplit.models import AlbumMeta, TrackMeta
 
 logger = logging.getLogger(__name__)
 
-TAG_SCHEMA_VERSION = 2
+# 3: MusicBrainz ID lists are written only when every artist resolves, and
+#    the intro track carries the album's individual artists. Bumping this
+#    makes reconcile plan a RETAG for albums written by an earlier version.
+TAG_SCHEMA_VERSION = 3
 
 
 class _ExistingTags(Protocol):
@@ -58,6 +61,29 @@ def _count_tag_deltas(
     return added, removed, changed
 
 
+def _complete_mbids(names: Sequence[str], mbids: Sequence[str]) -> list[str] | None:
+    """Return the MBID list only when it covers every name, else None.
+
+    MusicBrainz ID tags are positional: element *n* identifies element *n*
+    of the matching plural tag. A gap has no representation in that model.
+    Writing an empty placeholder does not survive the round trip, because
+    consumers that validate each element (Navidrome drops anything failing
+    ``uuid.Parse``, empty strings included) shorten the list and then pair
+    what is left by index, binding every later name to the previous
+    artist's MBID. A short list mis-binds the same way.
+
+    So the list is emitted only when it is complete and aligned, and
+    omitted otherwise. The plural name tag is unaffected either way: an
+    absent MBID list costs an identifier the artist usually carries on
+    other tracks, while a wrong one asserts the wrong artist outright.
+    """
+    if len(mbids) != len(names):
+        return None
+    if not all(m.strip() for m in mbids):
+        return None
+    return list(mbids)
+
+
 def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
     """Build a Vorbis comment dict from album and track metadata.
 
@@ -67,10 +93,9 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
     - ``ARTISTS`` / ``ALBUMARTISTS``: multi-value individual artist names.
       Emitted only when non-empty.
     - ``MUSICBRAINZ_ARTISTID`` / ``MUSICBRAINZ_ALBUMARTISTID``: multi-value,
-      positionally aligned with ``ARTISTS`` / ``ALBUMARTISTS``. Empty-string
-      slots preserved so positional consumers stay aligned; the tag is
-      omitted entirely when every slot is empty (a single MBID cannot
-      identify a collab, and nothing non-empty is worth writing).
+      positionally aligned with ``ARTISTS`` / ``ALBUMARTISTS``, and written
+      only when every artist resolves. A partial list is omitted rather
+      than padded with empty slots; see ``_complete_mbids``.
     """
     tags: dict[str, list[str]] = {
         "TITLE": [track.title],
@@ -100,27 +125,18 @@ def build_tag_dict(album: AlbumMeta, track: TrackMeta) -> dict[str, list[str]]:
     if album.comment:
         tags["COMMENT"] = [album.comment]
 
-    # Per-track individual artists + aligned MBIDs. When every MBID slot
-    # is empty, omit MUSICBRAINZ_ARTISTID entirely rather than writing a
-    # row of empty strings (nothing to link against).
+    # Per-track individual artists + complete MBID list (see _complete_mbids).
     if track.artists:
         tags["ARTISTS"] = list(track.artists)
-        if track.artist_mbids:
-            mbids = list(track.artist_mbids)
-            while len(mbids) < len(track.artists):
-                mbids.append("")
-            mbids = mbids[: len(track.artists)]
-            if any(mbids):
-                tags["MUSICBRAINZ_ARTISTID"] = mbids
+        mbids = _complete_mbids(track.artists, track.artist_mbids)
+        if mbids is not None:
+            tags["MUSICBRAINZ_ARTISTID"] = mbids
 
-    # Album-level individuals + aligned MBIDs.
+    # Album-level individuals + complete MBID list.
     if album.albumartists:
         tags["ALBUMARTISTS"] = list(album.albumartists)
-        mbids = list(album.albumartist_mbids)
-        while len(mbids) < len(album.albumartists):
-            mbids.append("")
-        mbids = mbids[: len(album.albumartists)]
-        if any(mbids):
+        mbids = _complete_mbids(album.albumartists, album.albumartist_mbids)
+        if mbids is not None:
             tags["MUSICBRAINZ_ALBUMARTISTID"] = mbids
 
     if album.festival:

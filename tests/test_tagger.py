@@ -301,12 +301,12 @@ def test_artists_tag_emitted_when_track_has_individuals():
     track = _track(
         artist="Armin van Buuren & JOA",
         artists=["Armin van Buuren", "JOA", "DJ KUBA & NEITAN"],
-        artist_mbids=["m-arm", "m-joa", ""],
+        artist_mbids=["m-arm", "m-joa", "m-kuba"],
     )
     tags = build_tag_dict(_album(), track)
     assert tags["ARTIST"] == ["Armin van Buuren & JOA"]
     assert tags["ARTISTS"] == ["Armin van Buuren", "JOA", "DJ KUBA & NEITAN"]
-    assert tags["MUSICBRAINZ_ARTISTID"] == ["m-arm", "m-joa", ""]
+    assert tags["MUSICBRAINZ_ARTISTID"] == ["m-arm", "m-joa", "m-kuba"]
 
 
 def test_artists_tag_absent_when_no_individuals():
@@ -330,15 +330,6 @@ def test_albumartists_and_multi_albumartistid():
     assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["m-arm", "m-ki"]
 
 
-def test_albumartists_empty_mbid_slots_preserved():
-    album = _album(
-        albumartists=["A", "B"],
-        albumartist_mbids=["m-a", ""],
-    )
-    tags = build_tag_dict(album, _track(artist="x"))
-    assert tags["MUSICBRAINZ_ALBUMARTISTID"] == ["m-a", ""]
-
-
 def test_all_empty_track_mbids_omit_tag():
     track = _track(artist="A & B", artists=["A", "B"], artist_mbids=["", ""])
     tags = build_tag_dict(_album(), track)
@@ -353,6 +344,55 @@ def test_all_empty_albumartist_mbids_omit_tag():
     tags = build_tag_dict(album, _track(artist="x"))
     assert tags["ALBUMARTISTS"] == ["AFROJACK"]
     assert "MUSICBRAINZ_ALBUMARTISTID" not in tags
+
+
+def test_partial_track_mbids_omit_tag():
+    """One unresolved slot omits the whole per-track MBID list.
+
+    A gap cannot be expressed in a positional list. Consumers that drop
+    empty values and then pair by index (Navidrome) bind each following
+    name to the previous artist's MBID, so a partial list asserts wrong
+    identities. ARTISTS keeps every name; only the MBID list is dropped.
+    """
+    track = _track(
+        artist="Parris Mitchell Project ft. Wax Master",
+        artists=["Parris Mitchell Project", "AFROJACK", "HNTR"],
+        artist_mbids=["", "m-afrojack", "m-hntr"],
+    )
+    tags = build_tag_dict(_album(), track)
+    assert tags["ARTISTS"] == ["Parris Mitchell Project", "AFROJACK", "HNTR"]
+    assert "MUSICBRAINZ_ARTISTID" not in tags
+
+
+def test_partial_albumartist_mbids_omit_tag():
+    """The album-level pair follows the same all-or-nothing rule."""
+    album = _album(albumartists=["A", "B"], albumartist_mbids=["m-a", ""])
+    tags = build_tag_dict(album, _track(artist="x"))
+    assert tags["ALBUMARTISTS"] == ["A", "B"]
+    assert "MUSICBRAINZ_ALBUMARTISTID" not in tags
+
+
+def test_track_mbid_count_mismatch_omits_tag():
+    """A short MBID list is dropped rather than padded into alignment."""
+    track = _track(
+        artist="A & B & C",
+        artists=["A", "B", "C"],
+        artist_mbids=["m-a", "m-b"],
+    )
+    tags = build_tag_dict(_album(), track)
+    assert tags["ARTISTS"] == ["A", "B", "C"]
+    assert "MUSICBRAINZ_ARTISTID" not in tags
+
+
+def test_complete_track_mbids_still_written():
+    """The tag is unchanged when every artist resolves."""
+    track = _track(
+        artist="A & B",
+        artists=["A", "B"],
+        artist_mbids=["m-a", "m-b"],
+    )
+    tags = build_tag_dict(_album(), track)
+    assert tags["MUSICBRAINZ_ARTISTID"] == ["m-a", "m-b"]
 
 
 def _make_silent_flac(path: Path, duration: float = 0.5) -> None:
@@ -394,13 +434,13 @@ def test_multi_artist_tags_survive_flac_roundtrip(tmp_path):
         end=1.0,
         artist="A & B",
         artists=["A", "B", "C"],
-        artist_mbids=["m-a", "", "m-c"],
+        artist_mbids=["m-a", "m-b", "m-c"],
     )
     tag_flac(flac_path, album, track)
 
     audio = FLAC(flac_path)
     assert list(audio["ARTISTS"]) == ["A", "B", "C"]
-    assert list(audio["MUSICBRAINZ_ARTISTID"]) == ["m-a", "", "m-c"]
+    assert list(audio["MUSICBRAINZ_ARTISTID"]) == ["m-a", "m-b", "m-c"]
     assert list(audio["ALBUMARTISTS"]) == ["Armin van Buuren", "KI/KI"]
     assert list(audio["MUSICBRAINZ_ALBUMARTISTID"]) == ["m-arm", "m-ki"]
 

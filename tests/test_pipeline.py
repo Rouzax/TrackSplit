@@ -12,10 +12,16 @@ from tracksplit.pipeline import (
     _safe_log_name,
     build_intro_track,
 )
+from tracksplit.split import build_track_filename
 
 # ---------------------------------------------------------------------------
 # build_intro_track
 # ---------------------------------------------------------------------------
+
+
+def _bare_album() -> AlbumMeta:
+    """Album with no individual-artist data, for timing-only intro tests."""
+    return AlbumMeta(artist="DJ X", album="Set")
 
 
 class TestBuildIntroTrack:
@@ -25,7 +31,7 @@ class TestBuildIntroTrack:
             Chapter(index=1, title="Track 1", start=30.0, end=120.0),
             Chapter(index=2, title="Track 2", start=120.0, end=240.0),
         ]
-        result = build_intro_track(chapters)
+        result = build_intro_track(chapters, _bare_album())
         assert result is not None
         assert result.number == 0
         assert result.title == "Intro"
@@ -37,28 +43,28 @@ class TestBuildIntroTrack:
         chapters = [
             Chapter(index=1, title="Track 1", start=0.0, end=120.0),
         ]
-        result = build_intro_track(chapters)
+        result = build_intro_track(chapters, _bare_album())
         assert result is None
 
     def test_empty_chapters(self):
         """Empty chapter list returns None."""
-        result = build_intro_track([])
+        result = build_intro_track([], _bare_album())
         assert result is None
 
     def test_build_intro_track_returns_none_for_short_gap(self):
         """First chapter starts at 2.0s (below 5s threshold), no intro."""
         chapters = [Chapter(index=1, title="Track A", start=2.0, end=60.0)]
-        assert build_intro_track(chapters) is None
+        assert build_intro_track(chapters, _bare_album()) is None
 
     def test_build_intro_track_returns_none_just_under_threshold(self):
         """First chapter starts at 4.999s (just below threshold), no intro."""
         chapters = [Chapter(index=1, title="Track A", start=4.999, end=60.0)]
-        assert build_intro_track(chapters) is None
+        assert build_intro_track(chapters, _bare_album()) is None
 
     def test_build_intro_track_creates_intro_at_threshold_boundary(self):
         """First chapter starts exactly at 5.0s (boundary is exclusive), intro created."""
         chapters = [Chapter(index=1, title="Track A", start=5.0, end=60.0)]
-        intro = build_intro_track(chapters)
+        intro = build_intro_track(chapters, _bare_album())
         assert intro is not None
         assert intro.start == 0.0
         assert intro.end == 5.0
@@ -85,6 +91,47 @@ class TestApplyIntroTrack:
         assert album.tracks[0].start == 0.0
         assert album.tracks[0].end == 10.0
         assert album.tracks[1].start == 10.0
+
+    def test_apply_intro_track_gives_intro_the_album_individuals(self):
+        """The intro is credited to the album artists, so it carries the same
+        plural pair every other track gets.
+
+        Without ARTISTS a consumer reading only ARTIST sees the joined
+        credit "Armin van Buuren & KI/KI" and invents a third artist entity
+        alongside the two real ones.
+        """
+        album = AlbumMeta(
+            artist="Armin van Buuren & KI/KI",
+            album="AMF 2025",
+            albumartists=["Armin van Buuren", "KI/KI"],
+            albumartist_mbids=["m-arm", "m-kiki"],
+            tracks=[TrackMeta(number=1, title="Track A", start=10.0, end=60.0)],
+        )
+        chapters = [Chapter(index=1, title="Track A", start=10.0, end=60.0)]
+        _apply_intro_track(album, chapters)
+        intro = album.tracks[0]
+        assert intro.title == "Intro"
+        assert intro.artists == ["Armin van Buuren", "KI/KI"]
+        assert intro.artist_mbids == ["m-arm", "m-kiki"]
+
+    def test_apply_intro_track_leaves_intro_track_artist_empty(self):
+        """track.artist stays empty on the intro.
+
+        build_track_filename omits the artist segment when it is empty, so
+        the intro keeps its "00 - Intro" name, and build_tag_dict already
+        falls back to the album credit for the ARTIST tag.
+        """
+        album = AlbumMeta(
+            artist="Armin van Buuren & KI/KI",
+            album="AMF 2025",
+            albumartists=["Armin van Buuren", "KI/KI"],
+            albumartist_mbids=["m-arm", "m-kiki"],
+            tracks=[TrackMeta(number=1, title="Track A", start=10.0, end=60.0)],
+        )
+        chapters = [Chapter(index=1, title="Track A", start=10.0, end=60.0)]
+        _apply_intro_track(album, chapters)
+        assert album.tracks[0].artist == ""
+        assert build_track_filename(album.tracks[0], ".opus") == "00 - Intro.opus"
 
     def test_apply_intro_track_slides_track_one_for_short_gap(self):
         """Gap of 2s is under threshold: no intro, but track 1 slides to 0.0."""

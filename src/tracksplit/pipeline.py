@@ -126,7 +126,7 @@ def prune_orphan_tracks(album_dir: Path, expected: set[str]) -> list[str]:
     return removed
 
 
-def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
+def build_intro_track(chapters: list[Chapter], album: AlbumMeta) -> TrackMeta | None:
     """Build an intro track if the first chapter starts at or after INTRO_MIN_SECONDS.
 
     Returns a TrackMeta with number=0 and title="Intro" spanning from
@@ -134,6 +134,17 @@ def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
     empty, the first chapter already starts at 0.0, or the gap before
     the first chapter is smaller than INTRO_MIN_SECONDS (the audio is
     folded into track 1 elsewhere in the pipeline).
+
+    The intro has no tracklist entry of its own, so it is credited to the
+    set's artists: it inherits the album's individual artists and their
+    MBIDs. Without them the written file carries a bare ARTIST holding the
+    joined credit, and a consumer reading only that invents an artist
+    entity for the whole string.
+
+    ``artist`` is deliberately left empty. build_tag_dict already falls
+    back to the album credit for the ARTIST tag, and build_track_filename
+    drops the artist segment when it is empty, which is what keeps the
+    file named "00 - Intro" rather than "00 - <joined credit> - Intro".
     """
     if not chapters:
         return None
@@ -144,6 +155,8 @@ def build_intro_track(chapters: list[Chapter]) -> TrackMeta | None:
         title="Intro",
         start=0.0,
         end=chapters[0].start,
+        artists=list(album.albumartists),
+        artist_mbids=list(album.albumartist_mbids),
     )
 
 
@@ -155,7 +168,7 @@ def _apply_intro_track(album: AlbumMeta, chapters: list[Chapter]) -> None:
     the first track's start to 0.0 so no audio is dropped. Otherwise
     (zero gap, no chapters, no tracks) do nothing.
     """
-    intro = build_intro_track(chapters)
+    intro = build_intro_track(chapters, album)
     if intro is not None:
         album.tracks.insert(0, intro)
         return

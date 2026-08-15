@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.18.0] - 2026-08-15
+
+### Fixed
+
+- `MUSICBRAINZ_ARTISTID` and `MUSICBRAINZ_ALBUMARTISTID` are now written only when every artist in the matching `ARTISTS` / `ALBUMARTISTS` list resolves to a MusicBrainz ID. Previously an unresolved artist left an empty slot in the list to hold the positional alignment. That does not survive the round trip: music servers that validate each value (Navidrome rejects anything that is not a UUID, empty strings included) drop the empty entry and then pair the remainder by position, so every artist after the gap silently received the previous artist's MusicBrainz identity. A partial list is now omitted entirely; the artist names in `ARTISTS` are unaffected, and the missing IDs are recovered from other tracks where the same artists resolve. Add unresolved names to `mbid_cache.json` to make the tags reappear.
+- The `00 - Intro` track now carries `ARTISTS` and `MUSICBRAINZ_ARTISTID` copied from the album's individual artists. It previously got only the joined `ARTIST` display string, so a music server reading that tag alone created a bogus artist entity for the whole credit (for example `Armin van Buuren & KI/KI`) alongside the two real artists. The intro's filename is unchanged.
+- Both fixes apply to existing libraries on the next run: the tag schema version bumped to 3, so albums written by an earlier version reconcile with a retag. Tags are rewritten in place, no audio is re-extracted and no files are renamed. Trigger a library rescan in your music server afterwards.
+
 ## [0.17.1] - 2026-08-01
 
 ### Fixed

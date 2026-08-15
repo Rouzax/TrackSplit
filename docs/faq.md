@@ -72,7 +72,7 @@ See [Troubleshooting](troubleshooting.md#batch-processing-is-slow-or-hanging) fo
 
 ## How do Jellyfin and Lyrion show multi-artist tracks?
 
-TrackSplit writes a multi-value `ARTISTS` tag listing every individual contributor alongside the display `ARTIST` string. It also writes a positionally-aligned `MUSICBRAINZ_ARTISTID` tag so each artist links to their own page. Both Jellyfin and Lyrion read these tags and surface every collaborator, not just the headliner.
+TrackSplit writes a multi-value `ARTISTS` tag listing every individual contributor alongside the display `ARTIST` string. It also writes a positionally-aligned `MUSICBRAINZ_ARTISTID` tag so each artist links to their own page. That tag is written only when every artist on the track has a known MusicBrainz ID; if one is missing the tag is left off entirely, because a partially-filled list makes some servers attach the wrong ID to the wrong artist. The artist names in `ARTISTS` are always written either way. Both Jellyfin and Lyrion read these tags and surface every collaborator, not just the headliner.
 
 If you upgraded TrackSplit and re-ran it against existing albums, trigger a library rescan in your music server so it picks up the updated tags.
 
