@@ -112,6 +112,16 @@ img { display: block; max-width: 100%; }
 }
 .nav-links a:hover { color: var(--text-primary); }
 
+/* Hides with the other text links at the 768px breakpoint; the footer link
+   is the mobile path. */
+.nav-links a.nav-support {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent);
+}
+.nav-links a.nav-support:hover { color: var(--accent-soft); }
+
 .nav-gh {
   display: flex;
   align-items: center;

@@ -4,6 +4,7 @@
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0">
   <img src="https://img.shields.io/badge/version-v0.18.0-orange" alt="v0.18.0">
+  <a href="https://ko-fi.com/O0W221GBUG"><img src="https://img.shields.io/badge/Ko--fi-Support-FF5E5B?logo=kofi&logoColor=white" alt="Support on Ko-fi"></a>
 </p>
 
 <p align="center"><em>Turn chaptered videos into gapless, tagged albums. Lossless FLAC or Opus, fully tagged with cover art, ready for Jellyfin, Lyrion, Navidrome, and Plex.</em></p>
@@ -225,6 +226,12 @@ TRACKSPLIT_TEST_VIDEO=/path/to/video.mkv pytest tests/test_integration.py -v
 ## Disclaimer
 
 Artwork displayed in this project is generated from DJ source images and chapter metadata that originates with CrateDigger and public festival/event material. All artwork, logos, and trademarks belong to their respective owners. TrackSplit is not affiliated with any festival, artist, or platform shown.
+
+## Support
+
+Building tools that solve my own problems and sharing them in the hope they solve yours too. If TrackSplit saved you an evening of hand-cutting a festival set into tracks and typing the tags in one by one, a coffee is always welcome.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O0W221GBUG)
 
 ## License
 

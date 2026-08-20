@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- A Ko-fi support link on the project's documentation surfaces: a Sponsor button on the GitHub repository page, a badge and a Support section in the README, a footer icon on every documentation page, and a nav and footer link on the landing page. This is documentation only. TrackSplit itself is unchanged: no prompt, no notice, and no network call is added to the CLI, and nothing about running the tool differs.
+
 ## [0.18.0] - 2026-08-15
 
 ### Fixed
