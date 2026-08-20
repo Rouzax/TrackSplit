@@ -191,6 +191,7 @@ ignore = [
     ".editorconfig",
     ".pre-commit-config.yaml",
     "mkdocs.yml",
+    "requirements-docs.txt",
     "*.example",
     ".github/**",
     "docs/**",

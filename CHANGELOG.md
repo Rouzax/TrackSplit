@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - A Ko-fi support link on the project's documentation surfaces: a Sponsor button on the GitHub repository page, a badge and a Support section in the README, a footer icon on every documentation page, and a nav and footer link on the landing page. This is documentation only. TrackSplit itself is unchanged: no prompt, no notice, and no network call is added to the CLI, and nothing about running the tool differs.
 
+### Changed
+
+- The documentation site is now built with [Zensical](https://zensical.org/) instead of MkDocs with Material for MkDocs. Material entered maintenance mode in November 2025 and MkDocs 2.0 is a rewrite that drops the plugin system, switches config to TOML with no migration path, and currently ships without a license; Zensical is the same team's successor, is MIT licensed, and reads the existing `mkdocs.yml` natively, so the configuration stays where it is. Rendered page content is unchanged: all seven pages were built with both toolchains and compared character for character with tags and whitespace stripped, and none differ. `site_dir` moves from `site_build` to `build/docs` because Zensical has no `-d` flag and the workflow was relying on that override. The build tool is now pinned in `requirements-docs.txt` rather than installed unpinned in the workflow, so Dependabot tracks it. Nothing about running TrackSplit changes.
+
 ## [0.18.0] - 2026-08-15
 
 ### Fixed

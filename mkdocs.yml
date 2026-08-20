@@ -4,8 +4,17 @@ repo_url: https://github.com/Rouzax/TrackSplit
 repo_name: Rouzax/TrackSplit
 
 # Build into a dedicated, gitignored directory. The tracked `site/` holds the
-# hand-curated landing page; mkdocs must not overwrite it.
-site_dir: site_build
+# hand-curated landing page; the docs build must not overwrite it. This must
+# stay in step with what deploy-docs.yml publishes: Zensical has no
+# `-d` / `--site-dir` flag, so this key is the only thing that decides where
+# the build lands.
+site_dir: build/docs
+
+# Built with Zensical, which reads this mkdocs.yml natively. Material for
+# MkDocs went into maintenance mode in November 2025; Zensical is the same
+# team's successor. Keeping the config in mkdocs.yml rather than the native
+# zensical.toml is deliberate: it is what the Zensical project itself does,
+# and it keeps the build tool swappable.
 
 theme:
   name: material
@@ -39,6 +48,8 @@ extra:
       link: https://ko-fi.com/O0W221GBUG
       name: Support TrackSplit on Ko-fi
 
+# Only honoured by MkDocs; Zensical ignores exclude_docs. The real guard is
+# .gitignore, which keeps docs/plans/ out of the repo and therefore out of CI.
 exclude_docs: |
   plans/
 

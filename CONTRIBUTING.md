@@ -68,8 +68,8 @@ changing is expected; a repo-wide tightening pass is its own separate change.
 ## Running the docs locally
 
 ```bash
-pip install mkdocs-material
-mkdocs serve
+pip install -r requirements-docs.txt
+zensical serve
 ```
 
 Then visit http://127.0.0.1:8000/.
