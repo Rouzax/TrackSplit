@@ -950,30 +950,35 @@
                 
                   
   
+    <a href="https://github.com/Rouzax/TrackSplit/edit/main/docs/faq.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
+    </a>
+  
   
 
 
-<h1 id="faq">FAQ</h1>
-<h2 id="do-i-need-cratedigger-to-use-tracksplit">Do I need CrateDigger to use TrackSplit?</h2>
+<h1 id="faq">FAQ<a class="headerlink" href="#faq" title="Permanent link">&para;</a></h1>
+<h2 id="do-i-need-cratedigger-to-use-tracksplit">Do I need CrateDigger to use TrackSplit?<a class="headerlink" href="#do-i-need-cratedigger-to-use-tracksplit" title="Permanent link">&para;</a></h2>
 <p>No. TrackSplit works on any video file that has chapter markers and an audio stream.</p>
 <p>Without CrateDigger you still get a properly split, tagged album: one file per chapter, numbered tracks, cover art, and whatever metadata the source file carries. With CrateDigger-tagged sources you also get canonical artist names, festival and venue details, MusicBrainz IDs for every artist, and per-track genre. That richer metadata is what lets Jellyfin and Lyrion link artists, albums, and collaborators correctly across your library.</p>
 <p>See <a href="../getting-started/">Getting Started</a> for more on how the two tools work together.</p>
-<h2 id="my-video-has-no-chapters-what-happens">My video has no chapters. What happens?</h2>
+<h2 id="my-video-has-no-chapters-what-happens">My video has no chapters. What happens?<a class="headerlink" href="#my-video-has-no-chapters-what-happens" title="Permanent link">&para;</a></h2>
 <p>If the video has a readable duration, TrackSplit produces a single-track album covering the whole file. If it cannot read the duration either, the file is skipped with a warning.</p>
 <p>If you expected chapters but there are none, the source may have had them stripped by a downloader or remuxer. <a href="https://github.com/Rouzax/CrateDigger">CrateDigger</a> can identify recordings and embed chapter markers automatically. You can also add chapters manually with MKVToolNix.</p>
-<h2 id="why-is-there-no-00-intro-track-even-though-the-first-chapter-starts-after-000">Why is there no <code>00 - Intro</code> track even though the first chapter starts after 0:00?</h2>
+<h2 id="why-is-there-no-00-intro-track-even-though-the-first-chapter-starts-after-000">Why is there no <code>00 - Intro</code> track even though the first chapter starts after 0:00?<a class="headerlink" href="#why-is-there-no-00-intro-track-even-though-the-first-chapter-starts-after-000" title="Permanent link">&para;</a></h2>
 <p>If the gap between the start of the file and the first chapter is less than 5 seconds, TrackSplit folds that audio into track 1 instead of creating a standalone intro track. This avoids very short "Intro" files that are not musically meaningful. Gaps of 5 seconds or longer still produce a <code>00 - Intro</code> track.</p>
-<h2 id="a-file-was-skipped-even-though-i-expected-it-to-be-processed-why">A file was skipped even though I expected it to be processed. Why?</h2>
+<h2 id="a-file-was-skipped-even-though-i-expected-it-to-be-processed-why">A file was skipped even though I expected it to be processed. Why?<a class="headerlink" href="#a-file-was-skipped-even-though-i-expected-it-to-be-processed-why" title="Permanent link">&para;</a></h2>
 <p>Two common reasons:</p>
 <ol>
 <li><strong>The output is already up to date.</strong> TrackSplit keeps a record of the last run in each album folder (the manifest). If the identity, audio, chapters, metadata, and format are all unchanged, the album is skipped. Pass <code>--force</code> to rebuild it anyway.</li>
 <li><strong>No audio stream or zero duration.</strong> TrackSplit warns and moves on.</li>
 </ol>
 <p>Re-run with <code>--verbose</code> to see which reason triggered.</p>
-<h2 id="why-doesnt-reorganizing-my-cratedigger-library-re-split-everything-anymore">Why doesn't reorganizing my CrateDigger library re-split everything anymore?</h2>
+<h2 id="why-doesnt-reorganizing-my-cratedigger-library-re-split-everything-anymore">Why doesn't reorganizing my CrateDigger library re-split everything anymore?<a class="headerlink" href="#why-doesnt-reorganizing-my-cratedigger-library-re-split-everything-anymore" title="Permanent link">&para;</a></h2>
 <p>TrackSplit now identifies each album by the stable CrateDigger 1001Tracklists ID (<code>CRATEDIGGER_1001TL_ID</code>) embedded in the source MKV, not by the source file path. When you reorganize your library (move files to a new folder, rename the library root, or restructure year/artist subdirectories), the identity stays the same. TrackSplit finds the album by its ID, notes that the path changed, updates the stored path in the manifest, and moves on without re-splitting or re-tagging anything.</p>
 <p>For sources that do not carry the CrateDigger ID tag, TrackSplit falls back to a best-effort fingerprint of the audio stream (codec, sample rate, channels, and Matroska time base (the audio stream tick rate, which changes if the file is re-muxed)) and chapter boundaries. This is less precise: if the audio or chapters differ from the stored fingerprint, a re-split follows as before. Re-enriching the source with a current CrateDigger version embeds the stable ID and removes this ambiguity.</p>
-<h2 id="when-does-tracksplit-re-split-vs-just-re-tag-or-rename">When does TrackSplit re-split vs. just re-tag or rename?</h2>
+<h2 id="when-does-tracksplit-re-split-vs-just-re-tag-or-rename">When does TrackSplit re-split vs. just re-tag or rename?<a class="headerlink" href="#when-does-tracksplit-re-split-vs-just-re-tag-or-rename" title="Permanent link">&para;</a></h2>
 <p>TrackSplit always chooses the cheapest operation that brings the album up to date:</p>
 <ul>
 <li><strong>Skip:</strong> nothing changed. The album folder and all track files stay exactly as they are.</li>
@@ -984,29 +989,29 @@
 <li><strong>Full re-split:</strong> the audio itself must change. This happens when: the audio stream changed (re-encode, different codec, different sample rate, channels, or time base), the output format or codec mode changed, the number of tracks changed, or a chapter boundary (start or end time) moved.</li>
 </ul>
 <p>A full re-split is always the most expensive path. TrackSplit only takes it when the audio output would genuinely differ from what is already on disk.</p>
-<h2 id="can-i-delete-tracksplit_manifestjson">Can I delete <code>.tracksplit_manifest.json</code>?</h2>
+<h2 id="can-i-delete-tracksplit_manifestjson">Can I delete <code>.tracksplit_manifest.json</code>?<a class="headerlink" href="#can-i-delete-tracksplit_manifestjson" title="Permanent link">&para;</a></h2>
 <p>Yes. It is only used by TrackSplit to decide whether to skip an album on the next run. Delete it to force a full rebuild of that album. You do not need to back it up, and your music server ignores it entirely.</p>
-<h2 id="does-tracksplit-modify-my-source-videos">Does TrackSplit modify my source videos?</h2>
+<h2 id="does-tracksplit-modify-my-source-videos">Does TrackSplit modify my source videos?<a class="headerlink" href="#does-tracksplit-modify-my-source-videos" title="Permanent link">&para;</a></h2>
 <p>No. TrackSplit only reads your source files. All output goes to the directory you specify with <code>--output</code>, or your current working directory if you omit it. Your source videos are never touched.</p>
-<h2 id="can-i-change-the-folder-or-filename-template">Can I change the folder or filename template?</h2>
+<h2 id="can-i-change-the-folder-or-filename-template">Can I change the folder or filename template?<a class="headerlink" href="#can-i-change-the-folder-or-filename-template" title="Permanent link">&para;</a></h2>
 <p>Not yet. For CrateDigger-tagged sources the album folder is named <code>Festival Year (Stage)</code> when a festival tag is present, or <code>Venue Year</code> (or <code>Location Year</code> when only a location tag is present) for venue recordings without a festival name. Plain chaptered videos use the source filename. The album folder is always placed inside an <code>Artist/</code> folder. Track filenames follow <code>NN - Title</code>. The template is fixed in the current release.</p>
-<h2 id="does-it-need-the-internet">Does it need the internet?</h2>
+<h2 id="does-it-need-the-internet">Does it need the internet?<a class="headerlink" href="#does-it-need-the-internet" title="Permanent link">&para;</a></h2>
 <p>No. TrackSplit is fully offline. It reads metadata from your source files and does all processing locally. No API keys, no external lookups.</p>
-<h2 id="parallel-mode-is-slow-on-my-disk-what-do-i-do">Parallel mode is slow on my disk. What do I do?</h2>
+<h2 id="parallel-mode-is-slow-on-my-disk-what-do-i-do">Parallel mode is slow on my disk. What do I do?<a class="headerlink" href="#parallel-mode-is-slow-on-my-disk-what-do-i-do" title="Permanent link">&para;</a></h2>
 <p>Try <code>--workers 1</code> first. On spinning disks and network shares, sequential processing is usually faster because parallel writes cause expensive disk seeks.</p>
 <p>On fast SSDs, the default (roughly <code>logical_cores / 4</code>, between 2 and 12) is a good starting point. You can push it higher if your sources use Opus audio, because in that case TrackSplit copies the audio directly without re-encoding and CPU usage per worker is near zero. If your sources require re-encoding (FLAC output or Opus from a lossy source), raising workers beyond the default risks overloading your CPU.</p>
 <p>See <a href="../troubleshooting/#batch-processing-is-slow-or-hanging">Troubleshooting</a> for a full breakdown.</p>
-<h2 id="how-do-jellyfin-and-lyrion-show-multi-artist-tracks">How do Jellyfin and Lyrion show multi-artist tracks?</h2>
+<h2 id="how-do-jellyfin-and-lyrion-show-multi-artist-tracks">How do Jellyfin and Lyrion show multi-artist tracks?<a class="headerlink" href="#how-do-jellyfin-and-lyrion-show-multi-artist-tracks" title="Permanent link">&para;</a></h2>
 <p>TrackSplit writes a multi-value <code>ARTISTS</code> tag listing every individual contributor alongside the display <code>ARTIST</code> string. It also writes a positionally-aligned <code>MUSICBRAINZ_ARTISTID</code> tag so each artist links to their own page. That tag is written only when every artist on the track has a known MusicBrainz ID; if one is missing the tag is left off entirely, because a partially-filled list makes some servers attach the wrong ID to the wrong artist. The artist names in <code>ARTISTS</code> are always written either way. Both Jellyfin and Lyrion read these tags and surface every collaborator, not just the headliner.</p>
 <p>If you upgraded TrackSplit and re-ran it against existing albums, trigger a library rescan in your music server so it picks up the updated tags.</p>
-<h2 id="does-tracksplit-produce-gapless-output">Does TrackSplit produce gapless output?</h2>
+<h2 id="does-tracksplit-produce-gapless-output">Does TrackSplit produce gapless output?<a class="headerlink" href="#does-tracksplit-produce-gapless-output" title="Permanent link">&para;</a></h2>
 <p>Yes, for both output formats, subject to player support.</p>
 <p><strong>FLAC:</strong> gapless in any player that handles FLAC correctly.</p>
 <p><strong>Opus:</strong> gapless in players that support gapless playback, such as Symfonium and mpv. TrackSplit inserts the necessary warmup frame and sets the correct <code>pre_skip</code> value so the decoder trims it cleanly at each boundary. The Jellyfin mobile app does not support gapless playback and introduces a 1-2s gap between tracks regardless of file content. That gap is a player-side limitation and cannot be fixed at the file level.</p>
-<h2 id="how-does-tracksplit-differ-from-cratedigger">How does TrackSplit differ from CrateDigger?</h2>
+<h2 id="how-does-tracksplit-differ-from-cratedigger">How does TrackSplit differ from CrateDigger?<a class="headerlink" href="#how-does-tracksplit-differ-from-cratedigger" title="Permanent link">&para;</a></h2>
 <p>They do different jobs and work best together. <strong>CrateDigger</strong> builds a video library: it identifies recordings, embeds chapter markers and metadata, generates posters, and syncs with Kodi. <strong>TrackSplit</strong> reads that video library and produces a parallel music library of tagged FLAC or Opus albums for music servers like Jellyfin and Lyrion.</p>
 <p>Because they share the same artist names, festival spellings, and MusicBrainz IDs, the same set shows up consistently whether you are browsing your video library or your music library.</p>
-<h2 id="what-is-the-yellow-message-on-startup">What is the yellow "!" message on startup?</h2>
+<h2 id="what-is-the-yellow-message-on-startup">What is the yellow "!" message on startup?<a class="headerlink" href="#what-is-the-yellow-message-on-startup" title="Permanent link">&para;</a></h2>
 <p>That message means a newer release of TrackSplit is available on GitHub. The line shows the new version number and an upgrade command suited to your install method.</p>
 <p>To upgrade, run the command printed in the notice. The three common variants are:</p>
 <ul>
@@ -1035,6 +1040,8 @@
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -1047,6 +1054,30 @@
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../troubleshooting/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Troubleshooting">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Troubleshooting
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1094,7 +1125,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["navigation.tabs","navigation.sections","navigation.top","search.highlight","content.code.copy"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["navigation.tabs","navigation.sections","navigation.top","navigation.footer","navigation.instant","navigation.instant.prefetch","navigation.tracking","search.highlight","search.suggest","content.code.copy","content.code.select","content.code.annotate","content.action.edit","content.tabs.link","content.tooltips","content.footnote.tooltips"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>

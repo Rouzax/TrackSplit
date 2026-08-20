@@ -1042,38 +1042,43 @@
                 
                   
   
+    <a href="https://github.com/Rouzax/TrackSplit/edit/main/docs/output.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
+    </a>
+  
   
 
 
-<h1 id="output-structure">Output Structure</h1>
+<h1 id="output-structure">Output Structure<a class="headerlink" href="#output-structure" title="Permanent link">&para;</a></h1>
 <p>TrackSplit writes one album folder per video into your output directory. This page explains what every file is, what it is for, and what changes when your source files carry CrateDigger metadata.</p>
 <blockquote>
 <p>Want to see it first? The <a href="https://rouzax.github.io/TrackSplit/#library-browser">interactive library browser</a> lets you click through real artists, albums, cover art, and tracklists.</p>
 </blockquote>
-<h2 id="what-you-get">What you get</h2>
+<h2 id="what-you-get">What you get<a class="headerlink" href="#what-you-get" title="Permanent link">&para;</a></h2>
 <p>After a successful run you will find a folder structure like this inside your output directory:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Artist/
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  folder.jpg
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  artist.jpg
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  Festival Year (Stage)/
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    01 - Track Title.flac
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    02 - Track Title.flac
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    ...
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    cover.jpg
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    .tracksplit_manifest.json
-</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Artist/
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  folder.jpg
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  artist.jpg
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  Festival Year (Stage)/
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    01 - Track Title.flac
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    02 - Track Title.flac
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    ...
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    cover.jpg
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    .tracksplit_manifest.json
+</span></code></pre></div>
 <p>Every file in that structure has a specific purpose. Some are for your music server. One is for TrackSplit only.</p>
-<h2 id="the-two-levels-of-output">The two levels of output</h2>
+<h2 id="the-two-levels-of-output">The two levels of output<a class="headerlink" href="#the-two-levels-of-output" title="Permanent link">&para;</a></h2>
 <p>The quality of your output depends on what metadata is in the source video.</p>
 <p><strong>With CrateDigger tags (enriched sources):</strong> TrackSplit has everything it needs. The album folder is named <code>Festival Year (Stage)</code> when the source carries a festival name (most common case), or <code>Venue Year</code> for non-festival venue recordings (e.g. a club or arena set with no named festival). Tracks get canonical artist names, MusicBrainz IDs, festival and venue details, and per-track genre. Your music server can link every artist, album, and collaborator correctly.</p>
 <p><strong>Without CrateDigger tags (any chaptered video):</strong> TrackSplit still works. It infers the artist and album from whatever it finds in the filename and embedded tags, numbers the tracks, and writes what it can. The album folder is named after the source filename. You get a properly split, tagged album, just without the rich festival metadata.</p>
 <p>In both cases you get the same files. The difference is in how accurate and complete the metadata inside those files is.</p>
-<h2 id="directory-layout-explained">Directory layout explained</h2>
-<h3 id="artist-folder">Artist folder</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Artist/
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  folder.jpg
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  artist.jpg
-</code></pre></div>
+<h2 id="directory-layout-explained">Directory layout explained<a class="headerlink" href="#directory-layout-explained" title="Permanent link">&para;</a></h2>
+<h3 id="artist-folder">Artist folder<a class="headerlink" href="#artist-folder" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Artist/
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  folder.jpg
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  artist.jpg
+</span></code></pre></div>
 <p>The top-level folder is named after the artist. Inside it, two image files are placed at the artist level so your music server can display artist artwork:</p>
 <ul>
 <li><code>folder.jpg</code>: the artist cover image, picked up by Jellyfin and similar servers as the artist folder image.</li>
@@ -1082,13 +1087,13 @@
 <p>Both files contain the same image. TrackSplit writes both so the artist looks correct in whichever server you use.</p>
 <p>The DJ photo is placed as a rounded square thumbnail, center-cropped from the source image so faces keep natural proportions. A landscape source (such as <code>fanart.jpg</code>) is cropped to its center square rather than squashed to fit.</p>
 <p><strong>Multi-artist (B2B) sets go under the primary artist's folder.</strong> When a set has more than one headliner (as listed in the CrateDigger <code>CRATEDIGGER_1001TL_ARTISTS</code> tag), TrackSplit places the album inside the first-listed artist's folder rather than creating a combined folder like <code>Martin Garrix &amp; Alesso/</code>. The artist artwork (<code>folder.jpg</code>, <code>artist.jpg</code>) reflects the primary artist.</p>
-<h3 id="album-folder">Album folder</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Festival Year (Stage)/
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  01 - Track Title.flac
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  02 - Track Title.flac
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  cover.jpg
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  .tracksplit_manifest.json
-</code></pre></div>
+<h3 id="album-folder">Album folder<a class="headerlink" href="#album-folder" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Festival Year (Stage)/
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  01 - Track Title.flac
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  02 - Track Title.flac
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  cover.jpg
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  .tracksplit_manifest.json
+</span></code></pre></div>
 <p>Each video gets its own album folder inside the artist folder. The folder name comes from the metadata:</p>
 <ul>
 <li><strong>CrateDigger source with a festival tag:</strong> <code>Festival Year (Stage)</code>, or <code>Festival Year</code> when no stage is set. Sets at multi-weekend festivals (Tomorrowland, Coachella) additionally carry the weekend designator: <code>Tomorrowland 2026 (Mainstage, WE2)</code>, or <code>Coachella 2026 (WE1)</code> without a stage. The designator comes from the CrateDigger 1001Tracklists metadata (the location tag, or the stored tracklist title for files enriched before CrateDigger 0.33.0), so the two weekends of the same artist and stage produce distinct album folders instead of colliding. A location value that is only a weekend designator is not treated as a venue: it does not appear on cover art or in embedded tags, only in the album name.</li>
@@ -1096,11 +1101,11 @@
 <li><strong>Plain chaptered video:</strong> the source filename (without extension).</li>
 </ul>
 <p><strong>Multi-artist (B2B) sets get a "(with ...)" annotation on the folder name.</strong> When a set has more than one headliner, all guest artists (everyone after the first) are appended to the folder name: <code>Red Rocks Amphitheatre 2025 (with Alesso)</code>. For three or more headliners the guests are joined with <code>&amp;</code>: <code>Festival 2025 (with Alesso &amp; John Summit)</code>. When the base album name already ends with a parenthetical (such as a stage name), the "with" annotation is merged into it rather than added as a second pair of parentheses: <code>UMF Miami 2026 (Mainstage, with Alesso)</code>. The <code>ALBUM</code> tag inside every track file always contains the clean album name without this annotation; the annotation appears only in the folder name.</p>
-<h3 id="track-files">Track files</h3>
+<h3 id="track-files">Track files<a class="headerlink" href="#track-files" title="Permanent link">&para;</a></h3>
 <p>One audio file per chapter. Filenames follow the pattern <code>NN - Title.flac</code> (or <code>.opus</code>), where <code>NN</code> is a zero-padded number starting at <code>01</code>.</p>
 <p>If the video has audio before the first chapter marker (an unlabelled intro section) and that pre-chapter gap is at least 5 seconds, TrackSplit creates an extra track numbered <code>00 - Intro</code> for that segment. Gaps shorter than 5 seconds are folded into track 1 instead, so track 1 begins at the start of the file and absorbs the lead-in audio. This avoids tiny sliver files for negligible gaps. The threshold is fixed and not user-configurable.</p>
 <p>The intro has no tracklist entry of its own, so it is credited to the set's artists: it carries the same <code>ARTIST</code>, <code>ARTISTS</code> and <code>MUSICBRAINZ_ARTISTID</code> tags as the album. Its filename stays <code>00 - Intro</code> regardless of how many artists that is.</p>
-<h3 id="coverjpg"><code>cover.jpg</code></h3>
+<h3 id="coverjpg"><code>cover.jpg</code><a class="headerlink" href="#coverjpg" title="Permanent link">&para;</a></h3>
 <p>The album cover image, placed at the album level. It is also embedded inside every track file, so your music server sees it whether it reads the folder image or the file tags.</p>
 <p>This file is always created.</p>
 <p><strong>What's on the cover:</strong> the artist name above an accent rail, with the festival (or closest available location) below the rail, then the date, then the stage. The accent color is sampled from the background image.</p>
@@ -1111,7 +1116,7 @@
 <p><strong>Without CrateDigger tags:</strong> the album artist comes from the filename and there is no structured act list. The cover falls back to splitting the displayed name on <code>&amp;</code>, <code>B2B</code>, <code>VS</code>, and <code>X</code> (with surrounding spaces), as well as the <code>"Act (members)"</code> parenthetical form. A standalone act whose name contains one of those connectors will be split across lines, and there is no TrackSplit setting to prevent it. This is cosmetic only: the artist folder name and the tags always use the whole artist name.</p>
 <p><strong>Festival accent fallback.</strong> The line directly below the accent rail shows the festival name when one is present. If there is no festival, TrackSplit falls back to the venue, then to the location (from the 1001Tracklists page heading), then to the first comma-separated segment of the stage, then leaves the slot empty. When stage is what fills the accent line, the separate stage subline below is suppressed so the same text does not appear twice. Whitespace-only festival, venue, location, or stage values are treated as empty and fall through the chain.</p>
 <p>If the text that fills the accent slot contains a comma, it is split at the first comma: the part before the comma stays in the accent slot, and the remainder renders as an additional white detail line below the date, above any stage line. This matters most for sets with no registered 1001Tracklists source, where the location is a single free-text string combining venue and city (for example "Portal do Amanhã, Parque Villa-Lobos São Paulo"). Official festival and venue names contain no comma, so they are unaffected.</p>
-<h3 id="gapless-playback">Gapless playback</h3>
+<h3 id="gapless-playback">Gapless playback<a class="headerlink" href="#gapless-playback" title="Permanent link">&para;</a></h3>
 <p>FLAC output is inherently gapless: any player that handles FLAC correctly will move from one track to the next without a gap or click.</p>
 <p>Opus output is gapless in players that support gapless playback, such as Symfonium and mpv. TrackSplit achieves this by prepending two 20ms warmup frames (40ms total) to each track after the first and setting the <code>pre_skip</code> field in the Opus stream header to 1920, so the decoder discards the warmup cleanly and audio starts exactly at the chapter boundary.</p>
 <p>Two conditions are required for this path:</p>
@@ -1121,10 +1126,10 @@
 </ul>
 <p>When either condition is not met, TrackSplit falls back to re-encoding with libopus, which also produces gapless output but takes longer.</p>
 <p>Players that do not support gapless playback, such as the Jellyfin mobile app, will introduce a 1-2s gap between tracks regardless of file content. This is a player-side limitation that cannot be fixed at the file level.</p>
-<h3 id="tracksplit_manifestjson"><code>.tracksplit_manifest.json</code></h3>
+<h3 id="tracksplit_manifestjson"><code>.tracksplit_manifest.json</code><a class="headerlink" href="#tracksplit_manifestjson" title="Permanent link">&para;</a></h3>
 <p>A small record file TrackSplit uses internally (one per album folder). It stores the identity of the source recording, the audio fingerprint, and the complete set of tags and filenames from the last run, so TrackSplit can detect on the next run what changed and apply only what is necessary.</p>
 <p><strong>This file is only for TrackSplit, not for your music server.</strong> Your server will ignore it. You can delete it at any time to force TrackSplit to rebuild that album from scratch. You do not need to back it up.</p>
-<h2 id="what-your-music-server-uses">What your music server uses</h2>
+<h2 id="what-your-music-server-uses">What your music server uses<a class="headerlink" href="#what-your-music-server-uses" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1161,7 +1166,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="tags-written-to-every-track">Tags written to every track</h2>
+<h2 id="tags-written-to-every-track">Tags written to every track<a class="headerlink" href="#tags-written-to-every-track" title="Permanent link">&para;</a></h2>
 <p>TrackSplit embeds metadata tags inside each audio file. Your music server reads these to display artist names, album titles, track numbers, and dates.</p>
 <p>The core tags written on every track:</p>
 <table>
@@ -1270,10 +1275,10 @@
 </tbody>
 </table>
 <p>Tags are omitted entirely when the information is not available. Empty tags are never written.</p>
-<h2 id="what-does-not-change">What does NOT change</h2>
+<h2 id="what-does-not-change">What does NOT change<a class="headerlink" href="#what-does-not-change" title="Permanent link">&para;</a></h2>
 <p>TrackSplit only reads your source video files. It never modifies, moves, or deletes them. All output goes to the directory you specify (or the current working directory if you omit <code>--output</code>).</p>
-<h2 id="advanced-details">Advanced details</h2>
-<h3 id="artist-tagging-policy">Artist tagging policy</h3>
+<h2 id="advanced-details">Advanced details<a class="headerlink" href="#advanced-details" title="Permanent link">&para;</a></h2>
+<h3 id="artist-tagging-policy">Artist tagging policy<a class="headerlink" href="#artist-tagging-policy" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong><code>ARTIST</code></strong> is the display string for this specific track: for example <code>"AFROJACK ft. Eva Simons"</code>. When CrateDigger supplies a per-chapter <code>PERFORMER</code> tag, TrackSplit uses it verbatim so "Artist ft. Remixer" forms are preserved. When a chapter title has no artist separator, <code>ARTIST</code> falls back to <code>ALBUMARTIST</code>.</li>
 <li><strong><code>ARTISTS</code></strong> is a multi-value list of the individual artists on this track: <code>"AFROJACK"</code>, <code>"Eva Simons"</code>. Jellyfin and Lyrion use this to link each contributor to their own artist page.</li>
@@ -1284,12 +1289,12 @@
 <li>Per-track artists whose name matches the album artist (case-insensitively) are normalized to the album artist's exact casing. This prevents Lyrion from listing two rows for the same artist and stops Jellyfin from showing stray uppercase variants.</li>
 <li><strong><code>GENRE</code></strong> is per-track when CrateDigger supplies a chapter-level genre tag. It falls back to the album's genre list otherwise. When the source carries multiple genres joined by <code>|</code> (for example <code>House|Techno</code>), each is written as a separate repeated Vorbis comment, the same way <code>ARTISTS</code> is handled. <strong><code>PUBLISHER</code></strong> follows the same rule: multiple pipe-separated labels become separate repeated values.</li>
 </ul>
-<h3 id="metadata-tiers">Metadata tiers</h3>
+<h3 id="metadata-tiers">Metadata tiers<a class="headerlink" href="#metadata-tiers" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Tier 1 (any chaptered video):</strong> TrackSplit infers artist and album from filename and embedded tags. The album folder uses the filename stem. You get numbered, tagged tracks with whatever metadata the source carries.</li>
 <li><strong>Tier 2 (CrateDigger-tagged source):</strong> TrackSplit uses the canonical artist, festival, venue, date, and MusicBrainz IDs embedded by CrateDigger. The album folder uses <code>Festival Year (Stage)</code> naming for festival sets, or <code>Venue Year</code> (or <code>Location Year</code>) for venue recordings without a festival name. Every tag is populated precisely with no guessing.</li>
 </ul>
-<h3 id="cratedigger-cache-reuse">CrateDigger cache reuse</h3>
+<h3 id="cratedigger-cache-reuse">CrateDigger cache reuse<a class="headerlink" href="#cratedigger-cache-reuse" title="Permanent link">&para;</a></h3>
 <p>TrackSplit reads CrateDigger's caches directly, not just the tags baked into the MKV. This is how consistent artist spellings, festival aliases, MusicBrainz IDs, and DJ artwork stay in sync between your video library (CrateDigger) and your music library (TrackSplit) without TrackSplit needing any of its own config.</p>
 <p><strong>Lookup chain.</strong> For each curated data file, TrackSplit checks candidate directories in priority order and uses the first file found, matching CrateDigger's own resolution:</p>
 <ol>
@@ -1356,7 +1361,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="re-run-manifest-details-schema-4">Re-run manifest details (schema 4)</h3>
+<h3 id="re-run-manifest-details-schema-4">Re-run manifest details (schema 4)<a class="headerlink" href="#re-run-manifest-details-schema-4" title="Permanent link">&para;</a></h3>
 <p><code>.tracksplit_manifest.json</code> is the album's internal cache (schema version 4). It contains:</p>
 <ul>
 <li><strong>Source identity:</strong> the CrateDigger 1001Tracklists ID (<code>CRATEDIGGER_1001TL_ID</code>) embedded in the MKV, which is the primary stable identifier for CrateDigger-tagged sources. For sources without that tag, a best-effort fingerprint of the audio stream (codec, sample rate, channels, and Matroska time base (the audio stream tick rate, which changes if the file is re-muxed)) plus chapter boundaries is used as a fallback.</li>
@@ -1407,7 +1412,7 @@
 <p><strong>Migration from older manifests:</strong> the first run after upgrading from a version that wrote schema 3 manifests reads the old file and, if nothing meaningful changed, rewrites it to schema 4 without re-splitting or re-tagging. If the old album predates the current tag schema or cover renderer version, that first run also rewrites tags or recomposes covers to bring the album current; audio is still not re-extracted.</p>
 <p><strong>Compatibility:</strong> an older TrackSplit version reading a schema 4 manifest will not recognize the schema and will fall back to a full re-split, leaving your audio safe. Schema 4 manifests are not forward-compatible, but they are safe for older readers.</p>
 <p>Deleting the manifest forces a full rebuild of that album. Passing <code>--force</code> on the command line rebuilds every album regardless of manifests.</p>
-<h3 id="folder-cleanup-on-re-run">Folder cleanup on re-run</h3>
+<h3 id="folder-cleanup-on-re-run">Folder cleanup on re-run<a class="headerlink" href="#folder-cleanup-on-re-run" title="Permanent link">&para;</a></h3>
 <p>When a re-split or move is triggered, TrackSplit tidies up leftover files from the previous run automatically. It identifies old output by album identity (the stable source ID or fingerprint recorded in the manifest), not by matching folder names or source paths.</p>
 <ul>
 <li><strong>Album folder moved:</strong> if the album folder path changed (because the artist name, festival name, venue name, or stage changed), the old folder is deleted and a new one is created at the correct location.</li>
@@ -1434,6 +1439,8 @@
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -1446,6 +1453,46 @@
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../configuration/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Configuration">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Configuration
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../troubleshooting/" class="md-footer__link md-footer__link--next" aria-label="Next: Troubleshooting">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Troubleshooting
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1493,7 +1540,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["navigation.tabs","navigation.sections","navigation.top","search.highlight","content.code.copy"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["navigation.tabs","navigation.sections","navigation.top","navigation.footer","navigation.instant","navigation.instant.prefetch","navigation.tracking","search.highlight","search.suggest","content.code.copy","content.code.select","content.code.annotate","content.action.edit","content.tabs.link","content.tooltips","content.footnote.tooltips"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
