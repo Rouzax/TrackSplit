@@ -82,7 +82,7 @@ markers = [
 # excluded in CI). --cov-fail-under is a ratchet: it is set to the current
 # floor and only ever raised, so it guards against regressions without
 # forcing a big-bang test-writing effort. Raise it as new tests land.
-addopts = "--cov=tracksplit --cov-report=term-missing --cov-fail-under=85"
+addopts = "--cov=tracksplit --cov-report=term-missing --cov-fail-under=88"
 
 [tool.coverage.run]
 source = ["tracksplit"]
