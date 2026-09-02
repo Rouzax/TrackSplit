@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.18.1] - 2026-09-02
 
 ### Added
 
@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - The documentation site now uses Zensical's recommended extension and feature set. Declaring `markdown_extensions` at all suppresses those defaults, so the carried-over Material list had been silently disabling most of them. Every heading now has an anchor link (106 across the seven pages, previously none), pages carry an "edit this page" link to GitHub and previous/next footer navigation, code blocks support line selection and annotations, emoji and icon shortcodes work, and bare URLs and `#123` issue references link automatically. Rendered page text is unchanged apart from the heading anchors: all seven pages were compared character for character with tags, whitespace and the anchor glyphs stripped, and none differ. Breadcrumbs and section index pages are deliberately left off, having been verified to render nothing against this site's flat navigation. Nothing about running TrackSplit changes.
 
 - The documentation site is now built with [Zensical](https://zensical.org/) instead of MkDocs with Material for MkDocs. Material entered maintenance mode in November 2025 and MkDocs 2.0 is a rewrite that drops the plugin system, switches config to TOML with no migration path, and currently ships without a license; Zensical is the same team's successor, is MIT licensed, and reads the existing `mkdocs.yml` natively, so the configuration stays where it is. Rendered page content is unchanged: all seven pages were built with both toolchains and compared character for character with tags and whitespace stripped, and none differ. `site_dir` moves from `site_build` to `build/docs` because Zensical has no `-d` flag and the workflow was relying on that override. The build tool is now pinned in `requirements-docs.txt` rather than installed unpinned in the workflow, so Dependabot tracks it. Nothing about running TrackSplit changes.
+
+### Fixed
+
+- Full re-splits are now logged with a reason. TrackSplit emits `pipeline.regen: file=<name> reason=<reason>` at INFO level whenever it falls through to a full re-split, mirroring the existing `pipeline.skip: file=... reason=unchanged` line. The reason is one of `audio`, `output_format`, `codec_mode`, `track_count`, `boundary`, `no_manifest`, `retag_failed`, or `force`. Previously this reason was computed internally but never logged, so a log showed that an album was fully reprocessed without saying why.
+- Boundary comparison no longer flags a genuinely unchanged album as changed because of sub-second drift in the last track's synthesised end time. CrateDigger's MKV chapters carry no `ChapterTimeEnd` element, so ffmpeg synthesises the final chapter's end from the container duration, and different ffmpeg builds disagree on that synthesised value by a few milliseconds for the same unchanged file (measured: up to 7 ms across 18 albums). Comparing that value with exact equality meant an ffmpeg upgrade, or a remux that nudges the container duration, could send an entire library to a full re-split even though nothing about the audio changed. Track start times and all non-final end times are still compared exactly; only the final track's end is now compared with a 1 second tolerance, so a genuinely shortened or extended set still triggers a full re-split. The same reasoning was applied to the audio-fingerprint fallback identity lookup (used for sources lacking the CrateDigger 1001Tracklists ID tag), which is now keyed on track start times instead of full start/end boundaries, so it no longer misses an album because of the same millisecond drift. Existing libraries need no action: nothing is re-split or re-tagged as a result of this change, and no manifest schema change is involved.
 
 ## [0.18.0] - 2026-08-15
 

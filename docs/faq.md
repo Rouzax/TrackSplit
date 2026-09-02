@@ -42,7 +42,7 @@ TrackSplit always chooses the cheapest operation that brings the album up to dat
 - **Retag:** per-track or album-level metadata changed (label, genre, MBIDs, artist spelling, etc.). The existing audio files are opened and their tag blocks are rewritten. Audio data is not touched and no new audio file is written.
 - **Rename + retag:** a track title or performer changed. The track file is renamed to match the new title and its tags are rewritten. Audio is not re-extracted.
 - **Move + retag:** the album folder name changed (because the artist, festival, venue, or stage name changed). The album folder is moved to its new location and tags are rewritten inside it. Audio is not re-extracted.
-- **Full re-split:** the audio itself must change. This happens when: the audio stream changed (re-encode, different codec, different sample rate, channels, or time base), the output format or codec mode changed, the number of tracks changed, or a chapter boundary (start or end time) moved.
+- **Full re-split:** the audio itself must change. This happens when: the audio stream changed (re-encode, different codec, different sample rate, channels, or time base), the output format or codec mode changed, the number of tracks changed, a track start time moved, or the final track's end time moved by more than a second. (The final track's end is allowed to drift by up to a second because ffmpeg synthesises it from the container duration, and different ffmpeg builds compute it slightly differently even for an unchanged file.)
 
 A full re-split is always the most expensive path. TrackSplit only takes it when the audio output would genuinely differ from what is already on disk.
 

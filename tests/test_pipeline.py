@@ -2342,6 +2342,67 @@ class TestSkipBranchCoverRebuild:
         assert fresh is not None, f"manifest missing after full regen at {album_dir}"
         assert fresh.cover_schema_version == COVER_SCHEMA_VERSION
 
+    @patch("tracksplit.pipeline.tag_all")
+    @patch("tracksplit.pipeline.split_tracks")
+    @patch("tracksplit.pipeline.prepare_audio")
+    @patch("tracksplit.pipeline.compose_cover")
+    @patch("tracksplit.pipeline.compose_artist_cover")
+    @patch("tracksplit.pipeline.find_dj_artwork")
+    @patch("tracksplit.pipeline.extract_cover_from_mkv")
+    @patch("tracksplit.pipeline.retag_album")
+    @patch("tracksplit.pipeline.run_ffprobe")
+    def test_full_regen_logs_reason(
+        self,
+        mock_probe,
+        mock_retag,
+        mock_cover_mkv,
+        mock_dj,
+        mock_artist_cover,
+        mock_compose,
+        mock_prepare,
+        mock_split,
+        mock_tag,
+        tmp_path,
+        caplog,
+    ):
+        """A full regeneration says why, so a rerun can be explained from
+        the log alone instead of by re-deriving the reconciliation."""
+        from tracksplit.pipeline import process_file
+
+        mock_probe.return_value = self._probe()
+        mock_retag.side_effect = RuntimeError("simulated retag failure")
+        mock_cover_mkv.return_value = None
+        mock_dj.return_value = None
+        mock_compose.return_value = b"NEW-JPEG"
+        mock_artist_cover.return_value = b"NEW-JPEG2"
+
+        src = tmp_path / "src.mkv"
+        src.write_bytes(b"data" * 64)
+        out = tmp_path / "out"
+        album_dir = out / "DJ X" / "Show 2025"
+        album_dir.mkdir(parents=True)
+        (album_dir / "01 - Track 1.flac").write_bytes(b"audio")
+        mock_prepare.return_value = (src, ".flac", "copy")
+        mock_split.return_value = [album_dir / "01 - DJ X - Track 1.flac"]
+
+        # No manifest on disk: nothing to reconcile against.
+        with caplog.at_level("INFO", logger="tracksplit.pipeline"):
+            assert process_file(src, out) is True
+        assert any(
+            "pipeline.regen:" in r.message and "reason=no_manifest" in r.message
+            for r in caplog.records
+        ), caplog.text
+
+        # Manifest present but the retag it plans raises.
+        caplog.clear()
+        self._write_manifest(src, album_dir, cover_schema_version=0)
+        with caplog.at_level("INFO", logger="tracksplit.pipeline"):
+            assert process_file(src, out) is True
+        assert any(
+            "pipeline.regen:" in r.message and "reason=retag_failed" in r.message
+            for r in caplog.records
+        ), caplog.text
+
     @patch("tracksplit.pipeline.retag_album")
     @patch("tracksplit.pipeline.run_ffprobe")
     def test_clean_skip_when_version_current(

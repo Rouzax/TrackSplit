@@ -34,7 +34,9 @@ class AudioFingerprint:
     Stable across container rewrites (mkvpropedit tag edits) but moves on a
     real audio change: re-encode, re-mux to a different codec, channel-layout
     change. Duration is deliberately not stored: Matroska reports it as N/A on
-    the stream, and a length change already surfaces as a moved track boundary.
+    the stream, and a length change already surfaces as a moved track boundary
+    (within the slack reconcile.FINAL_END_TOLERANCE_SECONDS allows on the last
+    track's end, which ffmpeg synthesises from the container duration).
     """
 
     codec_name: str

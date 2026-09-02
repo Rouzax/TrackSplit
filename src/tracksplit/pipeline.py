@@ -677,6 +677,10 @@ def process_file(
             compose=compose_artist_cover,
         )
 
+    # Why the full extract+split pipeline ran, logged on the fall-through
+    # below. Narrowed as the cheap paths are ruled out.
+    regen_reason = "force" if force else "no_manifest"
+
     if not force and stored is not None and existing_dir is not None:
         desired = build_desired_album(
             album=album,
@@ -691,6 +695,8 @@ def process_file(
             track_filenames=expected_filenames,
         )
         plan = plan_reconciliation(stored, desired)
+        if plan.full_reason:
+            regen_reason = plan.full_reason
 
         if dry_run and plan.level is not _RegenLevel.FULL:
             # Report the planned cheap operation without mutating anything.
@@ -745,6 +751,7 @@ def process_file(
                     )
                     (current_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
                     stored = None  # trigger FULL below
+                    regen_reason = "retag_failed"
                 except Exception as exc:
                     logger.warning(
                         'pipeline.retag: file=%s reason=failed error="%s"',
@@ -753,6 +760,7 @@ def process_file(
                     )
                     (current_dir / ALBUM_MANIFEST_FILENAME).unlink(missing_ok=True)
                     stored = None  # trigger FULL below
+                    regen_reason = "retag_failed"
                 else:
                     _artist_cover_refresh()
                     logger.info(
@@ -786,6 +794,11 @@ def process_file(
 
     # Retag failed above (stored reset to None) or plan.level is FULL or force.
     # Fall through to the full extract+split pipeline.
+    logger.info(
+        "pipeline.regen: file=%s reason=%s",
+        _safe_log_name(input_path),
+        regen_reason,
+    )
 
     # Dry run: log and return
     if dry_run:

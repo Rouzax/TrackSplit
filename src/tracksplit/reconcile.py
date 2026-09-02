@@ -16,6 +16,36 @@ from tracksplit.manifest import (
 )
 from tracksplit.paths import fold, nfc
 
+# Tolerance applied to the LAST track's end when comparing boundaries.
+#
+# That value never reaches ffmpeg: split_tracks cuts every track at the next
+# track's start and lets the last one run to end of file, so the audio is
+# determined by the starts alone. It is also the least stable number in the
+# manifest. CrateDigger's MKVs carry no ChapterTimeEnd, so ffmpeg synthesises
+# the final chapter's end from the container duration, and different ffmpeg
+# builds disagree there by a few milliseconds on the same file. Comparing it
+# exactly would send an entire library to a full re-split after an ffmpeg
+# upgrade or a remux that nudges the duration. A real re-cut moves boundaries
+# by far more than a second, so drift below this threshold is ignored while a
+# genuinely shortened or extended set still triggers a full regeneration.
+FINAL_END_TOLERANCE_SECONDS = 1.0
+
+# Identity key for an album with no CrateDigger source id: audio fingerprint
+# plus the track starts.
+FingerprintKey = tuple[AudioFingerprint, tuple[float, ...]]
+
+
+def _fingerprint_key(
+    audio: AudioFingerprint, boundaries: list[tuple[float, float]]
+) -> FingerprintKey:
+    """Identity key for an album that carries no CrateDigger source id.
+
+    Keyed on the track starts only, for the same reason the final end is
+    compared with a tolerance: including it would make the key drift with the
+    ffmpeg build and miss the album it is meant to find.
+    """
+    return (audio, tuple(start for start, _ in boundaries))
+
 
 def build_desired_album(
     *,
@@ -121,8 +151,16 @@ def plan_reconciliation(stored: AlbumManifest, desired: DesiredAlbum) -> Reconci
         return ReconcilePlan(RegenLevel.FULL, full_reason="codec_mode")
     if len(stored.tracks) != len(desired.tracks):
         return ReconcilePlan(RegenLevel.FULL, full_reason="track_count")
-    for s, d in zip(stored.tracks, desired.tracks, strict=True):
-        if s.start != d.start or s.end != d.end:
+    last = len(stored.tracks) - 1
+    for i, (s, d) in enumerate(zip(stored.tracks, desired.tracks, strict=True)):
+        if s.start != d.start:
+            return ReconcilePlan(RegenLevel.FULL, full_reason="boundary")
+        moved_end = (
+            abs(s.end - d.end) > FINAL_END_TOLERANCE_SECONDS
+            if i == last
+            else s.end != d.end
+        )
+        if moved_end:
             return ReconcilePlan(RegenLevel.FULL, full_reason="boundary")
 
     # --- cheap ops ------------------------------------------------------
@@ -191,7 +229,7 @@ def plan_reconciliation(stored: AlbumManifest, desired: DesiredAlbum) -> Reconci
 @dataclass
 class IdentityIndex:
     by_id: dict[str, Path]
-    by_fp: dict[tuple, list[Path]]  # (audio, boundaries) -> dirs (ambiguity guard)
+    by_fp: dict[FingerprintKey, list[Path]]  # dirs per key (ambiguity guard)
 
     def lookup(
         self,
@@ -201,14 +239,13 @@ class IdentityIndex:
     ) -> Path | None:
         if source_id:
             return self.by_id.get(source_id)
-        key = (audio, tuple(boundaries))
-        hits = self.by_fp.get(key, [])
+        hits = self.by_fp.get(_fingerprint_key(audio, boundaries), [])
         return hits[0] if len(hits) == 1 else None
 
 
 def build_identity_index(output_root: Path, load=load_album_manifest) -> IdentityIndex:
     by_id: dict[str, Path] = {}
-    by_fp: dict[tuple, list[Path]] = {}
+    by_fp: dict[FingerprintKey, list[Path]] = {}
     if not output_root.exists():
         return IdentityIndex(by_id, by_fp)
     for album_dir in sorted(output_root.glob("*/*")):
@@ -223,6 +260,7 @@ def build_identity_index(output_root: Path, load=load_album_manifest) -> Identit
             # first writer wins deterministically by sorted scan order.
             by_id.setdefault(sid, album_dir)
         else:
-            bounds = tuple((t.start, t.end) for t in m.tracks)
-            by_fp.setdefault((m.identity.audio, bounds), []).append(album_dir)
+            bounds = [(t.start, t.end) for t in m.tracks]
+            key = _fingerprint_key(m.identity.audio, bounds)
+            by_fp.setdefault(key, []).append(album_dir)
     return IdentityIndex(by_id, by_fp)

@@ -361,3 +361,88 @@ def test_migrated_manifest_unchanged_album_tag_is_skip():
     assert p.level is RegenLevel.SKIP and not p.retag, (
         "unchanged migrated manifest must still reconcile to SKIP"
     )
+
+
+def _two_track_stored() -> AlbumManifest:
+    return _stored(
+        tracks=[
+            TrackEntry(1, "01 - A - One.opus", 0.0, 172.0, "One", artist="A"),
+            TrackEntry(2, "02 - A - Two.opus", 172.0, 292.0, "Two", artist="A"),
+        ]
+    )
+
+
+def _two_track_desired(final_end: float, **over) -> DesiredAlbum:
+    return _desired(
+        tracks=[
+            TrackEntry(1, "01 - A - One.opus", 0.0, 172.0, "One", artist="A"),
+            TrackEntry(2, "02 - A - Two.opus", 172.0, final_end, "Two", artist="A"),
+        ],
+        **over,
+    )
+
+
+def test_final_end_drift_below_tolerance_is_not_full():
+    # ffmpeg synthesises the last chapter's end from the container duration;
+    # builds disagree by milliseconds. That must not force a re-split.
+    p = plan_reconciliation(_two_track_stored(), _two_track_desired(291.993))
+    assert p.level is RegenLevel.SKIP and p.full_reason is None
+
+
+def test_final_end_drift_above_tolerance_is_full():
+    p = plan_reconciliation(_two_track_stored(), _two_track_desired(280.0))
+    assert p.level is RegenLevel.FULL and p.full_reason == "boundary"
+
+
+def test_non_final_end_change_is_full():
+    # Only the last track's end is synthesised, so every other end is exact.
+    d = _desired(
+        tracks=[
+            TrackEntry(1, "01 - A - One.opus", 0.0, 171.99, "One", artist="A"),
+            TrackEntry(2, "02 - A - Two.opus", 172.0, 292.0, "Two", artist="A"),
+        ]
+    )
+    p = plan_reconciliation(_two_track_stored(), d)
+    assert p.level is RegenLevel.FULL and p.full_reason == "boundary"
+
+
+def test_start_change_within_final_tolerance_is_full():
+    # The starts are the real cut points: no tolerance applies to them.
+    d = _desired(
+        tracks=[
+            TrackEntry(1, "01 - A - One.opus", 0.0, 172.0, "One", artist="A"),
+            TrackEntry(2, "02 - A - Two.opus", 172.5, 292.0, "Two", artist="A"),
+        ]
+    )
+    p = plan_reconciliation(_two_track_stored(), d)
+    assert p.level is RegenLevel.FULL and p.full_reason == "boundary"
+
+
+def test_index_lookup_survives_final_end_drift(tmp_path):
+    # No source_id, so the album is found by audio fingerprint + boundaries.
+    a = tmp_path / "ArtistA" / "TML 2025"
+    a.mkdir(parents=True)
+
+    def fake_load(d: Path):
+        if d != a:
+            return None
+        return AlbumManifest(
+            schema=MANIFEST_SCHEMA,
+            identity=SourceIdentity(None, AUDIO),
+            source_path="x",
+            resolved_artist_folder="ArtistA",
+            resolved_album_folder="TML 2025",
+            output_format="opus",
+            codec_mode="copy",
+            album_tags={},
+            tracks=[
+                TrackEntry(1, "01 - A - One.opus", 0.0, 172.0, "One", artist="A"),
+                TrackEntry(2, "02 - A - Two.opus", 172.0, 292.0, "Two", artist="A"),
+            ],
+            cover_sha256="abc",
+            cover_schema_version=99,
+            tag_schema_version=99,
+        )
+
+    idx = build_identity_index(tmp_path, load=fake_load)
+    assert idx.lookup(None, AUDIO, [(0.0, 172.0), (172.0, 291.993)]) == a
