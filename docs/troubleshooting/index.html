@@ -1162,17 +1162,17 @@
 <ul>
 <li>Source file moved or renamed (same recording, different path): the stored path is updated in the manifest. Nothing else happens. No re-split, no retag.</li>
 <li>Metadata changed (artist spelling, festival name, etc.): tags are rewritten in the existing files and the album folder is moved if the folder name changed. Still no re-split.</li>
-<li>Audio or chapter boundaries changed: full re-split.</li>
+<li>Audio changed, a track start time moved, or the final track's end time moved by more than a second: full re-split.</li>
 </ul>
 <p>If you are still seeing unexpected re-splits after upgrading, check that your source files carry the <code>CRATEDIGGER_1001TL_ID</code> tag (requires a recent CrateDigger enrich pass). Without that tag, identity falls back to the audio fingerprint, which is less reliable across codec changes.</p>
 <hr />
 <h2 id="tracksplit-re-split-an-album-even-though-only-a-tag-changed">TrackSplit re-split an album even though only a tag changed<a class="headerlink" href="#tracksplit-re-split-an-album-even-though-only-a-tag-changed" title="Permanent link">&para;</a></h2>
 <p><strong>What you see:</strong> An album was fully re-split when you expected only a retag.</p>
-<p><strong>What is happening:</strong> A full re-split is only needed when the audio itself must change: different audio stream, different output format or codec mode, different number of tracks, or a chapter boundary that moved. Everything else (tag change, folder rename, track rename) is handled without touching the audio.</p>
+<p><strong>What is happening:</strong> A full re-split is only needed when the audio itself must change: different audio stream, different output format or codec mode, different number of tracks, a track start time that moved, or the final track's end time moving by more than a second. Everything else (tag change, folder rename, track rename) is handled without touching the audio.</p>
 <p>If you see a re-split you did not expect:</p>
 <ol>
-<li>Re-run with <code>--verbose</code> and look for the <code>reconcile:</code> log lines. They will name the exact field that triggered the decision.</li>
-<li>Check whether the number of chapters changed, or whether a chapter start or end time shifted. Even a small boundary change forces a re-split because the audio cut must move.</li>
+<li>Re-run with <code>--verbose</code> and look for the <code>pipeline.regen</code> log line (<code>pipeline.regen: file=&lt;name&gt; reason=&lt;reason&gt;</code>). It is logged at INFO, so <code>--verbose</code> is enough to see it. The <code>reason</code> is one of: <code>audio</code> (the audio stream itself changed), <code>output_format</code> or <code>codec_mode</code> (the output format or codec mode changed), <code>track_count</code> (the number of chapters changed), <code>boundary</code> (a track start time moved, or the final track's end moved by more than a second), <code>no_manifest</code> (no manifest was found to compare against), <code>retag_failed</code> (a retag-only attempt failed and TrackSplit fell back to a full re-split), or <code>force</code> (you passed <code>--force</code>).</li>
+<li>Check whether the number of chapters changed, or whether a track start time shifted. A moved start time always forces a re-split because the audio cut must move; the final track's end time is allowed to drift by up to a second, since ffmpeg synthesises it from the container duration and different ffmpeg builds compute it slightly differently even for an unchanged file.</li>
 <li>Check whether you changed <code>--format</code> (FLAC vs Opus). A format change always triggers a re-split.</li>
 </ol>
 <p>If none of the above applies, open an issue and include the <code>--verbose</code> output and the log file from the run.</p>
@@ -1180,7 +1180,7 @@
 <h2 id="after-re-running-cratedigger-tracksplit-ran-again-unexpectedly">After re-running CrateDigger, TrackSplit ran again unexpectedly<a class="headerlink" href="#after-re-running-cratedigger-tracksplit-ran-again-unexpectedly" title="Permanent link">&para;</a></h2>
 <p><strong>What you see:</strong> TrackSplit retagged or re-split an album after CrateDigger updated the source file, even though you did not change the audio.</p>
 <p><strong>What is happening:</strong> TrackSplit compares the tags it would embed (genre, album artists, MusicBrainz IDs, and others) against what the manifest recorded. If CrateDigger's enrichment changed any of those tags, TrackSplit correctly treats the album as outdated and retags it in place. Only the tag blocks are rewritten; the audio data is not touched and no re-split occurs.</p>
-<p>A full re-split is only triggered when the audio itself must change: chapter boundaries moved, number of tracks changed, the audio stream changed (different codec, sample rate, channels, or time base), or the output format changed. A tag-only update from CrateDigger does not cause a re-split.</p>
+<p>A full re-split is only triggered when the audio itself must change: a track start time moved, the final track's end time moved by more than a second, the number of tracks changed, the audio stream changed (different codec, sample rate, channels, or time base), or the output format changed. A tag-only update from CrateDigger does not cause a re-split.</p>
 <p>Enrichments that touch only bookkeeping fields (the DJ artwork URL, the CrateDigger enrichment timestamp) do not trigger a retag or re-split, because those fields are not embedded into the output tracks.</p>
 <p>If you see a retag or re-split you were not expecting, check the debug log for the exact field that changed:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>grep<span class="w"> </span>-i<span class="w"> </span>manifest<span class="w"> </span>~/.local/state/TrackSplit/log/split-*.log
