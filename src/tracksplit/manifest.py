@@ -14,6 +14,9 @@ import os
 import tempfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Any
+
+from tracksplit.models import AlbumMeta
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +48,7 @@ class AudioFingerprint:
     time_base: str
 
     @classmethod
-    def from_ffprobe(cls, ffprobe_data: dict) -> AudioFingerprint:
+    def from_ffprobe(cls, ffprobe_data: dict[str, Any]) -> AudioFingerprint:
         for stream in ffprobe_data.get("streams", []):
             if stream.get("codec_type") == "audio":
                 return cls(
@@ -169,7 +172,7 @@ class AlbumManifest:
     resolved_album_folder: str
     output_format: str
     codec_mode: str
-    album_tags: dict
+    album_tags: dict[str, Any]
     tracks: list[TrackEntry]
     cover_sha256: str
     cover_schema_version: int = 0
@@ -214,10 +217,10 @@ class AlbumManifest:
         )
 
 
-def nfc_tags(tags: dict) -> dict:
+def nfc_tags(tags: dict[str, Any]) -> dict[str, Any]:
     from tracksplit.paths import nfc  # local: paths imports manifest (cycle)
 
-    out: dict = {}
+    out: dict[str, Any] = {}
     for k, v in tags.items():
         if isinstance(v, str):
             out[k] = nfc(v)
@@ -228,7 +231,7 @@ def nfc_tags(tags: dict) -> dict:
     return out
 
 
-def _album_tags_from_meta(album) -> dict:
+def album_tags_from_meta(album: AlbumMeta) -> dict[str, Any]:
     """Project album-level fields from an AlbumMeta into the manifest tag dict."""
     return {
         "artist": album.artist,
@@ -287,7 +290,7 @@ def build_album_manifest(
         resolved_album_folder=album_folder,
         output_format=output_format,
         codec_mode=codec_mode,
-        album_tags=_album_tags_from_meta(album),
+        album_tags=album_tags_from_meta(album),
         tracks=tracks,
         cover_sha256=_sha256(cover_bytes) if cover_bytes else "",
         cover_schema_version=COVER_SCHEMA_VERSION,

@@ -1,11 +1,14 @@
+# pyright: strict
 """Pure reconciliation planner: diff a stored manifest against the desired
 state and return the cheapest set of operations. No filesystem access."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from tracksplit.manifest import (
     AlbumManifest,
@@ -14,6 +17,7 @@ from tracksplit.manifest import (
     load_album_manifest,
     nfc_tags,
 )
+from tracksplit.models import AlbumMeta
 from tracksplit.paths import fold, nfc
 
 # Tolerance applied to the LAST track's end when comparing boundaries.
@@ -49,9 +53,9 @@ def _fingerprint_key(
 
 def build_desired_album(
     *,
-    album,  # AlbumMeta
-    ffprobe_data: dict,
-    tags: dict,
+    album: AlbumMeta,
+    ffprobe_data: dict[str, Any],
+    tags: dict[str, Any],
     artist_folder: str,
     album_folder: str,
     output_format: str,
@@ -61,9 +65,9 @@ def build_desired_album(
     track_filenames: list[str],
 ) -> DesiredAlbum:
     # Local imports mirror manifest.build_album_manifest: cover/tagger pull in
-    # heavier modules, and _album_tags_from_meta lives in manifest.
+    # heavier modules, and album_tags_from_meta lives in manifest.
     from tracksplit.cover import COVER_SCHEMA_VERSION
-    from tracksplit.manifest import _album_tags_from_meta  # projection helper
+    from tracksplit.manifest import album_tags_from_meta  # projection helper
     from tracksplit.tagger import TAG_SCHEMA_VERSION
 
     tracks = [
@@ -89,7 +93,7 @@ def build_desired_album(
         album_folder=album_folder,
         output_format=output_format,
         codec_mode=codec_mode,
-        album_tags=_album_tags_from_meta(album),
+        album_tags=album_tags_from_meta(album),
         tracks=tracks,
         cover_sha256=cover_sha256,
         cover_schema_version=COVER_SCHEMA_VERSION,
@@ -112,7 +116,7 @@ class DesiredAlbum:
     album_folder: str
     output_format: str
     codec_mode: str
-    album_tags: dict
+    album_tags: dict[str, Any]
     tracks: list[TrackEntry]
     cover_sha256: str
     cover_schema_version: int
@@ -129,7 +133,11 @@ class ReconcilePlan:
     full_reason: str | None = None
 
 
-def _track_tag_fields(t: TrackEntry) -> tuple:
+def _track_tag_fields(
+    t: TrackEntry,
+) -> tuple[
+    str, str, tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...]
+]:
     # The embedded per-track values (NFC). Filename and boundaries excluded.
     return (
         nfc(t.title),
@@ -243,7 +251,10 @@ class IdentityIndex:
         return hits[0] if len(hits) == 1 else None
 
 
-def build_identity_index(output_root: Path, load=load_album_manifest) -> IdentityIndex:
+def build_identity_index(
+    output_root: Path,
+    load: Callable[[Path], AlbumManifest | None] = load_album_manifest,
+) -> IdentityIndex:
     by_id: dict[str, Path] = {}
     by_fp: dict[FingerprintKey, list[Path]] = {}
     if not output_root.exists():

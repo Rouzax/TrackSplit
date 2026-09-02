@@ -720,7 +720,7 @@ class TestProcessFileManifest:
         album_dir.mkdir(parents=True)
 
         # Build the manifest using build_album_manifest so album_tags match
-        # what _album_tags_from_meta(album) produces during reconciliation.
+        # what album_tags_from_meta(album) produces during reconciliation.
         from tracksplit.manifest import build_album_manifest, save_album_manifest
         from tracksplit.metadata import build_album_meta
         from tracksplit.models import TrackMeta
