@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: CrateDigger
+    url: https://github.com/Rouzax/CrateDigger/issues
+    about: Problems with the tags CrateDigger writes into the MKV files that TrackSplit reads.
+  - name: TrackSplit documentation
+    url: https://rouzax.github.io/TrackSplit/docs/
+    about: Setup, usage, output layout, troubleshooting and FAQ.

@@ -1,7 +1,22 @@
 name: Bug Report
 description: Report a bug or unexpected behavior
+type: Bug
 labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        If a tag value is already wrong in the source MKV (artist, festival, stage, chapter titles), the problem is in CrateDigger: use the [CrateDigger issue tracker](https://github.com/Rouzax/CrateDigger/issues) instead.
+
+  - type: input
+    id: version
+    attributes:
+      label: TrackSplit version
+      description: Output of `tracksplit --version`
+      placeholder: e.g. 0.18.1
+    validations:
+      required: true
+
   - type: textarea
     id: description
     attributes:
@@ -39,9 +54,8 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: TrackSplit version, Python version, OS, ffmpeg version
+      description: Python version, OS, ffmpeg version
       placeholder: |
-        TrackSplit version:
         Python version:
         OS:
         ffmpeg version:

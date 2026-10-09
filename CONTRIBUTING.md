@@ -7,6 +7,16 @@ Thanks for your interest. TrackSplit is a small, focused CLI and we aim to keep 
 - **Bugs**: use the [Bug Report](https://github.com/Rouzax/TrackSplit/issues/new?template=bug_report.yml) template. Include the output of `tracksplit --check` and, where relevant, the per-run debug log file (its path is shown in the summary panel after each run and in `tracksplit --check`).
 - **Feature requests**: use the [Feature Request](https://github.com/Rouzax/TrackSplit/issues/new?template=feature_request.yml) template. Describe the use case, not just the mechanism.
 
+## Labels, issue types and milestones
+
+Each issue carries three pieces of triage information:
+
+- **Issue type and label: what it is.** Bug reports get the `Bug` type and the `bug` label, feature requests the `Feature` type and the `enhancement` label. The issue forms set both for you. `Task` (no label) is for internal work such as refactors, CI or release chores.
+- **Milestone: when it ships.** `Next` means planned for the next release. `Later` means accepted but not yet planned. No milestone means not triaged yet. The version number is only decided at release time, so `Next` is renamed to that version (for example `0.19.0`) and closed when the release ships, and a fresh `Next` is opened.
+- **Labels for state: what it waits on.** `needs-info` waits on the reporter, `needs-upstream` waits on an external project or tool, such as a tag CrateDigger does not write yet, or an ffmpeg, mutagen or player fix. The remaining labels are the GitHub defaults plus `dependencies`, which Dependabot puts on its pull requests.
+
+TrackSplit and [CrateDigger](https://github.com/Rouzax/CrateDigger) use the same labels, colours and milestones. [`.github/sync-labels.sh`](.github/sync-labels.sh) is the source of truth for both labels and the standing `Next` and `Later` milestones. To add, rename or recolour a label, edit the list in that script (and in CrateDigger's copy) and run it; it needs an authenticated `gh` with write access. Labels missing from the list are only reported; `--prune` deletes them, which also strips them from every issue and pull request that has them.
+
 ## Development setup
 
 Requires Python 3.11+, `ffmpeg`, and `ffprobe`. Optionally `mkvextract` for the MKV cover-extraction path.
@@ -49,9 +59,9 @@ TRACKSPLIT_TEST_VIDEO=/path/to/some.mkv pytest tests/test_integration.py -v
 The tool gates above are the standard and should not be removed. Quality levels
 are ratcheted up gradually rather than in one big sweep, and never regress:
 
-- **Coverage** , the `--cov-fail-under` floor only ever goes up (current 85, target 90). When you add tests that raise overall coverage, bump the floor in `[tool.pytest.ini_options]` to lock the gain in. Don't lower it.
-- **Type checking** , mypy and basedpyright both stay. Strictness grows per-file: when you create or substantially edit a module under `src/`, add `# pyright: strict` at its top and resolve the findings. Strict is not enabled globally.
-- **Dead code** , `vulture` gates high-confidence findings; dead functions are caught by per-file pyright strict and by the touched-files cleanup rule below, plus occasional manual sweeps.
+- **Coverage**: the `--cov-fail-under` floor only ever goes up (current 88, target 90). When you add tests that raise overall coverage, bump the floor in `[tool.pytest.ini_options]` to lock the gain in. Don't lower it.
+- **Type checking**: mypy and basedpyright both stay. Strictness grows per-file: when you create or substantially edit a module under `src/`, add `# pyright: strict` at its top and resolve the findings. Strict is not enabled globally.
+- **Dead code**: `vulture` gates high-confidence findings; dead functions are caught by per-file pyright strict and by the touched-files cleanup rule below, plus occasional manual sweeps.
 - **New files** should land at the current bar: tests that hold the floor, and `# pyright: strict`.
 
 This dovetails with the touched-files rule: tightening a file you're already
