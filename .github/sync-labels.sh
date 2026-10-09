@@ -66,7 +66,9 @@ done
 
 # At release time "Next" is renamed to the version and closed, so recreating it here
 # opens the fresh "Next" for the following release.
-existing="$(gh api "repos/$REPO/milestones?state=all&per_page=100" --jq '.[].title')"
+# Every release leaves a closed milestone behind, so read all pages: a "Next" past
+# the first page would otherwise look missing and fail as a duplicate title.
+existing="$(gh api --paginate "repos/$REPO/milestones?state=all&per_page=100" --jq '.[].title')"
 while IFS='|' read -r title description; do
     if grep -qxF "$title" <<< "$existing"; then
         echo "ok       milestone $title"

@@ -4,7 +4,8 @@
 # Triggered manually from the GitHub UI, the gh CLI, or the REST API:
 #   gh workflow run release.yml -f version=X.Y.Z
 # The workflow validates pyproject.toml and CHANGELOG.md against the input
-# version, builds artifacts, tags, and publishes a GitHub Release.
+# version, builds artifacts, tags, publishes a GitHub Release, and rolls the
+# "Next" milestone over to the released version.
 
 name: release
 
@@ -27,6 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Milestones and labels (scripts/roll-milestone.sh); pull requests too,
+      # because open PRs in "Next" are moved to the fresh milestone.
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -57,6 +62,12 @@ jobs:
         env:
           VERSION: ${{ steps.validate.outputs.version }}
         run: scripts/check-versions.sh "$VERSION"
+
+      - name: Verify milestones can roll over
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.validate.outputs.version }}
+        run: scripts/roll-milestone.sh check "$VERSION"
 
       - name: Extract release notes from CHANGELOG
         env:
@@ -93,3 +104,9 @@ jobs:
             --title "$TAG" \
             --notes-file /tmp/release-notes.md \
             dist/*.whl dist/*.tar.gz
+
+      - name: Roll the Next milestone over to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.validate.outputs.version }}
+        run: scripts/roll-milestone.sh roll "$VERSION"
