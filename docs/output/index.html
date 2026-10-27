@@ -1352,12 +1352,16 @@
 <td>Fills missing MusicBrainz artist IDs. For Tier-1 sources (no CrateDigger tags) the <code>ALBUMARTIST</code> is looked up here to populate <code>MUSICBRAINZ_ALBUMARTISTID</code>. For Tier-2 sources, any gap in the MBID list (per-track <code>MUSICBRAINZ_ARTISTID</code> and album-level <code>MUSICBRAINZ_ALBUMARTISTID</code>) is backfilled from this cache. A name that is still unresolved after the backfill leaves the list incomplete, and an incomplete list is not written at all, so adding entries here is what makes those tags appear.</td>
 </tr>
 <tr>
+<td><code>artists/{slug}/portrait.jpg</code></td>
+<td>The artist image CrateDigger chose by its <code>artist_background_priority</code> setting (by default the artist's Deezer photo, else the 1001Tracklists DJ photo, else fanart.tv), the same image as CrateDigger's artist posters. Used first for the artist cover; written on every <code>enrich</code> run by CrateDigger versions after 0.36.1. Absent when CrateDigger's <code>artist_background_priority</code> lists no image source (for example only <code>"gradient"</code>); the two files below are then used. Resolved by the same slug as <code>dj-artwork.jpg</code> below.</td>
+</tr>
+<tr>
 <td><code>artists/{slug}/dj-artwork.jpg</code></td>
-<td>DJ portrait used to compose the artist cover (<code>folder.jpg</code> / <code>artist.jpg</code>). Slugs are hyphenated (for example <code>martin-garrix</code>). Looked up by the CrateDigger canonical slug (from the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag, index 0), used verbatim, hyphens and any <code>&amp;</code> included. For files without that tag, the slug is derived from the artist name with <code>slugify</code>, which strips everything outside <code>a-z0-9</code> and produces a concatenated key (for example <code>martingarrix</code>); that key only matches cache folders created under the older concatenated naming, so files without the tag should be re-enriched with CrateDigger to get artwork matched under the current hyphenated folders.</td>
+<td>DJ portrait used to compose the artist cover when <code>portrait.jpg</code> is not present (<code>folder.jpg</code> / <code>artist.jpg</code>). Slugs are hyphenated (for example <code>martin-garrix</code>). Looked up by the CrateDigger canonical slug (from the <code>CRATEDIGGER_ALBUMARTIST_SLUGS</code> tag, index 0), used verbatim, hyphens and any <code>&amp;</code> included. For files without that tag, the slug is derived from the artist name with <code>slugify</code>, which strips everything outside <code>a-z0-9</code> and produces a concatenated key (for example <code>martingarrix</code>); that key only matches cache folders created under the older concatenated naming, so files without the tag should be re-enriched with CrateDigger to get artwork matched under the current hyphenated folders.</td>
 </tr>
 <tr>
 <td><code>artists/{slug}/fanart.jpg</code></td>
-<td>Fallback portrait used when <code>dj-artwork.jpg</code> is not present. Resolved by the same slug.</td>
+<td>Fallback portrait used when neither <code>portrait.jpg</code> nor <code>dj-artwork.jpg</code> is present. Resolved by the same slug.</td>
 </tr>
 </tbody>
 </table>
