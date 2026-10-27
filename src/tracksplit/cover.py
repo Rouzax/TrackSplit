@@ -760,7 +760,10 @@ def compose_cover(
 # DJ artwork lookup
 # ---------------------------------------------------------------------------
 
-_DJ_IMAGE_NAMES = ("dj-artwork.jpg", "fanart.jpg")
+# portrait.jpg is CrateDigger's pick under its artist_background_priority (the
+# same image as its artist posters); the other two are read when it is absent,
+# as in caches written before CrateDigger made that pick.
+_DJ_IMAGE_NAMES = ("portrait.jpg", "dj-artwork.jpg", "fanart.jpg")
 
 
 def _check_artist_dir(artist_dir: Path, artist: str, source: str) -> bytes | None:
@@ -790,7 +793,8 @@ def find_dj_artwork(
 
     Search order: CrateDigger's platformdirs **cache** directory, then the
     **data** directories (walk-up ``.cratedigger/``, visible data dir). Within
-    each artist directory, ``dj-artwork.jpg`` is preferred over ``fanart.jpg``.
+    each artist directory the first of ``portrait.jpg``, ``dj-artwork.jpg`` and
+    ``fanart.jpg`` that exists is used.
     """
     if slug:
         key = folder_slug(slug)

@@ -317,6 +317,24 @@ class TestFindDjArtwork:
         )
         assert result == b"ms-artwork"
 
+    def test_prefers_portrait_over_dj_artwork(self, tmp_path, monkeypatch):
+        """portrait.jpg is CrateDigger's pick under artist_background_priority."""
+        cache_dir = tmp_path / "cd_cache"
+        artist_dir = cache_dir / "artists" / "argy"
+        artist_dir.mkdir(parents=True)
+        (artist_dir / "portrait.jpg").write_bytes(b"portrait-data")
+        (artist_dir / "dj-artwork.jpg").write_bytes(b"dj-data")
+        (artist_dir / "fanart.jpg").write_bytes(b"fan-data")
+        monkeypatch.setattr("tracksplit.cover.cratedigger_cache_dir", lambda: cache_dir)
+        monkeypatch.setattr("tracksplit.paths.walkup_cratedigger_dir", lambda _p: None)
+        monkeypatch.setattr(
+            "tracksplit.paths.cratedigger_data_dir",
+            lambda: tmp_path / "empty",
+        )
+
+        result = find_dj_artwork(tmp_path / "file.mkv", slug="argy")
+        assert result == b"portrait-data"
+
     def test_prefers_dj_artwork_over_fanart(self, tmp_path, monkeypatch):
         cache_dir = tmp_path / "cd_cache"
         artist_dir = cache_dir / "artists" / "tiesto"

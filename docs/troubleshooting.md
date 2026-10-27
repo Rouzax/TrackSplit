@@ -277,7 +277,7 @@ pip install -e . --force-reinstall
 
 **What you see:** The `folder.jpg` / `artist.jpg` for an artist is absent or falls back to a generic placeholder, even though CrateDigger has a profile for that artist.
 
-**What is happening:** TrackSplit looks up the artist image by the CrateDigger canonical slug, read from the `CRATEDIGGER_ALBUMARTIST_SLUGS` tag embedded in the source file. It then looks for `cache/artists/<slug>/dj-artwork.jpg` (or `fanart.jpg`) in the CrateDigger data directory. The image is missing if:
+**What is happening:** TrackSplit looks up the artist image by the CrateDigger canonical slug, read from the `CRATEDIGGER_ALBUMARTIST_SLUGS` tag embedded in the source file. It then looks for `cache/artists/<slug>/portrait.jpg`, then `dj-artwork.jpg`, then `fanart.jpg` in the CrateDigger data directory. The image is missing if:
 
 - CrateDigger has no cached artwork for that artist yet. Run CrateDigger on the source file to fetch it, then re-run TrackSplit.
 - The source file lacks the `CRATEDIGGER_ALBUMARTIST_SLUGS` tag. Cache folders are named with hyphenated slugs (for example `martin-garrix`), but TrackSplit's fallback derives the slug from the artist name with `slugify`, which produces a concatenated key (for example `martingarrix`) instead. A concatenated key does not match a hyphenated folder, so the artwork lookup fails. Re-enriching the file with a current version of CrateDigger embeds the slug tag and removes the ambiguity.

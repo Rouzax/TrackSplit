@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Artist covers use the image CrateDigger chose for the artist, `portrait.jpg` in its artwork cache, before the 1001Tracklists DJ photo (`dj-artwork.jpg`) and `fanart.jpg`. With CrateDigger versions after 0.36.1 that is usually the artist's Deezer photo, so covers and CrateDigger's artist posters show the same picture. Caches from older CrateDigger versions have no `portrait.jpg`, and the previous order applies. A cover is rebuilt on the next run whenever its source image changes.
+
 ## [0.18.1] - 2026-09-02
 
 ### Added
